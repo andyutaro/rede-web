@@ -414,7 +414,11 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       const ws = new WebSocket(`${liveConfig.relay}/ws/pub?token=${encodeURIComponent(liveConfig.token)}`)
       ws.addEventListener('open', () => {
         liveSocket = ws
-        broadcastLive()
+        // 再接続時にこのタブの内容が古いまま放送してしまう事故を防ぐ:
+        // 未保存の編集がなければ、まず最新を取り込んでから放送する。
+        // (放置されたタブが中継の再起動時に古いスナップショットを流し、
+        // /watchが巻き戻って見える問題への対策)
+        refreshIfIdle().finally(() => broadcastLive())
       })
       ws.addEventListener('close', () => {
         liveSocket = null
