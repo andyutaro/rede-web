@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid body' }, { status: 400 })
   }
   const ext = (body.ext ?? '').toLowerCase()
-  if (!/^(jpg|jpeg|png|gif|webp|heic|pdf)$/.test(ext)) {
+  if (!/^(jpg|jpeg|png|gif|webp|heic|pdf|mp4|mov|webm|m4v)$/.test(ext)) {
     return NextResponse.json({ error: 'unsupported file type' }, { status: 400 })
   }
 
@@ -44,6 +44,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     path: data.path,
     token: data.token,
+    signedUrl: data.signedUrl,
     publicUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${data.path}`,
   })
 }

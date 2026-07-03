@@ -17,8 +17,11 @@ const EMBED_CSS = `
 .embed-podcast { display: block; margin: 14px 0; border-radius: 10px; cursor: pointer;
   overflow: hidden; background: rgba(255,255,255,0.03); }
 .embed-podcast iframe { display: block; border: none; width: 100%; }
+.embed-video { display: block; max-width: 100%; border-radius: 6px; margin: 14px 0; }
 .embed-selected { outline: 2px solid #7fb0e0; outline-offset: 3px; border-radius: 6px; }
 a.plain-link { color: #7fb0e0; text-decoration: underline; word-break: break-all; }
+.upload-placeholder { display: block; width: fit-content; padding: 10px 14px; margin: 10px 0;
+  background: rgba(255,255,255,0.04); border-radius: 8px; color: #6b6b6b; font-size: 14px; }
 `
 
 type Props = {
@@ -55,10 +58,12 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     let offlinePending = false
     const DRAFT_KEY = `scribe-draft-${openedDate}`
 
-    // 保存用HTML: 画面上の選択表示(embed-selected)を混ぜない
+    // 保存用HTML: 画面上の選択表示(embed-selected)と、進行中アップロードの
+    // プレースホルダを混ぜない(アーカイブは確定した内容だけ)
     function saveableHtml() {
       const clone = editor!.cloneNode(true) as HTMLElement
       clone.querySelectorAll('.embed-selected').forEach((el) => el.classList.remove('embed-selected'))
+      clone.querySelectorAll('.upload-placeholder').forEach((el) => el.remove())
       return clone.innerHTML
     }
 
@@ -137,8 +142,7 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       if (dirty && !saveTimer) doSave()
     }
 
-    // ---- 画像・PDF・埋め込みカード(旧scribeから移植) ----
-    const supabaseStorage = createClient()
+    // ---- 画像・動画・PDF・埋め込みカード(旧scribeから移植) ----
 
     // 挿入・削除系はinputイベントが発火しないため、保存系を手動で回す
     function markEdited() {
@@ -182,22 +186,60 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       }
     }
 
+    // 進捗イベントを取るためsupabase-jsではなくXHRで署名URLへPUTする
+    function putWithProgress(url: string, blob: Blob, onProgress: (pct: number) => void) {
+      return new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('PUT', url)
+        xhr.setRequestHeader('content-type', blob.type || 'application/octet-stream')
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
+        }
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(String(xhr.status))))
+        xhr.onerror = () => reject(new Error('network'))
+        xhr.send(blob)
+      })
+    }
+
+    const MAX_UPLOAD = 50 * 1024 * 1024 // Supabase無料枠のファイル上限
+
     async function uploadFile(file: File) {
       const isImage = file.type.startsWith('image/')
+      const isVideo = file.type.startsWith('video/')
       const isPdf = file.type === 'application/pdf'
-      if (!isImage && !isPdf) return
-      setStatus('アップロード中…')
+      if (!isImage && !isVideo && !isPdf) return
+
+      // 進捗プレースホルダ。DOMに入れることでライブ配信に乗り、
+      // deskとwatchの両方で同じ進捗が見える。アーカイブ保存からは
+      // saveableHtml()が除外するので、失敗の痕跡はDBに残らない
+      const ph = document.createElement('div')
+      ph.className = 'upload-placeholder'
+      ph.contentEditable = 'false'
+      ph.textContent = 'アップロード中… 0%'
+      insertNodeAtCaret(ph)
+
       try {
         const blob = isImage ? await downscaleImage(file) : file
-        const origExt = (file.name.split('.').pop() || (isPdf ? 'pdf' : 'png')).toLowerCase()
+        if (blob.size > MAX_UPLOAD) {
+          ph.remove()
+          setStatus('ファイルが大きすぎます(上限50MB)')
+          return
+        }
+        const fallbackExt = isPdf ? 'pdf' : isVideo ? 'mp4' : 'png'
+        const origExt = (file.name.split('.').pop() || fallbackExt).toLowerCase()
         const ext = blob === file ? origExt : 'jpg'
         const res = await fetch('/api/scribe/upload-url', { method: 'POST', body: JSON.stringify({ ext }) })
         if (!res.ok) throw new Error('upload-url failed')
-        const { path, token, publicUrl } = await res.json()
-        const { error } = await supabaseStorage.storage
-          .from('scribe-media')
-          .uploadToSignedUrl(path, token, blob, { contentType: blob.type || file.type })
-        if (error) throw error
+        const { signedUrl, publicUrl } = await res.json()
+
+        let lastShown = -5
+        await putWithProgress(signedUrl, blob, (pct) => {
+          // 5%刻みで更新(全量スナップショット配信なので更新頻度を抑える)
+          if (pct - lastShown >= 5 || pct === 100) {
+            lastShown = pct
+            ph.textContent = `アップロード中… ${pct}%`
+          }
+        })
 
         let node: HTMLElement
         if (isImage) {
@@ -205,6 +247,14 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
           img.className = 'embed-image'
           img.src = publicUrl
           node = img
+        } else if (isVideo) {
+          const video = document.createElement('video')
+          video.className = 'embed-video'
+          video.src = publicUrl
+          video.controls = true
+          video.playsInline = true
+          video.preload = 'metadata'
+          node = video
         } else {
           const a = document.createElement('a')
           a.className = 'embed-pdf'
@@ -215,10 +265,10 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
           node = a
         }
         node.contentEditable = 'false'
-        insertNodeAtCaret(node)
-        insertNodeAtCaret(document.createElement('br'))
+        ph.replaceWith(node, document.createElement('br'))
         markEdited()
       } catch {
+        ph.remove()
         setStatus('アップロード失敗')
       }
     }
@@ -290,7 +340,7 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       markEdited()
     }
     function onEditorClick(e: MouseEvent) {
-      const embed = (e.target as HTMLElement).closest?.('.embed-image, .embed-pdf, .embed-podcast') as HTMLElement | null
+      const embed = (e.target as HTMLElement).closest?.('.embed-image, .embed-pdf, .embed-podcast, .embed-video') as HTMLElement | null
       if (embed) {
         if (embed.classList.contains('embed-pdf')) e.preventDefault() // シングルクリックは選択のみ
         setSelectedEmbed(embed)
@@ -533,7 +583,7 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,application/pdf"
+        accept="image/*,video/*,application/pdf"
         multiple
         style={{ display: 'none' }}
         onChange={(e) => {
