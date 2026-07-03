@@ -28,6 +28,20 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     // nullは「まだ行が存在しない前提で開いた」ことを意味する。
     let baseUpdatedAt: string | null = initialUpdatedAt
     let saveTimer: ReturnType<typeof setTimeout> | null = null
+    // オフライン対応: dirty=クラウド未反映の編集がある / offlinePending=保存が
+    // ネットワーク起因で失敗した(オフライン執筆中)。下書きは打鍵ごとにlocalStorageへ
+    // 書くので、圏外でもタブ破棄でも失われない。
+    let dirty = false
+    let offlinePending = false
+    const DRAFT_KEY = `scribe-draft-${openedDate}`
+
+    function writeDraft() {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ html: editor!.innerHTML, dirty, ts: Date.now() }))
+      } catch {
+        // プライベートモード等でlocalStorage不可の場合は諦める(従来動作に落ちる)
+      }
+    }
     let liveSocket: WebSocket | null = null
     let liveConfig: { token: string; relay: string } | null = null
     let liveSeq = 0
@@ -49,6 +63,8 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       editor!.innerHTML = latest?.html ?? ''
       assignBlockIds()
       placeCaretAtEnd()
+      dirty = false
+      writeDraft()
       setStatus(message)
     }
 
@@ -58,28 +74,45 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       try {
         const res = await fetch('/api/scribe/save', { method: 'POST', body })
         if (res.status === 409) {
-          // 他端末が先に保存していた: このタブの内容は古い土台の上にあるので、
-          // 上書きせず最新を取り込む
           const { latest } = await res.json()
+          if (offlinePending) {
+            // オフライン中の執筆と他端末の保存が衝突した場合は、直近に身体が
+            // 書いた方(この端末)を正とし、新しいbaseで自分の内容を書き込み直す
+            baseUpdatedAt = latest?.updated_at ?? null
+            offlinePending = false
+            await doSave(dateOverride, finalize)
+            return
+          }
+          // 通常の衝突: このタブの内容は古い土台の上にあるので、上書きせず最新を取り込む
           applyRemote(latest, '他の端末の更新を読み込みました')
           return
         }
         if (res.ok) {
           const data = await res.json()
           baseUpdatedAt = data.updatedAt
+          dirty = false
+          offlinePending = false
+          writeDraft()
           setStatus('保存済み')
         } else {
           setStatus('保存失敗')
         }
       } catch {
-        setStatus('オフライン')
+        // ネットワーク断: 内容はlocalStorageに残っている。復帰時にretrySyncが送る
+        offlinePending = true
+        setStatus('オフライン(この端末には保存済み)')
       }
+    }
+
+    // オンライン復帰・定期リトライでクラウド未反映分を送る
+    function retrySync() {
+      if (dirty && !saveTimer) doSave()
     }
 
     // タブがフォアグラウンドに戻ったとき、未保存の編集がなければ最新を取り込む。
     // これで「別端末で書いたあと古いタブに戻る」ケースの衝突をそもそも起きにくくする。
     async function refreshIfIdle() {
-      if (saveTimer) return // 打鍵直後(未保存の編集あり)は触らない
+      if (saveTimer || dirty) return // クラウド未反映の編集があるうちは触らない(オフライン執筆の保護)
       try {
         const res = await fetch(`/api/scribe/load?date=${openedDate}`, { cache: 'no-store' })
         if (!res.ok) return
@@ -95,7 +128,12 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     function scheduleSave() {
       setStatus('・・・')
       if (saveTimer) clearTimeout(saveTimer)
-      saveTimer = setTimeout(() => doSave(), SAVE_DELAY)
+      // 発火時にnullへ戻すこと。残ったIDを「保存待ちあり」と誤認すると
+      // retrySync/refreshIfIdleが二度と動かなくなる
+      saveTimer = setTimeout(() => {
+        saveTimer = null
+        doSave()
+      }, SAVE_DELAY)
     }
 
     function broadcastLive() {
@@ -174,10 +212,42 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
 
     editor.innerHTML = initialHtml
     assignBlockIds()
+
+    // 未同期のオフライン下書きがあれば復元して即同期する
+    // (圏外で書いた後にタブが破棄されても、開き直せばここで拾われる)
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i)
+        if (!k || !k.startsWith('scribe-draft-') || k === DRAFT_KEY) continue
+        // 過去日の下書きは、同期済みのものだけ掃除する(未同期は救出用に残す)
+        try {
+          const old = JSON.parse(localStorage.getItem(k) ?? '{}')
+          if (!old.dirty) localStorage.removeItem(k)
+        } catch {
+          localStorage.removeItem(k)
+        }
+      }
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const draft = JSON.parse(raw)
+        if (draft.dirty && typeof draft.html === 'string') {
+          editor.innerHTML = draft.html
+          assignBlockIds()
+          dirty = true
+          offlinePending = true // サーバー側と食い違っていてもこの下書きを正とする
+          doSave()
+        }
+      }
+    } catch {
+      // localStorage不可の環境では復元なしで進む
+    }
+
     placeCaretAtEnd()
     connectLive()
 
     function onInput() {
+      dirty = true
+      writeDraft() // 打鍵ごとに端末へ下書き保存(圏外・タブ破棄への保険)
       scheduleSave()
       keepCaretCentered()
     }
@@ -207,6 +277,9 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     document.addEventListener('visibilitychange', onVisibility)
     // Macでウィンドウを切り替えて戻った場合など、visibilitychangeが発火しない復帰も拾う
     window.addEventListener('focus', refreshIfIdle)
+    // 圏外→復帰の自動同期。onlineイベントに加え、イベントが飛ばない環境の保険として定期リトライ
+    window.addEventListener('online', retrySync)
+    const retryInterval = setInterval(retrySync, 15 * 1000)
 
     return () => {
       editor.removeEventListener('input', onInput)
@@ -214,6 +287,8 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       window.removeEventListener('beforeunload', onBeforeUnload)
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('focus', refreshIfIdle)
+      window.removeEventListener('online', retrySync)
+      clearInterval(retryInterval)
       clearInterval(dateInterval)
       if (saveTimer) clearTimeout(saveTimer)
       liveSocket?.close()
