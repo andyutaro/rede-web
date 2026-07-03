@@ -17,9 +17,15 @@ export default async function DeskPage() {
   const date = todayInTokyo()
   const { data: row } = await supabase
     .from('scribe_days')
-    .select('html')
+    .select('html, updated_at')
     .eq('date', date)
     .maybeSingle()
 
-  return <DeskEditor initialDate={date} initialHtml={row?.html ?? ''} />
+  return (
+    <DeskEditor
+      initialDate={date}
+      initialHtml={row?.html ?? ''}
+      initialUpdatedAt={row?.updated_at ?? null}
+    />
+  )
 }

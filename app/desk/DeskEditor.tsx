@@ -9,9 +9,10 @@ const SAVE_DELAY = 1500
 type Props = {
   initialDate: string
   initialHtml: string
+  initialUpdatedAt: string | null
 }
 
-export default function DeskEditor({ initialDate, initialHtml }: Props) {
+export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt }: Props) {
   const editorRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState('')
 
@@ -23,6 +24,9 @@ export default function DeskEditor({ initialDate, initialHtml }: Props) {
     // connectLiveのような自己再帰の再接続ループはfunction宣言にする
     // (hoistされるため、宣言前の自己参照でもTDZエラーにならない)。
     const openedDate = initialDate
+    // 楽観ロックの基点。「このタブが最後に読み込んだ/保存した時点のupdated_at」。
+    // nullは「まだ行が存在しない前提で開いた」ことを意味する。
+    let baseUpdatedAt: string | null = initialUpdatedAt
     let saveTimer: ReturnType<typeof setTimeout> | null = null
     let liveSocket: WebSocket | null = null
     let liveConfig: { token: string; relay: string } | null = null
@@ -38,14 +42,53 @@ export default function DeskEditor({ initialDate, initialHtml }: Props) {
       }
     }
 
+    // 他端末の内容でエディタを置き換える。置き換え直前の未保存キーストロークは
+    // 失われるが、「文書全体を古い内容で上書きする」事故に比べれば損失は最小。
+    function applyRemote(latest: { html: string; updated_at: string | null } | null, message: string) {
+      baseUpdatedAt = latest?.updated_at ?? null
+      editor!.innerHTML = latest?.html ?? ''
+      assignBlockIds()
+      placeCaretAtEnd()
+      setStatus(message)
+    }
+
     async function doSave(dateOverride?: string, finalize?: boolean) {
       const date = dateOverride ?? openedDate
-      const body = JSON.stringify({ date, html: editor!.innerHTML, finalize })
+      const body = JSON.stringify({ date, html: editor!.innerHTML, finalize, baseUpdatedAt })
       try {
         const res = await fetch('/api/scribe/save', { method: 'POST', body })
-        setStatus(res.ok ? '保存済み' : '保存失敗')
+        if (res.status === 409) {
+          // 他端末が先に保存していた: このタブの内容は古い土台の上にあるので、
+          // 上書きせず最新を取り込む
+          const { latest } = await res.json()
+          applyRemote(latest, '他の端末の更新を読み込みました')
+          return
+        }
+        if (res.ok) {
+          const data = await res.json()
+          baseUpdatedAt = data.updatedAt
+          setStatus('保存済み')
+        } else {
+          setStatus('保存失敗')
+        }
       } catch {
         setStatus('オフライン')
+      }
+    }
+
+    // タブがフォアグラウンドに戻ったとき、未保存の編集がなければ最新を取り込む。
+    // これで「別端末で書いたあと古いタブに戻る」ケースの衝突をそもそも起きにくくする。
+    async function refreshIfIdle() {
+      if (saveTimer) return // 打鍵直後(未保存の編集あり)は触らない
+      try {
+        const res = await fetch(`/api/scribe/load?date=${openedDate}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const latest = await res.json()
+        if (latest.updatedAt && latest.updatedAt !== baseUpdatedAt) {
+          applyRemote({ html: latest.html, updated_at: latest.updatedAt }, '他の端末の更新を読み込みました')
+        }
+      } catch {
+        // オフライン等は無視(次の保存時に楽観ロックが守る)
       }
     }
 
@@ -149,22 +192,28 @@ export default function DeskEditor({ initialDate, initialHtml }: Props) {
     function onBeforeUnload() {
       if (!saveTimer) return
       clearTimeout(saveTimer)
-      const body = JSON.stringify({ date: openedDate, html: editor!.innerHTML })
+      const body = JSON.stringify({ date: openedDate, html: editor!.innerHTML, baseUpdatedAt })
       navigator.sendBeacon?.('/api/scribe/save', new Blob([body], { type: 'application/json' }))
     }
     window.addEventListener('beforeunload', onBeforeUnload)
 
     const dateInterval = setInterval(checkDateChange, 60 * 1000)
     function onVisibility() {
-      if (document.visibilityState === 'visible') checkDateChange()
+      if (document.visibilityState === 'visible') {
+        checkDateChange()
+        refreshIfIdle()
+      }
     }
     document.addEventListener('visibilitychange', onVisibility)
+    // Macでウィンドウを切り替えて戻った場合など、visibilitychangeが発火しない復帰も拾う
+    window.addEventListener('focus', refreshIfIdle)
 
     return () => {
       editor.removeEventListener('input', onInput)
       observer.disconnect()
       window.removeEventListener('beforeunload', onBeforeUnload)
       document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', refreshIfIdle)
       clearInterval(dateInterval)
       if (saveTimer) clearTimeout(saveTimer)
       liveSocket?.close()
