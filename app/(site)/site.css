@@ -704,27 +704,111 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   font-variant-numeric: tabular-nums;
 }
 
-.episode-listen {
+/* ネイティブ再生プレイヤー(シークバー付き)。彩色はサイトの原則どおり無彩色 */
+.audio-player {
   margin-top: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-.listen-btn {
+.audio-toggle {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--dot);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.audio-toggle:hover:not(:disabled) {
+  border-color: var(--mut);
+}
+
+.audio-toggle:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.audio-seek {
+  flex: 1;
+  height: 2px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--dot);
+  cursor: pointer;
+}
+
+.audio-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.audio-seek::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: none;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.audio-seek:disabled {
+  opacity: 0.4;
+}
+
+.audio-time {
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+}
+
+.episode-listen {
+  margin-top: 36px;
+}
+
+.listen-caption {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  color: var(--faint);
+}
+
+/* 配信先ボタン群: 番組単位のリンク。設定された配信先だけ並ぶ */
+.platform-links {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.platform-btn {
   display: inline-block;
   border: 1px solid var(--dot);
-  padding: 10px 26px;
-  font-size: 11px;
-  letter-spacing: 0.2em;
+  padding: 9px 18px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
   color: var(--body);
   transition: border-color 0.2s, color 0.2s;
 }
 
-.listen-btn:hover {
+.platform-btn:hover {
   border-color: var(--mut);
   color: var(--ink);
 }
 
 .listen-note {
-  margin-top: 14px;
+  margin-top: 18px;
   font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--faint);

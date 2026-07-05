@@ -14,6 +14,7 @@ export type Episode = {
   description: string // 生HTML。表示側でサニタイズ
   image: string | null
   link: string | null // 外部リスニングページ(遷移ボタンの行き先)
+  audioUrl: string | null // enclosureのMP3(ネイティブ再生プレイヤー用)
   duration: string | null
 }
 
@@ -28,29 +29,41 @@ export type ShowFeed = {
 const TTL_MS = 30 * 60 * 1000 // 新エピソードが30分以内にサイトへ反映される
 
 // サーバーインスタンス内キャッシュ(Nextのデータキャッシュ併用)。
-// フィードは全話分で数百KB〜になるため、リクエストごとの再取得・再パースを避ける
+// フィードは全話分で数百KB〜になるため、リクエストごとの再取得・再パースを避ける。
+// sinceはキャッシュキーに含める(番組ごとに絞り込み境界が違うため)
 const cache = new Map<string, { feed: ShowFeed | null; ts: number }>()
 
-export async function fetchShowFeed(feedUrl: string): Promise<ShowFeed | null> {
-  const hit = cache.get(feedUrl)
+// since: この日付(東京, YYYY-MM-DD)より前のエピソードを捨てる。
+// 同じAnchor枠で旧番組が配信されていた場合の混入除去(例: BrandShiftは新シリーズ
+// #001=2026-03-10以降のみ。それ以前は別番組がこの枠を使っていた)。
+export async function fetchShowFeed(feedUrl: string, since?: string): Promise<ShowFeed | null> {
+  const key = since ? `${feedUrl}#${since}` : feedUrl
+  const hit = cache.get(key)
   if (hit && Date.now() - hit.ts < TTL_MS) return hit.feed
 
   let feed: ShowFeed | null = null
   try {
     const res = await fetch(feedUrl, { next: { revalidate: 1800 } })
-    if (res.ok) feed = parseFeed(await res.text())
+    if (res.ok) {
+      feed = parseFeed(await res.text())
+      if (feed && since) {
+        const episodes = feed.episodes.filter((e) => e.date >= since)
+        feed = { ...feed, episodes, latest: episodes[0]?.date ?? null }
+      }
+    }
   } catch {
     // フィード到達不可: null(表示側はその番組を出さない/エピソードなし扱い)
   }
-  cache.set(feedUrl, { feed, ts: Date.now() })
+  cache.set(key, { feed, ts: Date.now() })
   return feed
 }
 
 // Homeのカバー+最新日付用の薄いラッパー
 export async function channelInfo(
-  feedUrl: string
+  feedUrl: string,
+  since?: string
 ): Promise<{ image: string | null; latest: string | null }> {
-  const feed = await fetchShowFeed(feedUrl)
+  const feed = await fetchShowFeed(feedUrl, since)
   return { image: feed?.image ?? null, latest: feed?.latest ?? null }
 }
 
@@ -101,6 +114,7 @@ function parseFeed(xml: string): ShowFeed {
       description: tagText(item, 'description') ?? '',
       image: httpsUrl(item.match(/<itunes:image[^>]*\bhref\s*=\s*["']([^"']+)["']/i)?.[1] ?? null),
       link,
+      audioUrl: httpsUrl(item.match(/<enclosure[^>]*\burl\s*=\s*["']([^"']+)["']/i)?.[1] ?? null),
       duration: tagText(item, 'itunes:duration'),
     })
   }

@@ -27,7 +27,7 @@ export default async function Home() {
     // (カバーは番組全体のアート。エピソード画像ではない)
     Promise.all(
       SHOWS.map((s) =>
-        s.feed ? channelInfo(s.feed) : Promise.resolve({ image: null, latest: null })
+        s.feed ? channelInfo(s.feed, s.since) : Promise.resolve({ image: null, latest: null })
       )
     ),
   ])

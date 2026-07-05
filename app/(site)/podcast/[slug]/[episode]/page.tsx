@@ -4,6 +4,8 @@ import { showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { dateDots } from '@/lib/site/text'
 import EpisodeNotes from '../../EpisodeNotes'
+import AudioPlayer from '../../AudioPlayer'
+import PlatformLinks from '../../PlatformLinks'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +15,7 @@ async function loadEpisode(params: Promise<Params>) {
   const { slug, episode } = await params
   const show = showBySlug(slug)
   if (!show || !show.feed) return null
-  const feed = await fetchShowFeed(show.feed)
+  const feed = await fetchShowFeed(show.feed, show.since)
   const ep = feed?.episodes.find((e) => e.id === episode)
   if (!ep) return null
   return { show, feed: feed!, ep }
@@ -28,8 +30,8 @@ export async function generateMetadata({
   return { title: data ? data.ep.title : 'Podcast' }
 }
 
-// エピソードページ: タイトル・サムネイル・遷移ボタン・概要欄の薄いテンプレート。
-// サイト内プレイヤーは持たない。外部リスニングプラットフォームへ送客する。
+// エピソードページ: タイトル・サムネイル・ネイティブ再生プレイヤー・
+// 各配信先への送客ボタン・概要欄の薄いテンプレート。
 export default async function EpisodePage({ params }: { params: Promise<Params> }) {
   const data = await loadEpisode(params)
   if (!data) notFound()
@@ -52,12 +54,15 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
           )}
           <h1 className="episode-title">{ep.title}</h1>
           {ep.duration && <div className="episode-duration">{ep.duration}</div>}
-          {ep.link && (
+
+          {/* このエピソードをその場で聴くプレイヤー(enclosure) */}
+          {ep.audioUrl && <AudioPlayer src={ep.audioUrl} title={ep.title} />}
+
+          {/* 各配信先への送客(番組単位)。旧サイトの一文を添える */}
+          {show.platforms && (
             <div className="episode-listen">
-              <a href={ep.link} target="_blank" rel="noopener noreferrer" className="listen-btn">
-                エピソードを聴く →
-              </a>
-              {/* 旧サイトから移植の一文(LISTEN 3連説明は畳む) */}
+              <div className="listen-caption">配信先で聴く</div>
+              <PlatformLinks platforms={show.platforms} />
               <p className="listen-note">全て無料です。使いやすいアプリからお聴きください。</p>
             </div>
           )}

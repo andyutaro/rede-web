@@ -11,7 +11,9 @@ export const metadata: Metadata = { title: 'Podcast' }
 // カバーで識別し、各カバーは番組ページへ。データはすべてRSSから。
 export default async function PodcastPage() {
   const covers = await Promise.all(
-    SHOWS.map((s) => (s.feed ? channelInfo(s.feed) : Promise.resolve({ image: null, latest: null })))
+    SHOWS.map((s) =>
+      s.feed ? channelInfo(s.feed, s.since) : Promise.resolve({ image: null, latest: null })
+    )
   )
 
   const withArt = SHOWS.map((s, i) => ({
