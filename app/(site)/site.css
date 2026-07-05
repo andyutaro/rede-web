@@ -642,6 +642,104 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   margin-top: 70px;
 }
 
+/* ---- 番組ページ ---- */
+.show-header {
+  text-align: center;
+}
+
+.show-cover {
+  width: 220px;
+  margin: 0 auto;
+}
+
+.show-title {
+  margin-top: 44px;
+  font-size: 15px;
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+
+.show-description {
+  margin-top: 28px;
+  font-size: 13px;
+  line-height: 2.4;
+  color: var(--mut);
+  white-space: pre-wrap; /* channel説明の改行を保持 */
+  text-align: center;
+}
+
+.show-role {
+  margin-top: 40px;
+  font-size: 13px;
+  line-height: 2.4;
+  color: var(--body);
+}
+
+/* ---- エピソードページ ---- */
+.episode-header {
+  margin-top: 70px;
+  text-align: center;
+}
+
+.episode-thumb {
+  width: 220px;
+  margin: 0 auto;
+}
+
+.episode-title {
+  margin-top: 44px;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 2.2;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.episode-duration {
+  margin-top: 10px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.episode-listen {
+  margin-top: 40px;
+}
+
+.listen-btn {
+  display: inline-block;
+  border: 1px solid var(--dot);
+  padding: 10px 26px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--body);
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.listen-btn:hover {
+  border-color: var(--mut);
+  color: var(--ink);
+}
+
+.listen-note {
+  margin-top: 14px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+}
+
+.episode-notes {
+  margin-top: 70px;
+  font-size: 13px;
+  line-height: 2.4;
+}
+
+.episode-notes > div {
+  min-height: 1em; /* 空段落(空白のみのp)も余白として残す */
+}
+
 /* ---- Photography(§2): 見出しの下に写真1枚 ---- */
 .photo-single img {
   display: block;

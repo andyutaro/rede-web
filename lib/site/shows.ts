@@ -1,15 +1,16 @@
 // Podcast番組カタログ(handoff-notes §2・§5)。
-// カバーアートはfeed(RSS)のチャンネル画像から自動取得(lib/site/podcastCovers.ts)。
+// フィードは全番組Anchor RSS(2026-07-05 Andy指定。LISTENは使わない)。
+// カバー・最新日付・エピソードはすべてRSSから自動取得(lib/site/podcastFeed.ts)。
 // feed未設定・取得失敗の番組は表示しない(プレースホルダ禁止)。
-// latest(LATEST日付)はRSS取り込み本体(フェーズ3)で自動化するまで未設定。
 export type Show = {
   slug: string
   name: string
   display?: string // タイル下の表記(Andy直接指定)。未指定の番組は配信開始時に指定をもらう
-  ended?: boolean // 終了番組: 最終更新日を年入り(2026.02.17)で表示する
+  ended?: boolean // 終了番組: 最終更新日を年入り(2024.02.17)で表示する
   group: 'original' | 'works'
   feed?: string
-  latest?: string // YYYY-MM-DD
+  // 番組ページのROLE(担当領域の列挙、旧サイト移植)。文言はAndyから。未設定なら非表示
+  role?: string
 }
 
 export const SHOWS: Show[] = [
@@ -18,7 +19,7 @@ export const SHOWS: Show[] = [
     name: 'サカナカイギ',
     display: 'SAKANAKAIGI',
     group: 'original',
-    feed: 'https://listen.style/p/sakanakaigi/rss',
+    feed: 'https://anchor.fm/s/1039cb824/podcast/rss',
   },
   {
     slug: 'mimoriradio',
@@ -26,7 +27,7 @@ export const SHOWS: Show[] = [
     display: 'MIMORIRADIO',
     ended: true, // 終了番組(最終更新を年入りで表示)
     group: 'original',
-    feed: 'https://listen.style/p/mimoriradio/rss',
+    feed: 'https://anchor.fm/s/ccd5236c/podcast/rss',
   },
   {
     slug: 'gairon',
@@ -39,7 +40,7 @@ export const SHOWS: Show[] = [
     name: 'ロングポスト',
     display: 'LONGPOST',
     group: 'original',
-    feed: 'https://listen.style/p/longpost/rss',
+    feed: 'https://anchor.fm/s/f20aee28/podcast/rss',
   },
   {
     slug: 'onairdo',
@@ -62,3 +63,7 @@ export const SHOWS: Show[] = [
     // 配信未開始(2026-07-05時点)。開始したらフィードURLをここに足す
   },
 ]
+
+export function showBySlug(slug: string): Show | undefined {
+  return SHOWS.find((s) => s.slug === slug)
+}

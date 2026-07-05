@@ -134,7 +134,9 @@ function sanitizeChildren(node: Node, inLink = false): Node[] {
       }
       continue
     }
-    if (tag === 'DIV') {
+    // Pはdivとして残す(scribeはpを生成しないが、RSSのエピソード概要欄が
+    // <p>段落で来るため。剥がすと段落が繋がってしまう)
+    if (tag === 'DIV' || tag === 'P') {
       const div = document.createElement('div')
       if (/\bembed-podcast\b/.test(el.className)) div.className = 'embed-podcast'
       copyBlockId(el, div)
