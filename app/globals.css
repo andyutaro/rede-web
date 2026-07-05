@@ -1,6 +1,32 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* 公開サイトのデザイントークン(handoff-notes §8)。
+     杉本肌: 紙白の地・グレースケール階調。彩色はLIVE赤のみ。 */
+  --bg: #fbfbfa;
+  --ink: #1c1c1c;
+  --body: #3a3a3a;
+  --mut: #8f8f8c;
+  --faint: #b8b8b4;
+  --ghost: #d9d9d5;
+  --dot: #e4e4e0;
+  --sel: rgba(0, 0, 0, 0.08);
+  --live: #c33;
+}
+
+/* ダークモード: 真っ黒でなくビリジアン混じりのダークグリーン黒。
+   テキストも緑がかったグレー系(handoff-notes §8) */
+html[data-theme='dark'] {
+  --bg: #131a17;
+  --ink: #dfe7e2;
+  --body: #b9c3bd;
+  --mut: #77847d;
+  --faint: #505c55;
+  --ghost: #35403a;
+  --dot: #27322c;
+  --sel: rgba(255, 255, 255, 0.1);
+  --live: #e05548;
 }
 
 @media (prefers-color-scheme: dark) {

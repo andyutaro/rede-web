@@ -1,0 +1,133 @@
+import Link from 'next/link'
+import { createService } from '@/lib/supabase/service'
+import { todayInTokyo } from '@/lib/scribe/date'
+import { recentUpdates } from '@/lib/site/updates'
+import { listAllImages, randomOf } from '@/lib/site/photos'
+import { SHOWS } from '@/lib/site/shows'
+import { channelInfo, type ChannelInfo } from '@/lib/site/podcastCovers'
+import { dateDots, dateShort } from '@/lib/site/text'
+import LiveWindow from './LiveWindow'
+import UpdateList from './UpdateList'
+
+// ライブ・ランダム写真・当日行はリクエストごとに変わるので静的化しない
+export const dynamic = 'force-dynamic'
+
+// Home構成(handoff-notes §2、上から):
+// ワードマーク/ナビ(layout) → Podcast Original → Podcast Works →
+// UPDATES → scribe窓 → Photography → Tags → フッター(layout)
+export default async function Home() {
+  const today = todayInTokyo()
+  const service = createService()
+
+  const [todayRes, updates, images, covers] = await Promise.all([
+    service.from('scribe_days').select('html').eq('date', today).maybeSingle(),
+    recentUpdates(10),
+    listAllImages(),
+    // 番組カバー+最新エピソード日付はRSSから自動取得
+    // (カバーは番組全体のアート。エピソード画像ではない)
+    Promise.all(
+      SHOWS.map((s) =>
+        s.feed ? channelInfo(s.feed) : Promise.resolve<ChannelInfo>({ image: null, latest: null })
+      )
+    ),
+  ])
+
+  const initialHtml = todayRes.data?.html || null
+  const photo = randomOf(images)
+  // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
+  // 並びは各群とも最新エピソードが新しい順(左が最新)
+  const withArt = SHOWS.map((s, i) => ({
+    ...s,
+    cover: covers[i].image,
+    latest: covers[i].latest ?? s.latest,
+  }))
+    .filter((s): s is typeof s & { cover: string } => Boolean(s.cover))
+    .sort((a, b) => (b.latest ?? '').localeCompare(a.latest ?? ''))
+  const originals = withArt.filter((s) => s.group === 'original')
+  const works = withArt.filter((s) => s.group === 'works')
+
+  return (
+    <div className="measure">
+      {originals.length > 0 && (
+        <PodcastGroup heading="PODCAST — ORIGINAL" shows={originals} />
+      )}
+      {works.length > 0 && <PodcastGroup heading="PODCAST — WORKS" shows={works} />}
+
+      <section className="section">
+        <div className="section-head">
+          <span>UPDATES — LAST 10 DAYS</span>
+          <Link href="/updates">ALL UPDATES →</Link>
+        </div>
+        <div className="section-body">
+          <UpdateList rows={updates} />
+        </div>
+      </section>
+
+      <LiveWindow
+        relay={process.env.SCRIBE_RELAY_URL ?? null}
+        today={today}
+        initialHtml={initialHtml}
+      />
+
+      {/* 見出しはPhotographyのまま存続(§11: Homeの統一感を優先する司令塔決定)。
+          母集団はサイト内の全アップロード写真 */}
+      {photo && (
+        <section className="section">
+          <div className="section-head">
+            <span>PHOTOGRAPHY</span>
+          </div>
+          <div className="section-body photo-single">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo} alt="" />
+          </div>
+        </section>
+      )}
+
+      {/* Tags(§7)は手動タグ付け開始まで非表示(ダミー不可)。タグ実装時にここへ */}
+    </div>
+  )
+}
+
+function PodcastGroup({
+  heading,
+  shows,
+}: {
+  heading: string
+  shows: {
+    slug: string
+    name: string
+    display?: string
+    ended?: boolean
+    cover: string
+    latest?: string
+  }[]
+}) {
+  return (
+    <section className="section">
+      <div className="section-head">
+        <span>{heading}</span>
+      </div>
+      <div className="section-body grid4">
+        {shows.map((show) => (
+          <div key={show.slug}>
+            {/* cover-frame: 白背景ロゴがページの地に溶けないための細枠 */}
+            <div className="sq cover-frame">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={show.cover} alt={show.name} />
+            </div>
+            {/* タイル下は「番組名(Andy指定の表記) + 最新エピソード日付」。
+                終了番組は最終更新がいつの年か分かるよう年入り(2026.02.17) */}
+            {show.latest && (
+              <div className="cover-label">
+                <span className="cover-name">{show.display ?? show.slug.toUpperCase()}</span>
+                <span className="latest-date">
+                  {show.ended ? dateDots(show.latest) : dateShort(show.latest)}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}

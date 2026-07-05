@@ -1,0 +1,651 @@
+/* 公開サイト共通スタイル。具体値はすべて handoff-notes §8-§10 から。
+   /desk・/login には影響させない(セレクタを .site 配下に限定する)。 */
+
+.site {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--body);
+  font-family: var(--font-noto), -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 2.6;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.site main {
+  flex: 1;
+}
+
+.site ::selection {
+  background: var(--sel);
+}
+
+/* コンテンツ幅640px・中央・左右padding 40px(§9) */
+.measure {
+  width: 100%;
+  max-width: 720px; /* 640(コンテンツ) + 40×2(padding) */
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* ---- セクションの律動(§9): 最初のセクション margin-top 150px、
+   見出し行→本体 70px。ページを跨いで同座標に重なること。 ---- */
+.section {
+  margin-top: 150px;
+}
+
+.section-head {
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  color: var(--mut);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.section-head a {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--faint);
+}
+
+.section-body {
+  margin-top: 70px;
+}
+
+/* ---- 4列グリッド(§9): Home / Article 完全共通。
+   minmax(0,1fr)は長いラベルによる列幅の押し広げ防止(実際に踏んだバグ)。 ---- */
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 44px 28px;
+}
+
+/* 正方形セルは「aspect-ratio:1のラッパー + 中身100%×100%」構造(§9)。
+   画像スロット自体にaspect-ratioを掛けると中身の高さで縦長に崩れる(実際に踏んだバグ)。 */
+.sq {
+  display: block; /* Linkをラッパーにした場合もinlineで高さが潰れないように */
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.sq > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sq img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 充当サムネイル(本人写真でなく装丁的に充てた画像)の見分け(§6) */
+.sq img.thumb-assigned {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.sq .empty-cell {
+  display: block;
+  border: 1px solid var(--dot);
+}
+
+/* タイル下のラベル: 「SCRIBE 07.03」形式。日付はtabular-nums(§10) */
+.cell-label {
+  margin-top: 12px;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  line-height: 1.6;
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- ヘッダー ---- */
+.site-header {
+  padding-top: 72px;
+  text-align: center;
+}
+
+.wordmark {
+  font-size: 14px;
+  font-weight: 200;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+.wordmark .wm-role {
+  color: var(--mut);
+  margin-left: 0.4em;
+}
+
+.site-nav {
+  margin-top: 44px;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+}
+
+.site-nav a {
+  color: var(--mut);
+  transition: color 0.2s;
+}
+
+.site-nav a:hover {
+  color: var(--ink);
+}
+
+.site-nav a[aria-current='page'] {
+  color: var(--ink);
+}
+
+/* ---- フッター: ナビ再掲+著作権表記。細罫線区切り(§1) ---- */
+.site-footer {
+  margin-top: 150px;
+  border-top: 1px solid var(--dot);
+  padding: 48px 0 64px;
+  text-align: center;
+}
+
+.site-footer .site-nav {
+  margin-top: 0;
+}
+
+.site-footer .copyright {
+  margin-top: 36px;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--faint);
+}
+
+/* ---- ダークモードトグル(§8): 枠の見える横長ピル72×30。
+   グリフは約5秒周期で控えめに明滅して現在のモードを示す ---- */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 22px;
+  width: 72px;
+  height: 30px;
+  border: 1px solid var(--dot);
+  border-radius: 999px;
+  background: var(--bg);
+  cursor: pointer;
+  padding: 0;
+  z-index: 20;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.theme-toggle .glyph {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  animation: glyph-breathe 5s ease-in-out infinite;
+}
+
+.theme-toggle .glyph-sun {
+  left: 11px;
+  color: #c0392b;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.theme-toggle .glyph-moon {
+  right: 11px;
+  color: #d9b44a;
+  display: none;
+}
+
+html[data-theme='dark'] .theme-toggle .glyph-sun {
+  display: none;
+}
+
+html[data-theme='dark'] .theme-toggle .glyph-moon {
+  display: flex;
+}
+
+@keyframes glyph-breathe {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---- 更新リスト(§4): 日付+種別ラベル+(scribeのみ)冒頭抜粋を1行ellipsis ---- */
+.update-row {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  border-bottom: 1px solid var(--dot);
+  padding: 10px 2px;
+  min-width: 0;
+}
+
+.update-row:first-child {
+  border-top: 1px solid var(--dot);
+}
+
+.update-date {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--mut);
+  flex: none;
+}
+
+.update-kind {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+  flex: none;
+  min-width: 52px;
+}
+
+.update-excerpt {
+  font-size: 13px;
+  color: var(--body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.update-row a {
+  display: contents;
+}
+
+/* ---- scribeライブ窓(§3): 高さ390px固定・overflow hidden・下端揃え。
+   最新行=キャレット位置が常に窓の下端に見え、古い行は上端の130pxフェードで消える ---- */
+.scribe-window {
+  position: relative;
+  height: 390px;
+  overflow: hidden;
+}
+
+.scribe-window-inner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.scribe-window::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  background: linear-gradient(var(--bg), transparent);
+  z-index: 2;
+  pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+/* idle(当日未執筆): 窓は空、中央に日付のみ(§3) */
+.scribe-idle-date {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* away: キャレット消灯、テキストは最後の状態で静止(§3) */
+.scribe-window.away .live-caret {
+  display: none;
+}
+
+.scribe-window-foot {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  color: var(--mut);
+}
+
+.scribe-window-foot .char-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.scribe-window-foot a {
+  letter-spacing: 0.12em;
+}
+
+.scribe-window-foot a:hover {
+  color: var(--ink);
+}
+
+/* ライブ状態表示: 赤●(ゆっくり明滅)+LIVE / グレー●+AWAY */
+.live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+}
+
+.live-status .live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.live-status.is-live {
+  color: var(--live);
+}
+
+.live-status.is-live .live-dot {
+  background: var(--live);
+  animation: rec-breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes rec-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* キャレット「▍」はstep-end 1.1sで明滅(§10) */
+.live-caret {
+  animation: caret-blink 1.1s step-end infinite;
+  color: var(--ink);
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---- scribe本文(窓・当日全文・確定アーカイブ共通)。
+   改行は<br>の生HTML(SSOT)。埋め込みのクラス名はサニタイザの出力と一致させる ---- */
+.scribe-html {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.scribe-html .embed-image {
+  display: block;
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 14px 0;
+}
+
+.scribe-html .embed-video {
+  display: block;
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 14px 0;
+}
+
+.scribe-html .embed-pdf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  background: var(--sel);
+  border-radius: 8px;
+  color: var(--body);
+  text-decoration: none;
+  width: fit-content;
+  font-size: 14px;
+}
+
+.scribe-html .embed-podcast {
+  display: block;
+  margin: 14px 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.scribe-html .embed-podcast iframe {
+  display: block;
+  border: none;
+  width: 100%;
+}
+
+/* リンクも無彩色(彩色はLIVE赤のみ、§10) */
+.scribe-html a.plain-link {
+  color: var(--body);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+/* ---- 当日ライブ全文ページ(/watch後継) ---- */
+.live-full-body {
+  min-height: 40vh;
+  padding-bottom: 40vh; /* 執筆点の下に余白(watchと同じ、最新行を画面中程に置ける) */
+}
+
+.live-full-body.away .live-caret {
+  display: none;
+}
+
+.live-full-idle {
+  min-height: 40vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.live-full-idle + .live-full-body {
+  display: none;
+}
+
+/* 読み返し中に「下で執筆が続いている」ことを知らせるフローティングチップ */
+.jump-chip {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(8px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--body);
+  background: var(--bg);
+  border: 1px solid var(--dot);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  user-select: none;
+  z-index: 10;
+}
+
+.jump-chip.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.jump-chip .live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.jump-chip.is-live .live-dot {
+  background: var(--live);
+  animation: rec-breathe 2.2s ease-in-out infinite;
+}
+
+/* ---- Podcastカバー(§5): 番組名は表示しない。カバー下は「LATEST 07.01」 ----
+   cover-frame: 白背景のロゴがページの地(--bg)に溶け込まないための細枠 */
+.cover-frame {
+  border: 1px solid var(--dot);
+}
+
+.cover-label {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2px 10px;
+  /* MIMORIRADIO 2026.02.17 のような長い組み合わせでも収まらなければ
+     日付が次の行に落ちる(クリップさせない) */
+  flex-wrap: wrap;
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--faint);
+}
+
+.cover-label .cover-name {
+  letter-spacing: 0.12em;
+}
+
+.cover-label .latest-date {
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Article一覧のタブ(§6): 実フィルタ、デフォルトALL ---- */
+.article-tabs {
+  gap: 30px;
+  justify-content: flex-start;
+}
+
+.article-tabs button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.article-tabs button:hover {
+  color: var(--mut);
+}
+
+.article-tabs button.active {
+  color: var(--ink);
+}
+
+/* ---- 当日執筆中scribeのLIVEセル(§6): 細枠のマス。中央の赤丸がゆっくり明滅し、
+   同じ2.8秒周期で枠色も赤へ明滅、明滅ごとに赤い波紋が広がって枠内で消える ---- */
+.live-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 1px solid var(--ghost);
+  overflow: hidden; /* 波紋は枠内で消える */
+  animation: live-frame 2.8s ease-in-out infinite;
+}
+
+@keyframes live-frame {
+  0%,
+  100% {
+    border-color: var(--ghost);
+  }
+  25% {
+    border-color: var(--live);
+  }
+}
+
+.live-cell .core {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--live);
+  animation: live-core 2.8s ease-in-out infinite;
+}
+
+@keyframes live-core {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  25% {
+    opacity: 1;
+  }
+}
+
+.live-cell .ripple {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  border: 1px solid var(--live);
+  opacity: 0;
+  animation: live-ripple 2.8s ease-out infinite;
+}
+
+@keyframes live-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(12);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(12);
+    opacity: 0;
+  }
+}
+
+.cell-label.is-live {
+  color: var(--live);
+}
+
+/* ---- scribe個別(確定アーカイブ) ---- */
+.scribe-preamble {
+  margin-top: 70px;
+  font-size: 11px;
+  line-height: 2.2;
+  color: var(--mut);
+}
+
+.scribe-archive-body {
+  margin-top: 70px;
+}
+
+/* ---- Photography(§2): 見出しの下に写真1枚 ---- */
+.photo-single img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
