@@ -1,10 +1,11 @@
 import { createService } from '@/lib/supabase/service'
-import { excerpt } from './text'
 import { SHOWS } from './shows'
 import { fetchShowFeed } from './podcastFeed'
 
-// 更新リストの1行(handoff-notes §4): 日付+種別ラベル+抜粋。
-// scribeは冒頭抜粋、Podcastはエピソードタイトル(タイトルを持つため)、Article/Photographyはラベルのみ。
+// 更新リストの1行: 日付+種別ラベル+(あれば)抜粋。
+// scribeはタイトルが無く、冒頭抜粋は日付マーカー(【7/5】等)や散文で雑然とするため
+// ラベルのみに。Podcastはタイトルを持つのでエピソードタイトルを出す。
+// Article/Photographyもラベルのみ。§4の「scribeのみ抜粋」からは反転(実運用の見栄え優先、司令塔に通す)。
 export type UpdateRow = {
   date: string // YYYY-MM-DD
   kind: 'scribe' | 'Article' | 'Photography' | 'Podcast'
@@ -27,7 +28,6 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   const rows: UpdateRow[] = (days ?? []).map((d) => ({
     date: d.date as string,
     kind: 'scribe',
-    excerpt: excerpt((d.html as string) ?? ''),
     href: `/scribe/${d.date}`,
   }))
 
