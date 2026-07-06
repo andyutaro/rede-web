@@ -1,23 +1,16 @@
 import { createService } from '@/lib/supabase/service'
-import { htmlToPlainText } from './text'
+import { scribeTitle } from './text'
 import { SHOWS } from './shows'
 import { fetchShowFeed } from './podcastFeed'
 
-// scribeの冒頭抜粋。行頭の日付マーカー(【7/5】等。日付列と重複するため)を剥がして
-// から短く切る。ラベルのみだとタイトルを持つPodcast行と混在して「歯抜け」に見えるため、
-// 全行が中身を持つよう冒頭抜粋を出す(重複日付だけ除いて雑然を抑える)。
-function scribeLine(html: string): string {
-  return htmlToPlainText(html)
-    .replace(/^[\s　]*【[^】]*】[\s　]*/, '')
-    .slice(0, 60)
-}
-
-// 更新リストの1行: 日付+種別ラベル+抜粋。
-// scribeは(日付マーカーを除いた)冒頭抜粋、Podcastはエピソードタイトル。Article/Photographyはラベルのみ。
+// 更新リストの1行: 日付+ラベル+タイトル。
+// scribeはタイトル=日付導出(20260706)、Podcastはラベル=番組名/タイトル=『…』配信、
+// Article/Photographyはラベルのみ。labelが無ければkindを大文字表示。
 export type UpdateRow = {
   date: string // YYYY-MM-DD
   kind: 'scribe' | 'Article' | 'Photography' | 'Podcast'
-  excerpt?: string
+  label?: string // ラベル列の表示を上書き(Podcast=番組名など)
+  excerpt?: string // タイトル列
   href: string
 }
 
@@ -36,7 +29,7 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   const rows: UpdateRow[] = (days ?? []).map((d) => ({
     date: d.date as string,
     kind: 'scribe',
-    excerpt: scribeLine((d.html as string) ?? ''),
+    excerpt: scribeTitle(d.date as string), // scribeのタイトルは日付導出(20260706)
     href: `/scribe/${d.date}`,
   }))
 
@@ -69,11 +62,15 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   SHOWS.forEach((s, i) => {
     const feed = feeds[i]
     if (!feed) return
+    const label = s.display ?? s.slug.toUpperCase() // ラベルは番組名(ON-AIRDO等)
     for (const ep of feed.episodes.slice(0, limit)) {
+      // タイトルは『エピソード名』配信。末尾の！等の強調記号だけ落とす(？は意味を持つので残す)
+      const title = ep.title.replace(/[！!\s　]+$/, '')
       rows.push({
         date: ep.date,
         kind: 'Podcast',
-        excerpt: ep.title,
+        label,
+        excerpt: `『${title}』配信`,
         href: `/podcast/${s.slug}/${ep.id}`,
       })
     }

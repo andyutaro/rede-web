@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
-import { dateDots } from '@/lib/site/text'
+import { scribeTitle } from '@/lib/site/text'
 import ScribeArchive from '../ScribeArchive'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +21,7 @@ export async function generateMetadata({
   params: Promise<Params>
 }): Promise<Metadata> {
   const { date } = await params
-  return { title: `scribe ${dateDots(date)}` }
+  return { title: `scribe ${scribeTitle(date)}` }
 }
 
 export default async function ScribeDayPage({ params }: { params: Promise<Params> }) {
@@ -46,8 +46,9 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
   return (
     <div className="measure">
       <article className="section">
+        {/* scribeのタイトルは日付導出(20260706)。日付はdatetimeとして併記 */}
         <div className="section-head">
-          <span>SCRIBE — {dateDots(date)}</span>
+          <span>SCRIBE — {scribeTitle(date)}</span>
         </div>
         <p className="scribe-preamble">{PREAMBLE}</p>
         <ScribeArchive html={data.html as string} />

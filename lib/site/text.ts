@@ -29,6 +29,12 @@ export function dateDots(isoDate: string): string {
   return isoDate.replaceAll('-', '.')
 }
 
+// scribeにはタイトルが無いため、当日の日付から一意なタイトルを自動導出する。
+// 「2026-07-06」→「20260706」。scribeのタイトルはサイト全体でこのパターン。
+export function scribeTitle(isoDate: string): string {
+  return isoDate.replaceAll('-', '')
+}
+
 export function dateShort(isoDate: string): string {
   return isoDate.slice(5).replace('-', '.')
 }

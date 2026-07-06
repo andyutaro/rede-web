@@ -248,10 +248,14 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 
 .update-kind {
   font-size: 9px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   color: var(--faint);
   flex: none;
-  min-width: 52px;
+  /* 番組名(SAKANAKAIGI等)は長さがバラつくため固定幅にし、タイトル開始位置を揃える */
+  width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .update-excerpt {
