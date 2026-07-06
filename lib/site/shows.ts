@@ -15,6 +15,8 @@ export type Platforms = {
 export type Show = {
   slug: string
   name: string
+  // Updates等で「◯◯配信」と使う自然な番組名(サブタイトルなし)。未指定ならnameを使う。
+  shortName?: string
   display?: string // タイル下の表記(Andy直接指定)。未指定の番組は配信開始時に指定をもらう
   ended?: boolean // 終了番組: 最終更新日を年入り(2024.02.17)で表示する
   group: 'original' | 'works'
@@ -74,6 +76,7 @@ export const SHOWS: Show[] = [
   {
     slug: 'onairdo',
     name: 'ON-AIRDO 声で旅する北海道',
+    shortName: 'ON-AIRDO',
     display: 'ON-AIRDO',
     group: 'works',
     feed: 'https://anchor.fm/s/fe6f8048/podcast/rss',
