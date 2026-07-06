@@ -7,7 +7,8 @@ import EpisodeNotes from '../../EpisodeNotes'
 import AudioPlayer from '../../AudioPlayer'
 import PlatformLinks from '../../PlatformLinks'
 
-export const dynamic = 'force-dynamic'
+// ISR: 30分ごとに再検証。新エピソードのページは初回アクセス時に生成・キャッシュされる
+export const revalidate = 1800
 
 type Params = { slug: string; episode: string }
 

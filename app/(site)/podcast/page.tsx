@@ -3,7 +3,10 @@ import { SHOWS } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import CoverGrid from '../CoverGrid'
 
-export const dynamic = 'force-dynamic'
+// ISR: RSS→HTMLの純粋なページ。30分ごとに再検証し、新エピソードを自動反映する。
+// リクエスト毎ではなく最大30分に1回だけRSSを取得(force-dynamicはfetchをno-storeに
+// 上書きしてしまうため使わない)。
+export const revalidate = 1800
 
 export const metadata: Metadata = { title: 'Podcast' }
 

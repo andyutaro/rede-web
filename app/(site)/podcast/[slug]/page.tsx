@@ -1,12 +1,19 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { showBySlug } from '@/lib/site/shows'
+import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { dateDots } from '@/lib/site/text'
 import PlatformLinks from '../PlatformLinks'
 
-export const dynamic = 'force-dynamic'
+// ISR: 30分ごとに再検証し、新エピソードを自動で番組ページに反映する
+export const revalidate = 1800
+
+// 番組は5枠で既知なのでビルド時にプリレンダー(feedのある番組のみ)。
+// 各ページは30分ごとに背景で再生成され、新エピソードが乗る。
+export function generateStaticParams() {
+  return SHOWS.filter((s) => s.feed).map((s) => ({ slug: s.slug }))
+}
 
 type Params = { slug: string }
 
