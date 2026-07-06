@@ -104,6 +104,7 @@ export default function AboutEditor({ initial }: { initial: AboutContent }) {
   }
 
   return (
+    <div className="ae-page">
     <div className="ae">
       <header className="ae-top">
         <h1>About を編集</h1>
@@ -212,6 +213,7 @@ export default function AboutEditor({ initial }: { initial: AboutContent }) {
           保存
         </button>
       </div>
+    </div>
     </div>
   )
 }

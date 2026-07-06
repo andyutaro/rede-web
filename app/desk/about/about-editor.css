@@ -1,8 +1,14 @@
-/* About編集画面。管理ツールなので装飾は最小限、可読性優先。 */
+/* About編集画面。管理ツールなので装飾は最小限、可読性優先。
+   OSのダークモードに関わらず白基調で固定する(公開サイトのトークンは使わない)。 */
+.ae-page {
+  background: #fff;
+  min-height: 100vh;
+}
+
 .ae {
   max-width: 760px;
   margin: 0 auto;
-  padding: 32px 20px 120px;
+  padding: 0 20px 120px;
   font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
   color: #1c1c1c;
 }
