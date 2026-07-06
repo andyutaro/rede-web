@@ -1,16 +1,19 @@
 import { createService } from '@/lib/supabase/service'
 import { excerpt } from './text'
+import { SHOWS } from './shows'
+import { fetchShowFeed } from './podcastFeed'
 
-// 更新リストの1行(handoff-notes §4): 日付+種別ラベル+(scribeのみ)冒頭抜粋。
-// タイトル欄は存在しない(scribeにタイトルはない)。
+// 更新リストの1行(handoff-notes §4): 日付+種別ラベル+抜粋。
+// scribeは冒頭抜粋、Podcastはエピソードタイトル(タイトルを持つため)、Article/Photographyはラベルのみ。
 export type UpdateRow = {
   date: string // YYYY-MM-DD
-  kind: 'scribe' | 'Article' | 'Photography'
+  kind: 'scribe' | 'Article' | 'Photography' | 'Podcast'
   excerpt?: string
   href: string
 }
 
-// 「新しく生まれたものだけが流れる」: 対象は日次scribe確定とpublished記事。
+// 「新しく生まれたものだけが流れる」: 対象は日次scribe確定・published記事・新エピソード着信。
+// エピソードの"誕生"はpubDate。編集ではpubDateが変わらないため再掲されない(原則に合致)。
 export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   const service = createService()
 
@@ -48,6 +51,24 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
       })
     }
   }
+
+  // 各番組の直近エピソード(RSS)。フィードは番組ページ等と共有キャッシュ。
+  // sinceで旧番組の混入を除去(BrandShift)。マージ後にlimitで切るので各番組はlimit件で十分。
+  const feeds = await Promise.all(
+    SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))
+  )
+  SHOWS.forEach((s, i) => {
+    const feed = feeds[i]
+    if (!feed) return
+    for (const ep of feed.episodes.slice(0, limit)) {
+      rows.push({
+        date: ep.date,
+        kind: 'Podcast',
+        excerpt: ep.title,
+        href: `/podcast/${s.slug}/${ep.id}`,
+      })
+    }
+  })
 
   rows.sort((a, b) => (a.date < b.date ? 1 : -1))
   return rows.slice(0, limit)
