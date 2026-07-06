@@ -77,6 +77,7 @@ export const SHOWS: Show[] = [
     display: 'ON-AIRDO',
     group: 'works',
     feed: 'https://anchor.fm/s/fe6f8048/podcast/rss',
+    role: 'ディレクター兼サブMCとして、出演を含め番組制作上のほぼ全てに立ち上げから対応。',
     platforms: {
       spotify: 'https://open.spotify.com/show/1EjsDlGdwwEDc1xsNxpEAP',
       apple: 'https://podcasts.apple.com/jp/podcast/id1784693396',
@@ -90,6 +91,7 @@ export const SHOWS: Show[] = [
     feed: 'https://anchor.fm/s/10f799928/podcast/rss',
     // 同じAnchor枠で旧番組が#158まで配信されていたため、新シリーズ#001以降のみ取り込む
     since: '2026-03-10',
+    role: 'ディレクターとしてChronicleチームに参画し立ち上げから対応。',
     platforms: {
       spotify: 'https://open.spotify.com/show/53kqwZLMXYHUaPH8X7UFev',
       apple: 'https://podcasts.apple.com/jp/podcast/id1648834007',

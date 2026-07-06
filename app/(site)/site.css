@@ -824,6 +824,191 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   min-height: 1em; /* 空段落(空白のみのp)も余白として残す */
 }
 
+/* ---- About ---- */
+.about-prose p {
+  margin-bottom: 1.9em;
+}
+
+.about-prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* 長文格納アコーディオン(旧AboutのPROFILE/OVERVIEW) */
+.accordion {
+  border-bottom: 1px solid var(--dot);
+}
+
+.accordion:first-child {
+  border-top: 1px solid var(--dot);
+}
+
+.accordion-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--mut);
+  transition: color 0.2s;
+}
+
+.accordion-head:hover {
+  color: var(--ink);
+}
+
+.accordion-label {
+  font-size: 10px;
+  letter-spacing: 0.34em;
+}
+
+.accordion-mark {
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.accordion-body {
+  padding: 4px 2px 32px;
+}
+
+/* OVERVIEW: 名前/拠点/Mail の定義リスト + 活動リスト */
+.about-overview dl {
+  margin-bottom: 32px;
+}
+
+.about-overview dl > div {
+  display: flex;
+  gap: 20px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--dot);
+  font-size: 13px;
+}
+
+.about-overview dt {
+  flex: none;
+  width: 64px;
+  color: var(--mut);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  padding-top: 0.3em;
+}
+
+.about-overview dd {
+  color: var(--body);
+}
+
+.about-overview .ov-note {
+  display: block;
+  font-size: 11px;
+  color: var(--faint);
+  margin-top: 4px;
+}
+
+.about-overview a {
+  text-decoration: underline;
+}
+
+.ov-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.ov-act-head {
+  font-size: 12px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.ov-act ul {
+  list-style: none;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--body);
+}
+
+.ov-act li::before {
+  content: '・';
+  color: var(--faint);
+}
+
+.ov-act li.ov-sub {
+  padding-left: 1.4em;
+}
+
+/* 番組ポートフォリオ(名前→/podcastの番組ページ、Andy手書きの紹介文+担当) */
+.about-shows {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.about-show-name {
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.about-show-name:hover {
+  border-color: var(--mut);
+}
+
+.about-show-blurb {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 2.3;
+  color: var(--body);
+}
+
+.about-show-role {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--mut);
+}
+
+.about-show-role .role-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+  margin-right: 1em;
+}
+
+/* 姿勢の短い言葉 */
+.about-statement {
+  font-size: 14px;
+  line-height: 2.2;
+  color: var(--body);
+}
+
+.about-stance {
+  list-style: none;
+  counter-reset: stance;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.about-stance li {
+  counter-increment: stance;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--dot);
+  color: var(--body);
+  display: flex;
+  gap: 16px;
+}
+
+.about-stance li::before {
+  content: counter(stance, decimal-leading-zero);
+  color: var(--faint);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.3em;
+}
+
 /* ---- Photography(§2): 見出しの下に写真1枚 ---- */
 .photo-single img {
   display: block;
