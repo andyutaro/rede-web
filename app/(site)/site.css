@@ -835,7 +835,15 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   margin-top: 128px;
 }
 
-/* 導入エッセイのリード(ページの声。本文より一段大きく、字間広め) */
+/* 署名(名前)。エッセイの入り口に静かに掲げる */
+.about-name {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--mut);
+  margin-bottom: 22px;
+}
+
+/* 導入エッセイのリード(役割の一文。本文より一段大きく、字間広め) */
 .about-lead {
   font-size: 19px;
   font-weight: 200;
@@ -843,6 +851,25 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   letter-spacing: 0.04em;
   color: var(--ink);
   margin-bottom: 52px;
+}
+
+/* コーダ(エッセイの帰結)。彩色を使わず ink+字間+間 でこの一節だけ立てる */
+.about-coda {
+  margin-top: 52px;
+  padding-top: 40px;
+  border-top: 1px solid var(--dot);
+}
+
+.about-coda p {
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 2.3;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.about-coda p + p {
+  margin-top: 6px;
 }
 
 .about-prose p {
