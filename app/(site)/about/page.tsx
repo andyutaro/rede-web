@@ -182,12 +182,8 @@ export default async function AboutPage() {
       <ShowList heading="ORIGINAL PODCASTS" shows={ORIGINAL} covers={covers} />
       <ShowList heading="BRANDED PODCASTS" shows={BRANDED} covers={covers} />
 
-      {/* 楽章4: 姿勢(THEMA/DIRECTIONを命題として掲げ、STANCEを続ける。1ブロックに統合) */}
+      {/* 楽章4: 姿勢(STANCE) */}
       <section className="about-movement about-stance-block">
-        <div className="about-thesis">
-          <p>声で観点を編み上げて、視界の変化を生み出す。</p>
-          <p>ポッドキャストだけの面白さを突き詰める。</p>
-        </div>
         <div className="section-head">
           <span>STANCE</span>
         </div>

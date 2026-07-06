@@ -1044,24 +1044,6 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   margin-right: 1em;
 }
 
-/* 姿勢: THEMA/DIRECTIONを命題として中央に掲げ、STANCEを続ける(1ブロック統合) */
-.about-thesis {
-  text-align: center;
-  margin-bottom: 84px;
-}
-
-.about-thesis p {
-  font-size: 16px;
-  font-weight: 200;
-  line-height: 2.3;
-  letter-spacing: 0.06em;
-  color: var(--ink);
-}
-
-.about-thesis p + p {
-  margin-top: 18px;
-}
-
 /* STANCE: 全幅罫線をやめ、静かな番号+テキストの信条に(表組み感を消す) */
 .about-stance {
   margin-top: 28px;
