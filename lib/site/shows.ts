@@ -34,8 +34,9 @@ export const SHOWS: Show[] = [
     display: 'SAKANAKAIGI',
     group: 'original',
     feed: 'https://anchor.fm/s/1039cb824/podcast/rss',
-    // spotify/amazonはAndyの配信ダッシュボードのURLを入れる
     platforms: {
+      spotify: 'https://open.spotify.com/show/2oyDL4w0U7hRmwIFRC7jDK',
+      apple: 'https://podcasts.apple.com/jp/podcast/id1811565002',
       listen: 'https://listen.style/p/sakanakaigi',
     },
   },
@@ -47,6 +48,7 @@ export const SHOWS: Show[] = [
     group: 'original',
     feed: 'https://anchor.fm/s/ccd5236c/podcast/rss',
     platforms: {
+      spotify: 'https://open.spotify.com/show/0rkdfNkYUCfMyQmki7fdc1',
       apple: 'https://podcasts.apple.com/jp/podcast/id1654874149',
       listen: 'https://listen.style/p/mimoriradio',
     },
@@ -64,7 +66,9 @@ export const SHOWS: Show[] = [
     group: 'original',
     feed: 'https://anchor.fm/s/f20aee28/podcast/rss',
     platforms: {
+      spotify: 'https://open.spotify.com/show/34phiuFlCBcfscYLP5iCyb',
       apple: 'https://podcasts.apple.com/jp/podcast/id1734760147',
+      listen: 'https://listen.style/p/longpost',
     },
   },
   {
@@ -87,6 +91,7 @@ export const SHOWS: Show[] = [
     // 同じAnchor枠で旧番組が#158まで配信されていたため、新シリーズ#001以降のみ取り込む
     since: '2026-03-10',
     platforms: {
+      spotify: 'https://open.spotify.com/show/53kqwZLMXYHUaPH8X7UFev',
       apple: 'https://podcasts.apple.com/jp/podcast/id1648834007',
     },
   },
