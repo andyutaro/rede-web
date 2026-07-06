@@ -1,0 +1,137 @@
+/* About編集画面。管理ツールなので装飾は最小限、可読性優先。 */
+.ae {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 120px;
+  font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  color: #1c1c1c;
+}
+
+.ae-top {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #e4e4e0;
+  z-index: 5;
+}
+
+.ae-top h1 {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.ae-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ae-preview {
+  font-size: 13px;
+  color: #8f8f8c;
+  text-decoration: underline;
+}
+
+.ae-save {
+  border: 1px solid #1c1c1c;
+  background: #1c1c1c;
+  color: #fff;
+  padding: 8px 22px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ae-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ae-status {
+  margin: 16px 0;
+  padding: 10px 14px;
+  background: #f3f3f1;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #3a3a3a;
+}
+
+.ae h2 {
+  margin-top: 44px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: #8f8f8c;
+  border-bottom: 1px solid #e4e4e0;
+  padding-bottom: 8px;
+}
+
+.ae-field {
+  display: block;
+  margin-top: 18px;
+}
+
+.ae-label {
+  display: block;
+  font-size: 11px;
+  color: #8f8f8c;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+
+.ae-field input,
+.ae-field textarea {
+  width: 100%;
+  border: 1px solid #d9d9d5;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.9;
+  color: #1c1c1c;
+  background: #fff;
+  resize: vertical;
+}
+
+.ae-field input:focus,
+.ae-field textarea:focus {
+  outline: none;
+  border-color: #1c1c1c;
+}
+
+.ae-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ae-hint {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #8f8f8c;
+}
+
+.ae-act,
+.ae-show {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e4e4e0;
+  border-radius: 8px;
+}
+
+.ae-slug {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #b8b8b4;
+  text-transform: uppercase;
+}
+
+.ae-foot {
+  margin-top: 40px;
+}
+
+/* ダークOSでも管理画面は白基調のまま(公開サイトのトークンは使わない) */
