@@ -94,6 +94,15 @@ export default async function ArticlePage() {
 
   return (
     <div className="measure">
+      {/* scribeアーカイブ検索の入口(結果は/searchへ) */}
+      <form className="article-search" action="/search" method="get">
+        <input
+          type="search"
+          name="q"
+          placeholder="アーカイブを検索"
+          aria-label="アーカイブを検索"
+        />
+      </form>
       <ArticleGrid items={items} />
     </div>
   )

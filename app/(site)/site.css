@@ -1071,6 +1071,125 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   flex: none;
 }
 
+/* ---- 検索 ---- */
+/* Article上部の検索入口: 下線1本の静かな入力欄 */
+.article-search {
+  margin-top: 96px;
+}
+
+.article-search input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--dot);
+  background: none;
+  padding: 8px 2px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+.article-search input::placeholder {
+  color: var(--faint);
+}
+
+.article-search input:focus {
+  outline: none;
+  border-bottom-color: var(--mut);
+}
+
+/* /search ページのフォーム */
+.search-form {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  border-bottom: 1px solid var(--dot);
+  padding-bottom: 10px;
+}
+
+.search-form input {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 4px 2px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.search-form input:focus {
+  outline: none;
+}
+
+.search-form input::placeholder {
+  color: var(--faint);
+}
+
+.search-form button {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--mut);
+  cursor: pointer;
+}
+
+.search-form button:hover {
+  color: var(--ink);
+}
+
+.search-count {
+  margin-top: 26px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-results {
+  margin-top: 20px;
+}
+
+.search-hit {
+  display: flex;
+  gap: 22px;
+  align-items: baseline;
+  padding: 16px 2px;
+  border-bottom: 1px solid var(--dot);
+  min-width: 0;
+}
+
+.search-hit:first-child {
+  border-top: 1px solid var(--dot);
+}
+
+.search-date {
+  flex: none;
+  font-size: 12px;
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-snippet {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--body);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 一致箇所: 彩色を使わず薄いグレー地+ink で示す(LIVE赤以外は使わない原則) */
+.search-snippet mark {
+  background: var(--sel);
+  color: var(--ink);
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
 /* ---- Photography(§2): 見出しの下に写真1枚 ---- */
 .photo-single img {
   display: block;
