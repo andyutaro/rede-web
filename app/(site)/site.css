@@ -824,13 +824,38 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   min-height: 1em; /* 空段落(空白のみのp)も余白として残す */
 }
 
-/* ---- About ---- */
+/* ---- About ----
+   楽章(movement)単位のリズム: Homeの均等150pxをやめ、内容の重さで呼吸させる。
+   大きな塊の間は広く、楽章内は詰める。 */
+.about-opening {
+  margin-top: 96px;
+}
+
+.about-movement {
+  margin-top: 128px;
+}
+
+/* 導入エッセイのリード(ページの声。本文より一段大きく、字間広め) */
+.about-lead {
+  font-size: 19px;
+  font-weight: 200;
+  line-height: 2.2;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  margin-bottom: 52px;
+}
+
 .about-prose p {
   margin-bottom: 1.9em;
 }
 
 .about-prose p:last-child {
   margin-bottom: 0;
+}
+
+.about-prose-tight p {
+  font-size: 14px;
+  line-height: 2.4;
 }
 
 /* 長文格納アコーディオン(旧AboutのPROFILE/OVERVIEW) */
@@ -938,36 +963,50 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   padding-left: 1.4em;
 }
 
-/* 番組ポートフォリオ(名前→/podcastの番組ページ、Andy手書きの紹介文+担当) */
+/* 番組ポートフォリオ: カバー(左)+テキスト(右)。文字の壁を画像で割り、
+   番組名を見出しとして立てる。行全体が/podcastの番組ページへのリンク。 */
 .about-shows {
+  margin-top: 48px;
   display: flex;
   flex-direction: column;
-  gap: 34px;
+  gap: 40px;
+}
+
+.about-show {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 26px;
+  align-items: start;
+  color: inherit;
+}
+
+.about-show-cover .sq {
+  width: 92px;
 }
 
 .about-show-name {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink);
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  transition: color 0.2s;
 }
 
-.about-show-name:hover {
-  border-color: var(--mut);
+.about-show:hover .about-show-name {
+  color: var(--mut);
 }
 
 .about-show-blurb {
-  margin-top: 12px;
-  font-size: 13px;
-  line-height: 2.3;
+  margin-top: 14px;
+  font-size: 12.5px;
+  line-height: 2.2;
   color: var(--body);
 }
 
 .about-show-role {
-  margin-top: 10px;
-  font-size: 12px;
-  line-height: 2;
+  margin-top: 12px;
+  font-size: 11.5px;
+  line-height: 1.9;
   color: var(--mut);
 }
 
@@ -978,35 +1017,49 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   margin-right: 1em;
 }
 
-/* 姿勢の短い言葉 */
-.about-statement {
-  font-size: 14px;
-  line-height: 2.2;
-  color: var(--body);
+/* 姿勢: THEMA/DIRECTIONを命題として中央に掲げ、STANCEを続ける(1ブロック統合) */
+.about-thesis {
+  text-align: center;
+  margin-bottom: 84px;
 }
 
+.about-thesis p {
+  font-size: 16px;
+  font-weight: 200;
+  line-height: 2.3;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.about-thesis p + p {
+  margin-top: 18px;
+}
+
+/* STANCE: 全幅罫線をやめ、静かな番号+テキストの信条に(表組み感を消す) */
 .about-stance {
+  margin-top: 28px;
   list-style: none;
   counter-reset: stance;
   font-size: 13px;
-  line-height: 1.6;
 }
 
 .about-stance li {
   counter-increment: stance;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--dot);
+  padding: 11px 0;
   color: var(--body);
   display: flex;
-  gap: 16px;
+  gap: 20px;
+  align-items: baseline;
 }
 
 .about-stance li::before {
-  content: counter(stance, decimal-leading-zero);
+  content: counter(stance);
   color: var(--faint);
   font-size: 10px;
+  letter-spacing: 0.1em;
   font-variant-numeric: tabular-nums;
-  padding-top: 0.3em;
+  width: 1em;
+  flex: none;
 }
 
 /* ---- Photography(§2): 見出しの下に写真1枚 ---- */

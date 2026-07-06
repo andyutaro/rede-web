@@ -1,16 +1,20 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { showBySlug } from '@/lib/site/shows'
+import { channelInfo } from '@/lib/site/podcastFeed'
 import Accordion from './Accordion'
+
+// ISR: 番組カバーをRSSから引くため。テキストは手書きなので実質不変
+export const revalidate = 1800
 
 export const metadata: Metadata = { title: 'About' }
 
 // Aboutは手書きの単ページ(旧andyutaro.com/aboutの内容を移植、トーンは開発中サイトへ)。
 // Contactは独立ページにせずここに統合(OVERVIEWのMail)。長文はAccordionで格納。
-// 将来的に管理画面(Tiptap)化するが、v1はこのページに直接持つ。
 
-// 導入エッセイ(常時表示)
+// 導入エッセイ。先頭の一文はリード(ページの声)として大きく置く
+const LEAD = 'こんにちは。Andyと呼ばれています。本名は安田裕太郎です。'
 const INTRO = [
-  'こんにちは。Andyと呼ばれています。本名は安田裕太郎です。',
   '個人のポッドキャスター・ディレクターとして北海道・宮城を中心に活動中。依頼による制作と、オリジナル双方について企画・制作・出演もしています。',
   'ポッドキャストは音声メディアの一種。スマホで聴けるラジオ、でイメージしやすいかもしれません。低い離脱率・分散的なシステム・高い心理的安全性・低めの拡散力・強力なエンゲージメントなど…。デジタルメディアの中でも変わった性質を多く備えています。',
   '新しさと古さを兼ね備え、地味ながら疲れず楽しめて、小さいチームや個人の活動も力強いものとする、すこし粘りけのあるメディア。また大掛かりなスタジオを必須とせず、機材を片手に動いて作れる軽やかなメディア。',
@@ -77,105 +81,104 @@ const STANCE = [
   'リスナーに敬意を払う',
 ]
 
-export default function AboutPage() {
+async function coverMap(slugs: string[]): Promise<Record<string, string | null>> {
+  const entries = await Promise.all(
+    slugs.map(async (slug) => {
+      const show = showBySlug(slug)
+      if (!show?.feed) return [slug, null] as const
+      const { image } = await channelInfo(show.feed, show.since)
+      return [slug, image] as const
+    })
+  )
+  return Object.fromEntries(entries)
+}
+
+export default async function AboutPage() {
+  const covers = await coverMap([...ORIGINAL, ...BRANDED].map((s) => s.slug))
+
   return (
     <div className="measure about">
-      {/* 導入エッセイ */}
-      <section className="section">
-        <div className="section-head">
-          <span>ABOUT</span>
-        </div>
-        <div className="section-body about-prose">
+      {/* 楽章1: 導入エッセイ(ページの声。ラベルを置かず声から始める) */}
+      <section className="about-opening">
+        <p className="about-lead">{LEAD}</p>
+        <div className="about-prose">
           {INTRO.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
         </div>
       </section>
 
-      {/* PROFILE & OVERVIEW: 長文はアコーディオンで格納 */}
-      <section className="section">
-        <div className="section-head">
-          <span>PROFILE &amp; OVERVIEW</span>
-        </div>
-        <div className="section-body">
-          <Accordion label="PROFILE" defaultOpen>
-            <div className="about-prose">
-              {PROFILE.map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
-          </Accordion>
-          <Accordion label="OVERVIEW">
-            <div className="about-overview">
-              <dl>
-                <div>
-                  <dt>名前</dt>
-                  <dd>
-                    Andy（安田裕太郎）
-                    <span className="ov-note">※メールでもAndyで大丈夫です。</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>拠点</dt>
-                  <dd>北海道（メイン）・宮城県・東京都など</dd>
-                </div>
-                <div>
-                  <dt>Mail</dt>
-                  <dd>
-                    <a href="mailto:andyutaro@gmail.com">andyutaro@gmail.com</a>
-                  </dd>
-                </div>
-              </dl>
-              <div className="ov-activities">
-                <div className="ov-act">
-                  <div className="ov-act-head">① ポッドキャストの企画・制作</div>
-                  <ul>
-                    <li>番組プロデュース</li>
-                    <li>番組ディレクション</li>
-                    <li>制作上の収録〜編集等</li>
-                    <li className="ov-sub">上記活動の一貫請負</li>
-                    <li className="ov-sub">上記活動の一部支援</li>
-                  </ul>
-                </div>
-                <div className="ov-act">
-                  <div className="ov-act-head">② オリジナルポッドキャスト制作</div>
-                  <ul>
-                    <li>サカナカイギ等公開番組</li>
-                    <li>メンバーシップ限定番組</li>
-                  </ul>
-                </div>
-                <div className="ov-act">
-                  <div className="ov-act-head">③ ポッドキャストの派生活動</div>
-                  <ul>
-                    <li>メンバーシップ運営</li>
-                    <li>プロダクトの企画制作</li>
-                    <li>番組制作やPRへの助言</li>
-                  </ul>
-                </div>
+      {/* 楽章2: プロフィール(常時開)+概要(格納)。親ラベルは置かない */}
+      <section className="about-movement">
+        <Accordion label="PROFILE" defaultOpen>
+          <div className="about-prose about-prose-tight">
+            {PROFILE.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
+        </Accordion>
+        <Accordion label="OVERVIEW">
+          <div className="about-overview">
+            <dl>
+              <div>
+                <dt>名前</dt>
+                <dd>
+                  Andy（安田裕太郎）
+                  <span className="ov-note">※メールでもAndyで大丈夫です。</span>
+                </dd>
+              </div>
+              <div>
+                <dt>拠点</dt>
+                <dd>北海道（メイン）・宮城県・東京都など</dd>
+              </div>
+              <div>
+                <dt>Mail</dt>
+                <dd>
+                  <a href="mailto:andyutaro@gmail.com">andyutaro@gmail.com</a>
+                </dd>
+              </div>
+            </dl>
+            <div className="ov-activities">
+              <div className="ov-act">
+                <div className="ov-act-head">① ポッドキャストの企画・制作</div>
+                <ul>
+                  <li>番組プロデュース</li>
+                  <li>番組ディレクション</li>
+                  <li>制作上の収録〜編集等</li>
+                  <li className="ov-sub">上記活動の一貫請負</li>
+                  <li className="ov-sub">上記活動の一部支援</li>
+                </ul>
+              </div>
+              <div className="ov-act">
+                <div className="ov-act-head">② オリジナルポッドキャスト制作</div>
+                <ul>
+                  <li>サカナカイギ等公開番組</li>
+                  <li>メンバーシップ限定番組</li>
+                </ul>
+              </div>
+              <div className="ov-act">
+                <div className="ov-act-head">③ ポッドキャストの派生活動</div>
+                <ul>
+                  <li>メンバーシップ運営</li>
+                  <li>プロダクトの企画制作</li>
+                  <li>番組制作やPRへの助言</li>
+                </ul>
               </div>
             </div>
-          </Accordion>
-        </div>
+          </div>
+        </Accordion>
       </section>
 
-      {/* 番組ポートフォリオ。各番組は/podcastの番組ページへ */}
-      <ShowList heading="ORIGINAL PODCASTS" shows={ORIGINAL} />
-      <ShowList heading="BRANDED PODCASTS" shows={BRANDED} />
+      {/* 楽章3: 番組ポートフォリオ。カバーで文字の壁を割り、番組名は見出しとして立てる */}
+      <ShowList heading="ORIGINAL PODCASTS" shows={ORIGINAL} covers={covers} />
+      <ShowList heading="BRANDED PODCASTS" shows={BRANDED} covers={covers} />
 
-      {/* 姿勢の短い言葉 */}
-      <section className="section">
-        <div className="section-head">
-          <span>THEMA</span>
+      {/* 楽章4: 姿勢(THEMA/DIRECTIONを命題として掲げ、STANCEを続ける。1ブロックに統合) */}
+      <section className="about-movement about-stance-block">
+        <div className="about-thesis">
+          <p>声で観点を編み上げて、視界の変化を生み出す。</p>
+          <p>ポッドキャストだけの面白さを突き詰める。</p>
         </div>
-        <p className="about-statement">声で観点を編み上げて、視界の変化を生み出す。</p>
-      </section>
-      <section className="section">
-        <div className="section-head">
-          <span>DIRECTION</span>
-        </div>
-        <p className="about-statement">ポッドキャストだけの面白さを突き詰める。</p>
-      </section>
-      <section className="section">
         <div className="section-head">
           <span>STANCE</span>
         </div>
@@ -192,29 +195,39 @@ export default function AboutPage() {
 function ShowList({
   heading,
   shows,
+  covers,
 }: {
   heading: string
   shows: { slug: string; name: string; blurb: string; role?: string }[]
+  covers: Record<string, string | null>
 }) {
   return (
-    <section className="section">
+    <section className="about-movement">
       <div className="section-head">
         <span>{heading}</span>
       </div>
-      <div className="section-body about-shows">
+      <div className="about-shows">
         {shows.map((s) => (
-          <div className="about-show" key={s.slug}>
-            <Link href={`/podcast/${s.slug}`} className="about-show-name">
-              {s.name}
-            </Link>
-            <p className="about-show-blurb">{s.blurb}</p>
-            {s.role && (
-              <p className="about-show-role">
-                <span className="role-label">担当</span>
-                {s.role}
-              </p>
-            )}
-          </div>
+          <Link href={`/podcast/${s.slug}`} className="about-show" key={s.slug}>
+            <div className="about-show-cover">
+              {covers[s.slug] && (
+                <div className="sq cover-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={covers[s.slug]!} alt={s.name} />
+                </div>
+              )}
+            </div>
+            <div className="about-show-text">
+              <div className="about-show-name">{s.name}</div>
+              <p className="about-show-blurb">{s.blurb}</p>
+              {s.role && (
+                <p className="about-show-role">
+                  <span className="role-label">担当</span>
+                  {s.role}
+                </p>
+              )}
+            </div>
+          </Link>
         ))}
       </div>
     </section>
