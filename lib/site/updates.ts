@@ -29,9 +29,9 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   const rows: UpdateRow[] = (days ?? []).map((d) => ({
     date: d.date as string,
     kind: 'scribe',
-    // scribeはArticle配下なのでラベル=ARTICLE。タイトルは「SCRIBE更新『20260706』」
+    // scribeはArticle配下なのでラベル=ARTICLE。タイトルは「SCRIBE『20260706』」
     label: 'ARTICLE',
-    excerpt: `SCRIBE更新『${scribeTitle(d.date as string)}』`,
+    excerpt: `SCRIBE『${scribeTitle(d.date as string)}』`,
     href: `/scribe/${d.date}`,
   }))
 
@@ -66,13 +66,13 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
     if (!feed) return
     const showName = s.shortName ?? s.name // 「ロングポスト配信」等の自然な番組名
     for (const ep of feed.episodes.slice(0, limit)) {
-      // ラベル=PODCAST(kind由来)、タイトルは「◯◯配信『エピソード名』」。
+      // ラベル=PODCAST(kind由来)、タイトルは「◯◯『エピソード名』」。
       // 末尾の！等の強調記号だけ落とす(？は意味を持つので残す)
       const title = ep.title.replace(/[！!\s　]+$/, '')
       rows.push({
         date: ep.date,
         kind: 'Podcast',
-        excerpt: `${showName}配信『${title}』`,
+        excerpt: `${showName}『${title}』`,
         href: `/podcast/${s.slug}/${ep.id}`,
       })
     }
