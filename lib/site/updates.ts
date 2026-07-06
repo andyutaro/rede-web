@@ -1,11 +1,19 @@
 import { createService } from '@/lib/supabase/service'
+import { htmlToPlainText } from './text'
 import { SHOWS } from './shows'
 import { fetchShowFeed } from './podcastFeed'
 
-// 更新リストの1行: 日付+種別ラベル+(あれば)抜粋。
-// scribeはタイトルが無く、冒頭抜粋は日付マーカー(【7/5】等)や散文で雑然とするため
-// ラベルのみに。Podcastはタイトルを持つのでエピソードタイトルを出す。
-// Article/Photographyもラベルのみ。§4の「scribeのみ抜粋」からは反転(実運用の見栄え優先、司令塔に通す)。
+// scribeの冒頭抜粋。行頭の日付マーカー(【7/5】等。日付列と重複するため)を剥がして
+// から短く切る。ラベルのみだとタイトルを持つPodcast行と混在して「歯抜け」に見えるため、
+// 全行が中身を持つよう冒頭抜粋を出す(重複日付だけ除いて雑然を抑える)。
+function scribeLine(html: string): string {
+  return htmlToPlainText(html)
+    .replace(/^[\s　]*【[^】]*】[\s　]*/, '')
+    .slice(0, 60)
+}
+
+// 更新リストの1行: 日付+種別ラベル+抜粋。
+// scribeは(日付マーカーを除いた)冒頭抜粋、Podcastはエピソードタイトル。Article/Photographyはラベルのみ。
 export type UpdateRow = {
   date: string // YYYY-MM-DD
   kind: 'scribe' | 'Article' | 'Photography' | 'Podcast'
@@ -28,6 +36,7 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   const rows: UpdateRow[] = (days ?? []).map((d) => ({
     date: d.date as string,
     kind: 'scribe',
+    excerpt: scribeLine((d.html as string) ?? ''),
     href: `/scribe/${d.date}`,
   }))
 
