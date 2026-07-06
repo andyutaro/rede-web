@@ -29,7 +29,8 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   const rows: UpdateRow[] = (days ?? []).map((d) => ({
     date: d.date as string,
     kind: 'scribe',
-    excerpt: scribeTitle(d.date as string), // scribeのタイトルは日付導出(20260706)
+    // Podcastの『…』配信と対に、scribeは『20260706』記述(タイトルは日付導出)
+    excerpt: `『${scribeTitle(d.date as string)}』記述`,
     href: `/scribe/${d.date}`,
   }))
 
