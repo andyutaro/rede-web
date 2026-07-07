@@ -14,9 +14,17 @@ export type UpdateRow = {
   href: string
 }
 
+// Homeのミニマル表記でエピソードタイトルを厳しめに切る文字数(コードポイント数)。
+// 絵文字(🐟等サロゲートペア)を割らないよう[...s]で数える。
+const HOME_TITLE_MAX = 16
+function clip(s: string, n: number): string {
+  const chars = [...s]
+  return chars.length > n ? chars.slice(0, n).join('') + '…' : s
+}
+
 // 「新しく生まれたものだけが流れる」: 対象は日次scribe確定・published記事・新エピソード着信。
 // エピソードの"誕生"はpubDate。編集ではpubDateが変わらないため再掲されない(原則に合致)。
-// compact: HomeのLAST 10 DAYS用。Podcastはエピソードタイトルを入れず「番組名『New EP has Released』」に。
+// compact: HomeのLAST 10 DAYS用。Podcastのエピソードタイトルを厳しめに切って「…」で省略する。
 export async function recentUpdates(limit = 10, compact = false): Promise<UpdateRow[]> {
   const service = createService()
 
@@ -67,13 +75,13 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
     if (!feed) return
     const showName = s.shortName ?? s.name // 「ロングポスト」等の自然な番組名
     for (const ep of feed.episodes.slice(0, limit)) {
-      // ラベル=PODCAST(kind由来)。compact(Home)はエピソードタイトルを入れず新着表記のみ。
-      // 通常(/updates)はタイトルを『』内に(末尾の！等の強調記号だけ落とす、？は残す)。
+      // ラベル=PODCAST(kind由来)。タイトルは『』内に(末尾の！等の強調記号だけ落とす、？は残す)。
+      // compact(Home)は厳しめに切って「…」で省略、通常(/updates)は全文。
       const title = ep.title.replace(/[！!\s　]+$/, '')
       rows.push({
         date: ep.date,
         kind: 'Podcast',
-        excerpt: compact ? `${showName}『New EP has Released』` : `${showName}『${title}』`,
+        excerpt: `${showName}『${compact ? clip(title, HOME_TITLE_MAX) : title}』`,
         href: `/podcast/${s.slug}/${ep.id}`,
       })
     }
