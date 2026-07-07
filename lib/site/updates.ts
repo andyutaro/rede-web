@@ -16,7 +16,8 @@ export type UpdateRow = {
 
 // 「新しく生まれたものだけが流れる」: 対象は日次scribe確定・published記事・新エピソード着信。
 // エピソードの"誕生"はpubDate。編集ではpubDateが変わらないため再掲されない(原則に合致)。
-export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
+// compact: HomeのLAST 10 DAYS用。Podcastはエピソードタイトルを入れず「番組名『New EP has Released』」に。
+export async function recentUpdates(limit = 10, compact = false): Promise<UpdateRow[]> {
   const service = createService()
 
   const { data: days } = await service
@@ -64,15 +65,15 @@ export async function recentUpdates(limit = 10): Promise<UpdateRow[]> {
   SHOWS.forEach((s, i) => {
     const feed = feeds[i]
     if (!feed) return
-    const showName = s.shortName ?? s.name // 「ロングポスト配信」等の自然な番組名
+    const showName = s.shortName ?? s.name // 「ロングポスト」等の自然な番組名
     for (const ep of feed.episodes.slice(0, limit)) {
-      // ラベル=PODCAST(kind由来)、タイトルは「◯◯『エピソード名』」。
-      // 末尾の！等の強調記号だけ落とす(？は意味を持つので残す)
+      // ラベル=PODCAST(kind由来)。compact(Home)はエピソードタイトルを入れず新着表記のみ。
+      // 通常(/updates)はタイトルを『』内に(末尾の！等の強調記号だけ落とす、？は残す)。
       const title = ep.title.replace(/[！!\s　]+$/, '')
       rows.push({
         date: ep.date,
         kind: 'Podcast',
-        excerpt: `${showName}『${title}』`,
+        excerpt: compact ? `${showName}『New EP has Released』` : `${showName}『${title}』`,
         href: `/podcast/${s.slug}/${ep.id}`,
       })
     }

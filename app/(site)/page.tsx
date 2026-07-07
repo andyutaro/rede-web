@@ -21,7 +21,7 @@ export default async function Home() {
 
   const [todayRes, updates, images, covers] = await Promise.all([
     service.from('scribe_days').select('html').eq('date', today).maybeSingle(),
-    recentUpdates(10),
+    recentUpdates(10, true), // HomeのLAST 10 DAYSはミニマル表記
     listAllImages(),
     // 番組カバー+最新エピソード日付はRSSから自動取得
     // (カバーは番組全体のアート。エピソード画像ではない)
