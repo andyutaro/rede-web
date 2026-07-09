@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Noto_Sans_JP } from 'next/font/google'
 import NavLinks from './NavLinks'
 import ThemeToggle from './ThemeToggle'
+import ImageLightbox from './ImageLightbox'
 import './site.css'
 
 // 細字タイポ(200/300)が杉本肌の核。400以上は使わない
@@ -37,7 +38,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         </div>
         <NavLinks />
       </header>
-      <main>{children}</main>
+      <ImageLightbox>
+        <main>{children}</main>
+      </ImageLightbox>
       <footer className="site-footer">
         <div className="measure">
           <NavLinks />

@@ -75,8 +75,19 @@ export default async function Home() {
             <span>PHOTOGRAPHY</span>
           </div>
           <div className="section-body photo-single">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo} alt="" />
+            {/* URLパスから日付(YYYY-MM-DD)を抽出し当該scribeページへリンク */}
+            {(() => {
+              const date = photo.match(/scribe-media\/(\d{4}-\d{2}-\d{2})\//)?.[1]
+              return date ? (
+                <Link href={`/scribe/${date}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photo} alt="" />
+                </Link>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photo} alt="" />
+              )
+            })()}
           </div>
         </section>
       )}

@@ -271,6 +271,21 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   display: contents;
 }
 
+/* 当日執筆中(live)の行末に付く小さな赤●。ゆっくり明滅(§10 LIVE赤はサイト唯一の彩色) */
+.update-live-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--live);
+  animation: update-live-blink 2.4s ease-in-out infinite;
+}
+@keyframes update-live-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 /* ---- scribeライブ窓(§3): 高さ390px固定・overflow hidden・下端揃え。
    最新行=キャレット位置が常に窓の下端に見え、古い行は上端の130pxフェードで消える ---- */
 .scribe-window {
@@ -1199,5 +1214,183 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* Photographyのリンクラッパー(Home→scribeページ遷移用) */
+.photo-single a {
+  display: block;
+}
+
+/* ---- ライトボックス ---- */
+.lb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+.lb-content {
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.lb-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  display: block;
+  transform-origin: center center;
+  transition: transform 0.2s ease;
+}
+
+.lb-controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  cursor: default;
+}
+
+.lb-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lb-btn:hover {
+  border-color: rgba(255, 255, 255, 0.7);
+  color: #fff;
+}
+
+.lb-close {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+/* ---- Podcastエピソードセルラベル ---- */
+.ep-cell-label {
+  margin-top: 12px;
+  font-size: 9px;
+  line-height: 1.7;
+  color: var(--mut);
+  letter-spacing: 0.12em;
+}
+
+.ep-show {
+  display: block;
+  color: var(--faint);
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ep-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--mut);
+  letter-spacing: 0.06em;
+  word-break: break-word;
+}
+
+.ep-date {
+  display: block;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+/* ---- Podcastエピソードグリッドのヘッダー行・タブ・検索 ---- */
+.podcast-ep-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+}
+
+.podcast-ep-tabs {
+  display: flex;
+  gap: 24px;
+}
+
+.podcast-ep-tab {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.podcast-ep-tab:hover {
+  color: var(--mut);
+}
+
+.podcast-ep-tab.active {
+  color: var(--ink);
+}
+
+.podcast-ep-count {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.podcast-ep-search {
+  margin-top: 28px;
+}
+
+.podcast-ep-search input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--dot);
+  background: none;
+  padding: 8px 2px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+.podcast-ep-search input::placeholder {
+  color: var(--faint);
+}
+
+.podcast-ep-search input:focus {
+  outline: none;
+  border-bottom-color: var(--mut);
+}
+
+.podcast-ep-empty {
+  margin-top: 40px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
 }
 

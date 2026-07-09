@@ -11,6 +11,7 @@ export default function UpdateList({ rows }: { rows: UpdateRow[] }) {
             <span className="update-date">{dateDots(row.date)}</span>
             <span className="update-kind">{row.label ?? row.kind.toUpperCase()}</span>
             {row.excerpt && <span className="update-excerpt">{row.excerpt}</span>}
+            {row.live && <span className="update-live-dot" aria-label="LIVE" />}
           </Link>
         </div>
       ))}

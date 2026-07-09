@@ -1,5 +1,6 @@
 import { createService } from '@/lib/supabase/service'
-import { scribeTitle } from './text'
+import { scribeTitle, htmlToPlainText } from './text'
+import { todayInTokyo } from '@/lib/scribe/date'
 import { SHOWS } from './shows'
 import { fetchShowFeed } from './podcastFeed'
 
@@ -12,6 +13,7 @@ export type UpdateRow = {
   label?: string // ラベル列の表示を上書き(Podcast=番組名など)
   excerpt?: string // タイトル列
   href: string
+  live?: boolean // 当日執筆中(未確定)の行。他は確定=「生まれたもの」だが、当日分だけ例外的に載せる
 }
 
 // Homeのミニマル表記でエピソードタイトルを厳しめに切る文字数(コードポイント数)。
@@ -43,6 +45,25 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
     excerpt: `SCRIBE『${scribeTitle(d.date as string)}』`,
     href: `/scribe/${d.date}`,
   }))
+
+  // 当日分(未確定=上のクエリに含まれない)を、確定行と同じ形式で先頭に載せる。
+  // 何か書かれている日だけ(空の日は載せない)。liveフラグでドットを付ける。href=当日ライブ全文。
+  const today = todayInTokyo()
+  const { data: todayRow } = await service
+    .from('scribe_days')
+    .select('html, finalized_at')
+    .eq('date', today)
+    .maybeSingle()
+  if (todayRow && !todayRow.finalized_at && htmlToPlainText(todayRow.html as string).length > 0) {
+    rows.push({
+      date: today,
+      kind: 'scribe',
+      label: 'ARTICLE',
+      excerpt: `SCRIBE『${scribeTitle(today)}』`,
+      href: '/live',
+      live: true,
+    })
+  }
 
   // articlesテーブルはマイグレーション後に有効になる(未作成ならerrorで空のまま)
   const { data: articles, error } = await service
@@ -87,6 +108,8 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
     }
   })
 
-  rows.sort((a, b) => (a.date < b.date ? 1 : -1))
+  rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+  // 当日ライブ行は「今この瞬間」なので、同日の他更新より上=最上部に固定する
+  rows.sort((a, b) => (a.live === b.live ? 0 : a.live ? -1 : 1))
   return rows.slice(0, limit)
 }
