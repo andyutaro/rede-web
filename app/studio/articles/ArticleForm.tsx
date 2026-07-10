@@ -10,18 +10,20 @@ type Props = {
     id: string | null
     title: string
     html: string
-    type: 'article' | 'photography'
     status: 'draft' | 'published'
     tags: string[]
     updatedAt: string | null
   }
+  // typeは部屋で決まる(2026-07-10: PHOTOGRAPHYを独立室に。編集画面での選択は廃止)
+  fixedType: 'article' | 'photography'
+  // 部屋のベースパス(/studio/articles | /studio/photography)。URL書き換えとゴミ箱後の戻り先
+  basePath: string
 }
 
-// Articleエディタの外殻: タイトル・type・draft/published・タグ。
+// 記事エディタの外殻: タイトル・draft/published・タグ。
 // 本文はscribeと同じ共有エディタコア(HtmlEditor)。deskと同じデバウンス自動保存。
-export default function ArticleForm({ article }: Props) {
+export default function ArticleForm({ article, fixedType, basePath }: Props) {
   const [title, setTitle] = useState(article.title)
-  const [type, setType] = useState(article.type)
   const [status, setStatus] = useState(article.status)
   // タグは確定済みチップの配列+入力中の1語。半角スペース/Enterで確定し丸く囲む
   const [tags, setTags] = useState<string[]>(article.tags)
@@ -36,9 +38,9 @@ export default function ArticleForm({ article }: Props) {
   const savingRef = useRef(false)
   // フィールドの現在値をrefにも写す(タイマー発火時に古いclosureを掴まないため)。
   // 入力中の未確定タグ(tagDraft)も保存に含める(確定し忘れて閉じても失わない)
-  const fieldsRef = useRef({ title, type, status, tags, tagDraft })
+  const fieldsRef = useRef({ title, status, tags, tagDraft })
   useEffect(() => {
-    fieldsRef.current = { title, type, status, tags, tagDraft }
+    fieldsRef.current = { title, status, tags, tagDraft }
   })
 
   async function doSave(rebased = false) {
@@ -56,7 +58,7 @@ export default function ArticleForm({ article }: Props) {
           id: idRef.current,
           title: f.title,
           html: htmlRef.current,
-          type: f.type,
+          type: fixedType,
           status: f.status,
           tags,
           baseUpdatedAt: baseUpdatedAtRef.current,
@@ -87,7 +89,7 @@ export default function ArticleForm({ article }: Props) {
         // URLだけ新規→編集に差し替える(リロードや戻るで二重作成しないように)。
         // router.replaceは使わない: ページ再マウント中に旧インスタンスの保存が
         // 走ると基点がずれ、以後の自動保存が全部409になるレースを踏む
-        window.history.replaceState(null, '', `/studio/articles/${data.id}`)
+        window.history.replaceState(null, '', `${basePath}/${data.id}`)
       }
       setMessage(f.status === 'published' ? '保存済み(公開中)' : '保存済み(下書き)')
     } catch {
@@ -115,7 +117,7 @@ export default function ArticleForm({ article }: Props) {
     }
     schedule()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, type, status, tags])
+  }, [title, status, tags])
 
   function commitTagDraft(draft: string) {
     const t = draft.trim()
@@ -155,7 +157,7 @@ export default function ArticleForm({ article }: Props) {
         body: JSON.stringify({ ids: [idRef.current], action: 'trash' }),
       })
       if (!res.ok) throw new Error()
-      location.href = '/studio/articles'
+      location.href = basePath
     } catch {
       setMessage('ゴミ箱への移動に失敗しました')
     }
@@ -172,15 +174,6 @@ export default function ArticleForm({ article }: Props) {
         aria-label="タイトル"
       />
       <div className="studio-meta">
-        <select
-          className="studio-select"
-          value={type}
-          onChange={(e) => setType(e.target.value as 'article' | 'photography')}
-          aria-label="種別"
-        >
-          <option value="article">ARTICLE</option>
-          <option value="photography">PHOTOGRAPHY</option>
-        </select>
         <button
           type="button"
           className={`studio-publish${status === 'published' ? ' is-published' : ''}`}

@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 // 初回実装はArticlesとPodcast Inbox、残り3つはメニューだけ置く(骨格)。
 const ROOMS = [
   { href: '/studio/articles', label: 'ARTICLES' },
+  { href: '/studio/photography', label: 'PHOTOGRAPHY' },
   { href: '/studio/podcast', label: 'PODCAST INBOX' },
 ] as const
 

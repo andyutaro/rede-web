@@ -262,6 +262,18 @@
   color: #6b6b6b;
 }
 
+/* TRASHタブ内のセクション見出し(ARTICLE/SCRIBEの2群) */
+.studio-trash-section {
+  margin-bottom: 44px;
+}
+
+.studio-trash-head {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: #6b6b6b;
+  margin-bottom: 14px;
+}
+
 /* エディタのゴミ箱ボタン(メタ行の右端) */
 .studio-trash-btn {
   margin-left: auto;

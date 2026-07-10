@@ -5,18 +5,31 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { dateDots } from '@/lib/site/text'
 
-export type ArticleRow = {
-  id: string
+// studio共通の選択テーブル(Articles/Photography/scribeで共用)。
+// チェックボックス選択+一括操作。mode=active: 選択をゴミ箱へ /
+// mode=trash: 元に戻す・完全に消去(confirm付き)。
+// endpointは/api/article/delete または /api/scribe/delete(idsの中身がuuid/dateの違いだけ)
+export type SelectRow = {
+  id: string // APIに渡すids値(articles=uuid, scribe=date)
+  date: string // YYYY-MM-DD
+  label: string // 状態列(PUBLISHED/DRAFT/FINALIZED等)
+  published?: boolean // 緑表示
   title: string
-  type: string
-  status: string
-  tags: string[]
-  date: string // YYYY-MM-DD(published_at ?? created_at)
+  href?: string // activeで編集リンク(ゴミ箱内はリンクなし=戻してから編集)
+  tags?: string[]
 }
 
-// Articles一覧のテーブル(チェックボックス選択+一括操作)。
-// mode=active: 選択をゴミ箱へ / mode=trash: 元に戻す・完全に消去(confirm付き)
-export default function ArticlesTable({ rows, mode }: { rows: ArticleRow[]; mode: 'active' | 'trash' }) {
+export default function SelectTable({
+  rows,
+  mode,
+  endpoint,
+  emptyText,
+}: {
+  rows: SelectRow[]
+  mode: 'active' | 'trash'
+  endpoint: string
+  emptyText: string
+}) {
   const router = useRouter()
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState(false)
@@ -46,7 +59,7 @@ export default function ArticlesTable({ rows, mode }: { rows: ArticleRow[]; mode
     setBusy(true)
     setMessage('')
     try {
-      const res = await fetch('/api/article/delete', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         body: JSON.stringify({ ids: [...selected], action }),
       })
@@ -61,11 +74,7 @@ export default function ArticlesTable({ rows, mode }: { rows: ArticleRow[]; mode
   }
 
   if (rows.length === 0) {
-    return (
-      <p className="studio-empty">
-        {mode === 'trash' ? 'ゴミ箱は空です' : '記事がまだありません'}
-      </p>
-    )
+    return <p className="studio-empty">{emptyText}</p>
   }
 
   return (
@@ -112,29 +121,25 @@ export default function ArticlesTable({ rows, mode }: { rows: ArticleRow[]; mode
         <span className="bulk-message">{message}</span>
       </div>
       <div>
-        {rows.map((a) => (
-          <div className="studio-row" key={a.id}>
+        {rows.map((r) => (
+          <div className="studio-row" key={r.id}>
             <input
               type="checkbox"
               className="row-check"
-              checked={selected.has(a.id)}
-              onChange={() => toggle(a.id)}
-              aria-label={`${a.title || '(無題)'} を選択`}
+              checked={selected.has(r.id)}
+              onChange={() => toggle(r.id)}
+              aria-label={`${r.title} を選択`}
             />
-            <span className="row-date">{dateDots(a.date)}</span>
-            <span className={`row-status ${a.status}`}>
-              {a.status.toUpperCase()}
-              {a.type === 'photography' ? ' / PHOTO' : ''}
-            </span>
-            {mode === 'active' ? (
-              <Link className="row-title" href={`/studio/articles/${a.id}`}>
-                {a.title || '(無題)'}
+            <span className="row-date">{dateDots(r.date)}</span>
+            <span className={`row-status ${r.published ? 'published' : ''}`}>{r.label}</span>
+            {r.href ? (
+              <Link className="row-title" href={r.href}>
+                {r.title}
               </Link>
             ) : (
-              // ゴミ箱内は編集導線を持たない(戻してから編集)
-              <span className="row-title row-title-trash">{a.title || '(無題)'}</span>
+              <span className="row-title row-title-trash">{r.title}</span>
             )}
-            {a.tags.length > 0 && <span className="row-tags">{a.tags.join(' / ')}</span>}
+            {r.tags && r.tags.length > 0 && <span className="row-tags">{r.tags.join(' / ')}</span>}
           </div>
         ))}
       </div>

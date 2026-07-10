@@ -23,9 +23,10 @@ export async function searchScribe(query: string): Promise<SearchHit[]> {
   const escaped = q.replace(/[\\%_]/g, '\\$&')
 
   const service = createService()
+  // '*': deleted_at列がマイグレーション未実行でも壊れない読み方
   const { data, error } = await service
     .from('scribe_days')
-    .select('date, html, finalized_at')
+    .select('*')
     .not('finalized_at', 'is', null)
     .ilike('html', `%${escaped}%`)
     .order('date', { ascending: false })
@@ -35,6 +36,7 @@ export async function searchScribe(query: string): Promise<SearchHit[]> {
 
   const hits: SearchHit[] = []
   for (const row of data) {
+    if (row.deleted_at) continue // ゴミ箱入りの日は検索にも出さない
     const plain = htmlToPlainText((row.html as string) ?? '')
     const idx = plain.toLowerCase().indexOf(q.toLowerCase())
     if (idx < 0) continue // 一致がタグ/URL側にしかない稀なケースは落とす

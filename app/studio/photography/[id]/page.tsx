@@ -1,10 +1,10 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import ArticleForm from '../ArticleForm'
+import ArticleForm from '../../articles/ArticleForm'
 
 export const dynamic = 'force-dynamic'
 
-export default async function EditArticle({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditPhotography({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
   const { data: a } = await supabase
@@ -13,13 +13,13 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
     .eq('id', id)
     .maybeSingle()
   if (!a || a.deleted_at) notFound() // ゴミ箱内は編集不可(TRASHタブから戻す)
-  // photographyは独立室で編集する(旧リンク救済)
-  if (a.type === 'photography') redirect(`/studio/photography/${id}`)
+  // articleはArticles室で編集する(部屋違いのURL救済)
+  if (a.type !== 'photography') redirect(`/studio/articles/${id}`)
 
   return (
     <ArticleForm
-      fixedType="article"
-      basePath="/studio/articles"
+      fixedType="photography"
+      basePath="/studio/photography"
       article={{
         id: a.id as string,
         title: (a.title as string) ?? '',

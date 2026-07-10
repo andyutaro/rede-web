@@ -12,12 +12,16 @@ export default async function StudioPodcast() {
 
   const [feeds, { data: tagRows }] = await Promise.all([
     Promise.all(SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))),
-    supabase.from('episode_tags').select('show_slug, episode_id, tags'),
+    // hidden列はマイグレーション後に存在する。'*'なら未実行でも壊れない
+    supabase.from('episode_tags').select('*'),
   ])
 
-  const tagMap = new Map<string, string[]>()
+  const tagMap = new Map<string, { tags: string[]; hidden: boolean }>()
   for (const r of tagRows ?? []) {
-    tagMap.set(`${r.show_slug}/${r.episode_id}`, (r.tags as string[]) ?? [])
+    tagMap.set(`${r.show_slug}/${r.episode_id}`, {
+      tags: (r.tags as string[]) ?? [],
+      hidden: Boolean(r.hidden),
+    })
   }
 
   const rows: InboxRow[] = []
@@ -25,13 +29,15 @@ export default async function StudioPodcast() {
     const feed = feeds[i]
     if (!feed) return
     for (const ep of feed.episodes) {
+      const t = tagMap.get(`${show.slug}/${ep.id}`)
       rows.push({
         showSlug: show.slug,
         showLabel: show.display ?? show.name,
         episodeId: ep.id,
         title: ep.title,
         date: ep.date,
-        tags: tagMap.get(`${show.slug}/${ep.id}`) ?? [],
+        tags: t?.tags ?? [],
+        hidden: t?.hidden ?? false,
       })
     }
   })

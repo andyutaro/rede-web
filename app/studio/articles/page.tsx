@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { dateDots } from '@/lib/site/text'
-import ArticlesTable, { type ArticleRow } from './ArticlesTable'
+import { scribeTitle } from '@/lib/site/text'
+import SelectTable, { type SelectRow } from '../SelectTable'
+import { articleRows } from '../articleRows'
 
 export const dynamic = 'force-dynamic'
 
-// Articles一覧: draft/published両方(セッションクライアント+RLS authenticatedで
-// draftも読める)。scribeタブは確定済みscribe_daysの修正導線。
-// TRASHタブ=ゴミ箱(deleted_at not null)。完全消去はゴミ箱からのみ(事故予防の2段階)。
+// Articles室: type=articleのみ(photographyは独立室 /studio/photography)。
+// SCRIBEタブ=確定済みscribe_days(修正導線+選択ゴミ箱)。
+// TRASHタブ=記事とscribeのゴミ箱(完全消去はここからのみ=事故予防の2段階)。
 export default async function StudioArticles({
   searchParams,
 }: {
@@ -19,59 +20,92 @@ export default async function StudioArticles({
   if (tab === 'scribe') {
     const { data: days } = await supabase
       .from('scribe_days')
-      .select('date, finalized_at')
+      .select('date, finalized_at, deleted_at')
       .not('finalized_at', 'is', null)
+      .is('deleted_at', null)
       .order('date', { ascending: false })
+
+    const rows: SelectRow[] = (days ?? []).map((d) => ({
+      id: d.date as string,
+      date: d.date as string,
+      label: 'FINALIZED',
+      title: `SCRIBE — ${scribeTitle(d.date as string)}`,
+      href: `/studio/scribe/${d.date}`,
+    }))
 
     return (
       <>
         <h1 className="studio-h1">ARTICLES</h1>
         <Tabs active="scribe" />
-        <div>
-          {(days ?? []).map((d) => (
-            <div className="studio-row" key={d.date}>
-              <span className="row-date">{dateDots(d.date)}</span>
-              <span className="row-status">FINALIZED</span>
-              <Link className="row-title" href={`/studio/scribe/${d.date}`}>
-                SCRIBE — {(d.date as string).replaceAll('-', '')}
-              </Link>
-            </div>
-          ))}
-          {(days ?? []).length === 0 && <p className="studio-empty">確定済みのscribeがありません</p>}
+        <SelectTable
+          rows={rows}
+          mode="active"
+          endpoint="/api/scribe/delete"
+          emptyText="確定済みのscribeがありません"
+        />
+      </>
+    )
+  }
+
+  if (tab === 'trash') {
+    const [{ data: articles }, { data: days }] = await Promise.all([
+      supabase
+        .from('articles')
+        .select('id, title, type, status, tags, published_at, created_at, deleted_at')
+        .eq('type', 'article')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
+      supabase
+        .from('scribe_days')
+        .select('date, deleted_at')
+        .not('deleted_at', 'is', null)
+        .order('date', { ascending: false }),
+    ])
+
+    const artRows = articleRows(articles ?? [], null)
+    const scribeRows: SelectRow[] = (days ?? []).map((d) => ({
+      id: d.date as string,
+      date: d.date as string,
+      label: 'SCRIBE',
+      title: `SCRIBE — ${scribeTitle(d.date as string)}`,
+    }))
+
+    return (
+      <>
+        <h1 className="studio-h1">ARTICLES</h1>
+        <Tabs active="trash" />
+        <div className="studio-trash-section">
+          <div className="studio-trash-head">ARTICLE</div>
+          <SelectTable rows={artRows} mode="trash" endpoint="/api/article/delete" emptyText="ゴミ箱は空です" />
+        </div>
+        <div className="studio-trash-section">
+          <div className="studio-trash-head">SCRIBE</div>
+          <SelectTable rows={scribeRows} mode="trash" endpoint="/api/scribe/delete" emptyText="ゴミ箱は空です" />
         </div>
       </>
     )
   }
 
-  const trash = tab === 'trash'
-  let query = supabase
+  const { data: articles } = await supabase
     .from('articles')
     .select('id, title, type, status, tags, published_at, created_at, deleted_at')
+    .eq('type', 'article')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
-  query = trash ? query.not('deleted_at', 'is', null) : query.is('deleted_at', null)
-  const { data: articles } = await query
-
-  const rows: ArticleRow[] = (articles ?? []).map((a) => ({
-    id: a.id as string,
-    title: (a.title as string) ?? '',
-    type: a.type as string,
-    status: a.status as string,
-    tags: Array.isArray(a.tags) ? (a.tags as string[]) : [],
-    date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
-      new Date((a.published_at ?? a.created_at) as string)
-    ),
-  }))
 
   return (
     <>
       <h1 className="studio-h1">ARTICLES</h1>
-      <Tabs active={trash ? 'trash' : 'articles'} />
-      {!trash && (
-        <Link className="studio-new" href="/studio/articles/new">
-          ＋ 新規作成
-        </Link>
-      )}
-      <ArticlesTable rows={rows} mode={trash ? 'trash' : 'active'} />
+      <Tabs active="articles" />
+      <Link className="studio-new" href="/studio/articles/new">
+        ＋ 新規作成
+      </Link>
+      <SelectTable
+        rows={articleRows(articles ?? [], '/studio/articles')}
+        mode="active"
+        endpoint="/api/article/delete"
+        emptyText="記事がまだありません"
+      />
     </>
   )
 }

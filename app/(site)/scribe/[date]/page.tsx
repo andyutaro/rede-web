@@ -31,13 +31,10 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound()
 
   const service = createService()
-  const { data } = await service
-    .from('scribe_days')
-    .select('date, html, finalized_at')
-    .eq('date', date)
-    .maybeSingle()
+  // '*': deleted_at列がマイグレーション未実行でも壊れない読み方
+  const { data } = await service.from('scribe_days').select('*').eq('date', date).maybeSingle()
 
-  if (!data || !data.html) notFound()
+  if (!data || !data.html || data.deleted_at) notFound()
 
   // 当日まだ確定していない分は生放送ページへ(アーカイブとして固定表示しない)
   if (!data.finalized_at) {
@@ -45,12 +42,13 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
     notFound()
   }
 
-  // 戻る・進む: 前後の確定日(確定済みだけを渡り歩く)
+  // 戻る・進む: 前後の確定日(確定済みかつゴミ箱でない日だけを渡り歩く)
   const [prevRes, nextRes] = await Promise.all([
     service
       .from('scribe_days')
       .select('date')
       .not('finalized_at', 'is', null)
+      .is('deleted_at', null)
       .lt('date', date)
       .order('date', { ascending: false })
       .limit(1)
@@ -59,6 +57,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
       .from('scribe_days')
       .select('date')
       .not('finalized_at', 'is', null)
+      .is('deleted_at', null)
       .gt('date', date)
       .order('date', { ascending: true })
       .limit(1)

@@ -13,10 +13,11 @@ export default async function EditScribe({ params }: { params: Promise<{ date: s
   const supabase = await createClient()
   const { data: row } = await supabase
     .from('scribe_days')
-    .select('date, html, finalized_at, updated_at')
+    .select('*')
     .eq('date', date)
     .maybeSingle()
-  if (!row || !row.finalized_at) notFound() // 未確定日は放送卓の領分
+  // 未確定日は放送卓の領分。ゴミ箱内は編集不可(TRASHタブから戻す)
+  if (!row || !row.finalized_at || row.deleted_at) notFound()
 
   return (
     <ScribeEditForm

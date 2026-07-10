@@ -30,14 +30,17 @@ function clip(s: string, n: number): string {
 export async function recentUpdates(limit = 10, compact = false): Promise<UpdateRow[]> {
   const service = createService()
 
+  // '*': deleted_at列がマイグレーション未実行でも壊れない読み方。
+  // ゴミ箱(studio)入りの日はUpdatesにも出さない
   const { data: days } = await service
     .from('scribe_days')
-    .select('date, html, finalized_at')
+    .select('*')
     .not('finalized_at', 'is', null)
     .order('date', { ascending: false })
-    .limit(limit)
+    .limit(limit + 10) // ゴミ箱分を除いてもlimit件を保てるよう余分に取る
+  const liveDays = (days ?? []).filter((d) => !d.deleted_at).slice(0, limit)
 
-  const rows: UpdateRow[] = (days ?? []).map((d) => ({
+  const rows: UpdateRow[] = liveDays.map((d) => ({
     date: d.date as string,
     kind: 'scribe',
     // scribeはNotes棚の配下なのでラベル=NOTES。タイトルは「SCRIBE『20260706』」

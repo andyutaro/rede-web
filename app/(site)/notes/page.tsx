@@ -31,6 +31,7 @@ export default async function ArticlePage() {
   const items: GridItem[] = []
 
   for (const row of days ?? []) {
+    if (row.deleted_at) continue // ゴミ箱(studio)入りの日は公開一覧から消す
     const date = row.date as string
     const html = (row.html as string) ?? ''
     const finalized = Boolean(row.finalized_at)
