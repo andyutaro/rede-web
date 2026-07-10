@@ -7,5 +7,7 @@ export const NAV = [
   { label: 'Updates', href: '/updates' },
   { label: 'Podcast', href: '/podcast' },
   { label: 'Notes', href: '/notes' },
+  // Photographyは独立棚(2026-07-10格上げ: Podcast/Notesと並ぶ存在に)
+  { label: 'Photography', href: '/photography' },
   { label: 'About', href: '/about' },
 ] as const

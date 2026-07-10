@@ -22,6 +22,8 @@ export default async function ArticlePage() {
       .from('articles')
       .select('id, title, type, html, thumbnail_url, thumbnail_source, published_at')
       .eq('status', 'published')
+      // photographyは独立棚(/photography)へ格上げ(2026-07-10)。Notesはarticle+scribeのみ
+      .neq('type', 'photography')
       .order('published_at', { ascending: false }),
     listAllImages(),
   ])

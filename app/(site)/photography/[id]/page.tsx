@@ -12,10 +12,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params
   const a = await loadPublishedArticle(id)
-  return { title: a?.title || 'Notes' }
+  return { title: a?.title || 'Photography' }
 }
 
-export default async function NotesArticlePage({ params }: { params: Promise<Params> }) {
+export default async function PhotographyArticlePage({ params }: { params: Promise<Params> }) {
   const { id } = await params
-  return <ArticleDetail id={id} shelf="notes" />
+  return <ArticleDetail id={id} shelf="photography" />
 }

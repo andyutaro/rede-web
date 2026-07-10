@@ -1285,6 +1285,14 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   color: var(--ink);
 }
 
+/* 棚が空のとき(Photography等) */
+.shelf-empty {
+  margin-top: 70px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+}
+
 /* ---- Photography(§2): 見出しの下に写真1枚 ---- */
 .photo-single img {
   display: block;

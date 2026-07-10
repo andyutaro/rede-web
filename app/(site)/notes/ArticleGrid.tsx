@@ -16,7 +16,8 @@ export type GridItem = {
   assigned?: boolean // 充当サムネイル: grayscale+opacity 0.55で見分ける(§6)
 }
 
-const TABS = ['ALL', 'ARTICLE', 'SCRIBE', 'PHOTOGRAPHY'] as const
+// PHOTOGRAPHYタブは独立棚(/photography)への格上げに伴い廃止(2026-07-10)
+const TABS = ['ALL', 'ARTICLE', 'SCRIBE'] as const
 type Tab = (typeof TABS)[number]
 
 function visible(item: GridItem, tab: Tab): boolean {
@@ -28,8 +29,6 @@ function visible(item: GridItem, tab: Tab): boolean {
     case 'SCRIBE':
       // LIVEセルはALL/SCRIBEタブでのみ表示(§6)
       return item.kind === 'scribe' || item.kind === 'live'
-    case 'PHOTOGRAPHY':
-      return item.kind === 'photography'
   }
 }
 

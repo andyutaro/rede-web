@@ -78,17 +78,19 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
       if (!a.published_at) continue
       // タイトルは現在値を都度読む(後から付けたタイトルもここに反映される)。
       // 空のまま公開された記事は空欄ではなく(無題)を出す。
-      // 表記はscribe行と同型: ラベル=NOTES(棚) / タイトル=種別『…』
+      // ラベル=棚名: Notesの記事はNOTES+種別『…』、Photographyは独立棚(2026-07-10格上げ)
+      // なのでPHOTOGRAPHY+『…』
       const title = ((a.title as string) ?? '').trim() || '無題'
-      const typeLabel = a.type === 'photography' ? 'PHOTOGRAPHY' : 'ARTICLE'
+      const isPhoto = a.type === 'photography'
+      const clipped = compact ? clip(title, HOME_TITLE_MAX) : title
       rows.push({
         date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
           new Date(a.published_at as string)
         ),
-        kind: a.type === 'photography' ? 'Photography' : 'Article',
-        label: 'NOTES',
-        excerpt: `${typeLabel}『${compact ? clip(title, HOME_TITLE_MAX) : title}』`,
-        href: `/notes/${a.id}`,
+        kind: isPhoto ? 'Photography' : 'Article',
+        label: isPhoto ? 'PHOTOGRAPHY' : 'NOTES',
+        excerpt: isPhoto ? `『${clipped}』` : `ARTICLE『${clipped}』`,
+        href: isPhoto ? `/photography/${a.id}` : `/notes/${a.id}`,
       })
     }
   }
