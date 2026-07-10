@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
 function revalidate() {
   // /articleとHomeはforce-dynamicだが、/updatesなどISR側があっても即反映されるように
-  revalidatePath('/article')
+  revalidatePath('/notes')
   revalidatePath('/updates')
   revalidatePath('/')
 }

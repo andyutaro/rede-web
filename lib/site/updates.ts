@@ -40,8 +40,8 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
   const rows: UpdateRow[] = (days ?? []).map((d) => ({
     date: d.date as string,
     kind: 'scribe',
-    // scribeはArticle配下なのでラベル=ARTICLE。タイトルは「SCRIBE『20260706』」
-    label: 'ARTICLE',
+    // scribeはNotes棚の配下なのでラベル=NOTES。タイトルは「SCRIBE『20260706』」
+    label: 'NOTES',
     excerpt: `SCRIBE『${scribeTitle(d.date as string)}』`,
     href: `/scribe/${d.date}`,
   }))
@@ -58,7 +58,7 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
     rows.push({
       date: today,
       kind: 'scribe',
-      label: 'ARTICLE',
+      label: 'NOTES',
       excerpt: `SCRIBE『${scribeTitle(today)}』`,
       href: '/live',
       live: true,
@@ -85,7 +85,7 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
         ),
         kind: a.type === 'photography' ? 'Photography' : 'Article',
         excerpt: `『${compact ? clip(title || '無題', HOME_TITLE_MAX) : title || '無題'}』`,
-        href: `/article/${a.id}`,
+        href: `/notes/${a.id}`,
       })
     }
   }

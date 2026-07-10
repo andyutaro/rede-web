@@ -73,7 +73,7 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
       : Promise.resolve({ data: null }),
   ])
   const pagerLink = (row: { id: string; title: string } | null) =>
-    row ? { href: `/article/${row.id}`, title: (row.title || '').trim() || '無題' } : null
+    row ? { href: `/notes/${row.id}`, title: (row.title || '').trim() || '無題' } : null
 
   return (
     <div className="measure">

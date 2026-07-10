@@ -7,7 +7,7 @@ import ArticleGrid, { type GridItem } from './ArticleGrid'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Article' }
+export const metadata: Metadata = { title: 'Notes' }
 
 // Article一覧(handoff-notes §6): scribe棚はここに統合。
 // サムネイル決定(§11): ①本文の最初の画像 → ②プールから充当(一度決まったら固定)
@@ -88,7 +88,7 @@ export default async function ArticlePage() {
         key: `article-${a.id}`,
         kind: a.type === 'photography' ? 'photography' : 'article',
         date,
-        href: `/article/${a.id}`,
+        href: `/notes/${a.id}`,
         title: (a.title as string) || '(無題)',
         thumb,
         assigned: !a.thumbnail_url && !firstImageSrc((a.html as string) ?? '') && Boolean(thumb),
