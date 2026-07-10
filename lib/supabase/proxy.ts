@@ -29,8 +29,10 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // /desk配下は未ログインなら/loginへ。それ以外(/login自体, /auth/callback, 静的アセット)は素通り。
-  if (!user && request.nextUrl.pathname.startsWith('/desk')) {
+  // /desk(放送卓)・/studio(編集室)配下は未ログインなら/loginへ。
+  // それ以外(/login自体, /auth/callback, 静的アセット)は素通り。
+  const path = request.nextUrl.pathname
+  if (!user && (path.startsWith('/desk') || path.startsWith('/studio'))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

@@ -1,0 +1,161 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import HtmlEditor from '../HtmlEditor'
+
+const SAVE_DELAY = 1500
+
+type Props = {
+  article: {
+    id: string | null
+    title: string
+    html: string
+    type: 'article' | 'photography'
+    status: 'draft' | 'published'
+    tags: string[]
+    updatedAt: string | null
+  }
+}
+
+// Articleエディタの外殻: タイトル・type・draft/published・タグ。
+// 本文はscribeと同じ共有エディタコア(HtmlEditor)。deskと同じデバウンス自動保存。
+export default function ArticleForm({ article }: Props) {
+  const router = useRouter()
+  const [title, setTitle] = useState(article.title)
+  const [type, setType] = useState(article.type)
+  const [status, setStatus] = useState(article.status)
+  const [tagsText, setTagsText] = useState(article.tags.join(', '))
+  const [message, setMessage] = useState('')
+
+  // 保存パイプはrefで持つ(打鍵ごとのstate更新でエディタを再レンダーしない)
+  const htmlRef = useRef(article.html)
+  const idRef = useRef(article.id)
+  const baseUpdatedAtRef = useRef(article.updatedAt)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savingRef = useRef(false)
+  // フィールドの現在値をrefにも写す(タイマー発火時に古いclosureを掴まないため)
+  const fieldsRef = useRef({ title, type, status, tagsText })
+  useEffect(() => {
+    fieldsRef.current = { title, type, status, tagsText }
+  })
+
+  async function doSave() {
+    if (savingRef.current) {
+      schedule() // 保存中に重ねない。終わってから拾い直す
+      return
+    }
+    savingRef.current = true
+    const f = fieldsRef.current
+    const tags = f.tagsText
+      .split(/[,、]/)
+      .map((t) => t.trim())
+      .filter(Boolean)
+    try {
+      const res = await fetch('/api/article/save', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: idRef.current,
+          title: f.title,
+          html: htmlRef.current,
+          type: f.type,
+          status: f.status,
+          tags,
+          baseUpdatedAt: baseUpdatedAtRef.current,
+        }),
+      })
+      if (res.status === 409) {
+        setMessage('他の端末で更新されています。ページを再読み込みしてください')
+        return
+      }
+      if (!res.ok) {
+        setMessage('保存失敗')
+        return
+      }
+      const data = await res.json()
+      baseUpdatedAtRef.current = data.updatedAt
+      if (!idRef.current && data.id) {
+        idRef.current = data.id
+        // URLを新規→編集に差し替える(リロードや戻るで二重作成しないように)
+        router.replace(`/studio/articles/${data.id}`)
+      }
+      setMessage(f.status === 'published' ? '保存済み(公開中)' : '保存済み(下書き)')
+    } catch {
+      setMessage('保存失敗(ネットワーク)')
+    } finally {
+      savingRef.current = false
+    }
+  }
+
+  function schedule() {
+    setMessage('・・・')
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null
+      doSave()
+    }, SAVE_DELAY)
+  }
+
+  // メタフィールドの変更も自動保存に乗せる
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) {
+      first.current = false
+      return
+    }
+    schedule()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, type, status, tagsText])
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  return (
+    <>
+      <div className="studio-status-line">{message}</div>
+      <input
+        className="studio-title-input"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="タイトル"
+        aria-label="タイトル"
+      />
+      <div className="studio-meta">
+        <select
+          className="studio-select"
+          value={type}
+          onChange={(e) => setType(e.target.value as 'article' | 'photography')}
+          aria-label="種別"
+        >
+          <option value="article">ARTICLE</option>
+          <option value="photography">PHOTOGRAPHY</option>
+        </select>
+        <button
+          type="button"
+          className={`studio-publish${status === 'published' ? ' is-published' : ''}`}
+          onClick={() => setStatus(status === 'published' ? 'draft' : 'published')}
+        >
+          {status === 'published' ? '公開中(クリックで下書きに戻す)' : '下書き(クリックで公開)'}
+        </button>
+        <input
+          className="studio-tags-input"
+          value={tagsText}
+          onChange={(e) => setTagsText(e.target.value)}
+          placeholder="タグ(カンマ区切り)"
+          aria-label="タグ"
+        />
+      </div>
+      <HtmlEditor
+        initialHtml={article.html}
+        onChange={(html) => {
+          htmlRef.current = html
+          schedule()
+        }}
+        onError={setMessage}
+      />
+    </>
+  )
+}

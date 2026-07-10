@@ -1,0 +1,450 @@
+/* 編集室 /studio。放送卓(/desk)と同じダーク基調の作業環境。
+   公開サイトの杉本肌とは別系統(ここは道具なので実用優先)。 */
+
+.studio {
+  min-height: 100vh;
+  background: #1a1a1a;
+  color: #e8e6e0;
+  font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---- 上部バー: ワードマーク+ナビ+ログアウト ---- */
+.studio-bar {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 14px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.studio-mark {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: #a8a49c;
+  flex: none;
+}
+
+.studio-nav {
+  display: flex;
+  gap: 20px;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  overflow-x: auto;
+}
+
+.studio-nav a {
+  color: #6b6b6b;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.studio-nav a:hover {
+  color: #a8a49c;
+}
+
+.studio-nav a[aria-current='page'] {
+  color: #e8e6e0;
+}
+
+.studio-nav .nav-soon {
+  color: #4a4a4a;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.studio-bar-right {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 11px;
+  color: #6b6b6b;
+}
+
+.studio-bar-right a:hover,
+.studio-bar-right button:hover {
+  color: #a8a49c;
+}
+
+.studio-bar-right button {
+  background: none;
+  border: none;
+  color: #6b6b6b;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.studio-main {
+  flex: 1;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 36px 22px 30vh;
+}
+
+.studio-h1 {
+  font-size: 13px;
+  letter-spacing: 0.24em;
+  color: #a8a49c;
+  font-weight: 300;
+  margin-bottom: 28px;
+}
+
+/* ---- Articles一覧 ---- */
+.studio-tabs {
+  display: flex;
+  gap: 22px;
+  margin-bottom: 20px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+}
+
+.studio-tabs a {
+  color: #6b6b6b;
+}
+
+.studio-tabs a[aria-current='page'] {
+  color: #e8e6e0;
+}
+
+.studio-new {
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 18px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #a8a49c;
+  border-radius: 999px;
+  margin-bottom: 26px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.studio-new:hover {
+  color: #e8e6e0;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.studio-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  min-width: 0;
+  font-size: 13px;
+}
+
+.studio-row:first-of-type {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.studio-row .row-date {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: #6b6b6b;
+}
+
+.studio-row .row-status {
+  flex: none;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  width: 82px;
+  color: #6b6b6b;
+}
+
+.studio-row .row-status.published {
+  color: #7fb08a;
+}
+
+.studio-row .row-title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #e8e6e0;
+}
+
+.studio-row .row-title:hover {
+  color: #fff;
+}
+
+.studio-row .row-tags {
+  flex: none;
+  font-size: 10px;
+  color: #6b6b6b;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studio-empty {
+  padding: 40px 0;
+  font-size: 12px;
+  color: #6b6b6b;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Articleエディタ ---- */
+.studio-form-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.studio-title-input {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e8e6e0;
+  font-size: 22px;
+  font-weight: 300;
+  padding: 10px 2px;
+  font-family: inherit;
+  margin-bottom: 18px;
+}
+
+.studio-title-input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.studio-title-input::placeholder {
+  color: #4a4a4a;
+}
+
+.studio-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 30px;
+  font-size: 11px;
+  color: #6b6b6b;
+}
+
+.studio-select {
+  background: #222;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #a8a49c;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.studio-tags-input {
+  flex: 1;
+  min-width: 160px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #a8a49c;
+  font-size: 12px;
+  padding: 6px 2px;
+  font-family: inherit;
+}
+
+.studio-tags-input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.studio-tags-input::placeholder {
+  color: #4a4a4a;
+}
+
+.studio-publish {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: none;
+  color: #a8a49c;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 7px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.studio-publish:hover {
+  color: #e8e6e0;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.studio-publish.is-published {
+  color: #7fb08a;
+  border-color: rgba(127, 176, 138, 0.4);
+}
+
+.studio-status-line {
+  font-size: 11px;
+  color: #6b6b6b;
+  letter-spacing: 0.05em;
+  min-height: 1.4em;
+  margin-bottom: 6px;
+}
+
+/* ---- 共有エディタコア ---- */
+.html-editor-surface {
+  width: 100%;
+  font-size: 17px;
+  line-height: 1.9;
+  color: #e8e6e0;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  caret-color: #e8e6e0;
+  padding: 4px 0;
+}
+
+.html-editor-surface:empty::before {
+  content: attr(data-placeholder);
+  color: #4a4a4a;
+  pointer-events: none;
+}
+
+.html-editor-toolbelt {
+  position: fixed;
+  right: 18px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+}
+
+.html-editor-add {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(30, 30, 30, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #6b6b6b;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.html-editor-delete {
+  padding: 9px 16px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #d96b6b;
+  background: rgba(30, 30, 30, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+/* ---- Podcast Inbox ---- */
+.inbox-filter {
+  display: flex;
+  gap: 18px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  margin-bottom: 22px;
+}
+
+.inbox-filter button {
+  background: none;
+  border: none;
+  color: #6b6b6b;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.inbox-filter button.active {
+  color: #e8e6e0;
+}
+
+.inbox-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  min-width: 0;
+}
+
+.inbox-row .row-date {
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #6b6b6b;
+}
+
+.inbox-row .row-show {
+  flex: none;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #6b6b6b;
+  width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inbox-row .row-ep {
+  flex: 1;
+  min-width: 140px;
+  font-size: 12px;
+  color: #e8e6e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inbox-row input {
+  flex: 1;
+  min-width: 120px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a8a49c;
+  font-size: 12px;
+  padding: 4px 2px;
+  font-family: inherit;
+}
+
+.inbox-row input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.inbox-row .row-save {
+  flex: none;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #6b6b6b;
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.inbox-row .row-save:hover {
+  color: #a8a49c;
+}
+
+.inbox-row .row-save.saved {
+  color: #7fb08a;
+  border-color: rgba(127, 176, 138, 0.4);
+}
