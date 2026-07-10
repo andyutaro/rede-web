@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import HtmlEditor from '@/components/HtmlEditor'
 
 const SAVE_DELAY = 1500
@@ -21,7 +20,6 @@ type Props = {
 // Articleエディタの外殻: タイトル・type・draft/published・タグ。
 // 本文はscribeと同じ共有エディタコア(HtmlEditor)。deskと同じデバウンス自動保存。
 export default function ArticleForm({ article }: Props) {
-  const router = useRouter()
   const [title, setTitle] = useState(article.title)
   const [type, setType] = useState(article.type)
   const [status, setStatus] = useState(article.status)
@@ -43,7 +41,7 @@ export default function ArticleForm({ article }: Props) {
     fieldsRef.current = { title, type, status, tags, tagDraft }
   })
 
-  async function doSave() {
+  async function doSave(rebased = false) {
     if (savingRef.current) {
       schedule() // 保存中に重ねない。終わってから拾い直す
       return
@@ -65,6 +63,16 @@ export default function ArticleForm({ article }: Props) {
         }),
       })
       if (res.status === 409) {
+        // 書き手は一人なので、衝突は実質「このフォームの基点が古くなった」ケース
+        // (保存の追い越し等)。最新のupdated_atに基点を合わせて一度だけ書き直す
+        // (直近に身体が書いた内容=このフォームを正とする。deskのオフライン衝突と同じ哲学)
+        const { latest } = await res.json()
+        if (!rebased && latest?.updated_at) {
+          baseUpdatedAtRef.current = latest.updated_at
+          savingRef.current = false
+          await doSave(true)
+          return
+        }
         setMessage('他の端末で更新されています。ページを再読み込みしてください')
         return
       }
@@ -76,8 +84,10 @@ export default function ArticleForm({ article }: Props) {
       baseUpdatedAtRef.current = data.updatedAt
       if (!idRef.current && data.id) {
         idRef.current = data.id
-        // URLを新規→編集に差し替える(リロードや戻るで二重作成しないように)
-        router.replace(`/studio/articles/${data.id}`)
+        // URLだけ新規→編集に差し替える(リロードや戻るで二重作成しないように)。
+        // router.replaceは使わない: ページ再マウント中に旧インスタンスの保存が
+        // 走ると基点がずれ、以後の自動保存が全部409になるレースを踏む
+        window.history.replaceState(null, '', `/studio/articles/${data.id}`)
       }
       setMessage(f.status === 'published' ? '保存済み(公開中)' : '保存済み(下書き)')
     } catch {

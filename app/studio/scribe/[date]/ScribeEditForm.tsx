@@ -22,7 +22,7 @@ export default function ScribeEditForm({
   const baseUpdatedAtRef = useRef(initialUpdatedAt)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  async function doSave() {
+  async function doSave(rebased = false) {
     try {
       const res = await fetch('/api/scribe/save', {
         method: 'POST',
@@ -33,6 +33,14 @@ export default function ScribeEditForm({
         }),
       })
       if (res.status === 409) {
+        // 単独筆者の衝突は基点ずれ。最新に基点を合わせて一度だけ書き直す
+        // (このフォームの内容を正とする)
+        const { latest } = await res.json()
+        if (!rebased && latest?.updated_at) {
+          baseUpdatedAtRef.current = latest.updated_at
+          await doSave(true)
+          return
+        }
         setMessage('他の端末で更新されています。ページを再読み込みしてください')
         return
       }
