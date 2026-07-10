@@ -46,9 +46,9 @@ export default async function AboutPage() {
         )}
       </section>
 
-      {/* 楽章2: プロフィール(常時開)+概要(格納) */}
+      {/* 楽章2: プロフィール+概要(いずれも格納、デフォルト閉=2026-07-10) */}
       <section className="about-movement">
-        <Accordion label="PROFILE" defaultOpen>
+        <Accordion label="PROFILE">
           <div className="about-prose about-prose-tight">
             {c.profile.map((p, i) => (
               <p key={i}>{p}</p>

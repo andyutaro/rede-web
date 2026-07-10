@@ -41,24 +41,34 @@ export default async function ArticlePage() {
       continue
     }
 
-    let thumb: string | null = (row.thumbnail_url as string | null) ?? null
-    let assigned = row.thumbnail_source === 'assigned'
-    if (!thumb) {
-      const first = firstImageSrc(html)
-      if (first) {
-        thumb = first
-        assigned = false
-      } else {
-        // 充当。thumbnail_url列があればここで焼き込んで固定する
-        // (列がまだ無い間はハッシュ選択が決定性を代替)
-        thumb = assignedOf(pool, date)
-        assigned = thumb !== null
-        if (thumb && 'thumbnail_url' in row) {
-          await service
-            .from('scribe_days')
-            .update({ thumbnail_url: thumb, thumbnail_source: 'assigned' })
-            .eq('date', date)
-        }
+    // 優先順位(2026-07-10改訂): manual > 本文の最初の画像 > 充当(焼き込み)。
+    // 充当は「本文に画像が無い間のつなぎ」なので、後から本文に写真が入ったら
+    // 本文画像に昇格させ、焼き込みも更新する(6/22で踏んだ問題の恒久対応)
+    const first = firstImageSrc(html)
+    let thumb: string | null = null
+    let assigned = false
+    if (row.thumbnail_source === 'manual' && row.thumbnail_url) {
+      thumb = row.thumbnail_url as string
+    } else if (first) {
+      thumb = first
+      if (row.thumbnail_url !== first && 'thumbnail_url' in row) {
+        await service
+          .from('scribe_days')
+          .update({ thumbnail_url: first, thumbnail_source: 'first_image' })
+          .eq('date', date)
+      }
+    } else if (row.thumbnail_url) {
+      thumb = row.thumbnail_url as string
+      assigned = row.thumbnail_source === 'assigned'
+    } else {
+      // 充当。thumbnail_url列があればここで焼き込んで固定する
+      thumb = assignedOf(pool, date)
+      assigned = thumb !== null
+      if (thumb && 'thumbnail_url' in row) {
+        await service
+          .from('scribe_days')
+          .update({ thumbnail_url: thumb, thumbnail_source: 'assigned' })
+          .eq('date', date)
       }
     }
     items.push({ key: `scribe-${date}`, kind: 'scribe', date, href: `/scribe/${date}`, thumb, assigned })

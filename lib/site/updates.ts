@@ -68,7 +68,7 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
   // articlesテーブルはマイグレーション後に有効になる(未作成ならerrorで空のまま)
   const { data: articles, error } = await service
     .from('articles')
-    .select('id, type, published_at')
+    .select('id, title, type, published_at')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(limit)
@@ -76,12 +76,16 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
   if (!error) {
     for (const a of articles ?? []) {
       if (!a.published_at) continue
+      // タイトルは現在値を都度読む(後から付けたタイトルもここに反映される)。
+      // 空のまま公開された記事は空欄ではなく(無題)を出す
+      const title = ((a.title as string) ?? '').trim()
       rows.push({
         date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
           new Date(a.published_at as string)
         ),
         kind: a.type === 'photography' ? 'Photography' : 'Article',
-        href: '/article',
+        excerpt: `『${compact ? clip(title || '無題', HOME_TITLE_MAX) : title || '無題'}』`,
+        href: `/article/${a.id}`,
       })
     }
   }
