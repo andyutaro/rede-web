@@ -9,10 +9,10 @@ import { fetchShowFeed } from './podcastFeed'
 // Article/Photographyはラベルのみ。labelが無ければkindを大文字表示。
 export type UpdateRow = {
   date: string // YYYY-MM-DD
-  kind: 'scribe' | 'Article' | 'Photography' | 'Podcast'
+  kind: 'scribe' | 'Article' | 'Photography' | 'Podcast' | 'News'
   label?: string // ラベル列の表示を上書き(Podcast=番組名など)
   excerpt?: string // タイトル列
-  href: string
+  href: string // 空文字=リンクなし(手動投稿でリンク先を持たない行)
   live?: boolean // 当日執筆中(未確定)の行。他は確定=「生まれたもの」だが、当日分だけ例外的に載せる
 }
 
@@ -94,6 +94,27 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
         label: isPhoto ? 'PHOTOGRAPHY' : 'NOTES',
         excerpt: isPhoto ? `『${clipped}』` : `ARTICLE『${clipped}』`,
         href: isPhoto ? `/photography/${a.id}` : `/notes/${a.id}`,
+      })
+    }
+  }
+
+  // 手動投稿(studioのUPDATES室)。テーブル未作成ならerrorで空のまま。
+  // ゴミ箱入りは出さない。リンク先が無い行はhref=''(表示側で非リンク)
+  const { data: manual, error: manualErr } = await service
+    .from('manual_updates')
+    .select('*')
+    .order('date', { ascending: false })
+    .limit(limit + 10)
+  if (!manualErr) {
+    for (const m of manual ?? []) {
+      if (m.deleted_at) continue
+      const text = (m.body as string) ?? ''
+      rows.push({
+        date: m.date as string,
+        kind: 'News',
+        label: ((m.label as string) || 'NEWS').toUpperCase(),
+        excerpt: compact ? clip(text, HOME_TITLE_MAX) : text,
+        href: (m.href as string | null) ?? '',
       })
     }
   }

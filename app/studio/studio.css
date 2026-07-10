@@ -262,6 +262,158 @@
   color: #6b6b6b;
 }
 
+/* ---- UPDATES室: 手動投稿フォーム ---- */
+.update-post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 36px;
+  max-width: 560px;
+}
+
+.update-post-form input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e8e6e0;
+  font-size: 13px;
+  padding: 8px 2px;
+  font-family: inherit;
+  color-scheme: dark; /* dateピッカーをダークに */
+}
+
+.update-post-form input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.update-post-form input::placeholder {
+  color: #4a4a4a;
+}
+
+.update-post-row {
+  display: flex;
+  gap: 16px;
+}
+
+.update-post-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.update-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ---- THUMBNAILS室 ---- */
+.thumb-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.thumb-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.thumb-preview {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+.thumb-preview.thumb-none {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.thumb-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.thumb-title {
+  font-size: 13px;
+  color: #e8e6e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thumb-source {
+  margin-top: 4px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: #6b6b6b;
+}
+
+.thumb-source.manual {
+  color: #7fb08a;
+}
+
+.thumb-actions {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.thumb-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px;
+  padding: 14px 2px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.thumb-choice {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.thumb-choice img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 4px;
+}
+
+.thumb-choice:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.thumb-choice.current {
+  border-color: #7fb08a;
+}
+
+/* ---- TAGS室 ---- */
+.tag-rename-input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  color: #e8e6e0;
+  font-size: 13px;
+  padding: 4px 2px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.tag-rename-input:focus {
+  outline: none;
+}
+
 /* TRASHタブ内のセクション見出し(ARTICLE/SCRIBEの2群) */
 .studio-trash-section {
   margin-bottom: 44px;

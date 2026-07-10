@@ -3,15 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-// 部屋は仕様で5つ(Articles/Podcast Inbox/Updates/Thumbnails/Tags)。
-// 初回実装はArticlesとPodcast Inbox、残り3つはメニューだけ置く(骨格)。
+// 部屋は仕様の5つ+Photography独立室(2026-07-10)。全室実装済み(2026-07-11)
 const ROOMS = [
   { href: '/studio/articles', label: 'ARTICLES' },
   { href: '/studio/photography', label: 'PHOTOGRAPHY' },
   { href: '/studio/podcast', label: 'PODCAST INBOX' },
+  { href: '/studio/updates', label: 'UPDATES' },
+  { href: '/studio/thumbnails', label: 'THUMBNAILS' },
+  { href: '/studio/tags', label: 'TAGS' },
 ] as const
-
-const SOON = ['UPDATES', 'THUMBNAILS', 'TAGS'] as const
 
 export default function StudioNav() {
   const pathname = usePathname()
@@ -21,11 +21,6 @@ export default function StudioNav() {
         <Link key={r.href} href={r.href} aria-current={pathname.startsWith(r.href) ? 'page' : undefined}>
           {r.label}
         </Link>
-      ))}
-      {SOON.map((label) => (
-        <span key={label} className="nav-soon" title="後で実装">
-          {label}
-        </span>
       ))}
     </nav>
   )

@@ -267,7 +267,8 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   min-width: 0;
 }
 
-.update-row a {
+.update-row a,
+.update-row .update-nolink {
   display: contents;
 }
 
