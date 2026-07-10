@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
 import { dateDots } from '@/lib/site/text'
+import Pager from '../../Pager'
 import ScribeArchive from '../../scribe/ScribeArchive'
 
 export const dynamic = 'force-dynamic'
@@ -47,6 +48,33 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
       )
     : null
 
+  // 戻る・進む: published_at順で前後のpublished記事を渡り歩く
+  const service = createService()
+  const [prevRes, nextRes] = await Promise.all([
+    a.published_at
+      ? service
+          .from('articles')
+          .select('id, title')
+          .eq('status', 'published')
+          .lt('published_at', a.published_at)
+          .order('published_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    a.published_at
+      ? service
+          .from('articles')
+          .select('id, title')
+          .eq('status', 'published')
+          .gt('published_at', a.published_at)
+          .order('published_at', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ])
+  const pagerLink = (row: { id: string; title: string } | null) =>
+    row ? { href: `/article/${row.id}`, title: (row.title || '').trim() || '無題' } : null
+
   return (
     <div className="measure">
       <article className="section">
@@ -56,6 +84,7 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
         </div>
         <h1 className="article-title">{a.title || '(無題)'}</h1>
         <ScribeArchive html={(a.html as string) ?? ''} />
+        <Pager older={pagerLink(prevRes.data)} newer={pagerLink(nextRes.data)} />
       </article>
     </div>
   )

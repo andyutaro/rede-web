@@ -4,6 +4,7 @@ import { showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { dateDots } from '@/lib/site/text'
 import Accordion from '../../../about/Accordion'
+import Pager from '../../../Pager'
 import EpisodeNotes from '../../EpisodeNotes'
 import AudioPlayer from '../../AudioPlayer'
 import PlatformLinks from '../../PlatformLinks'
@@ -40,6 +41,13 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
   const { show, feed, ep } = data
 
   const thumb = ep.image ?? feed.image
+
+  // 戻る・進む: 同一番組内の前後エピソード(フィードは逆時系列なのでindex+1=古い方)
+  const idx = feed.episodes.findIndex((e) => e.id === ep.id)
+  const olderEp = feed.episodes[idx + 1]
+  const newerEp = idx > 0 ? feed.episodes[idx - 1] : undefined
+  const pagerLink = (e?: { id: string; title: string }) =>
+    e ? { href: `/podcast/${show.slug}/${e.id}`, title: e.title } : null
 
   return (
     <div className="measure">
@@ -85,6 +93,7 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
             )}
           </div>
         )}
+        <Pager older={pagerLink(olderEp)} newer={pagerLink(newerEp)} />
       </article>
     </div>
   )

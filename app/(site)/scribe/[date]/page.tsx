@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { scribeTitle } from '@/lib/site/text'
+import Pager from '../../Pager'
 import ScribeArchive from '../ScribeArchive'
 
 export const dynamic = 'force-dynamic'
@@ -44,6 +45,28 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
     notFound()
   }
 
+  // 戻る・進む: 前後の確定日(確定済みだけを渡り歩く)
+  const [prevRes, nextRes] = await Promise.all([
+    service
+      .from('scribe_days')
+      .select('date')
+      .not('finalized_at', 'is', null)
+      .lt('date', date)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    service
+      .from('scribe_days')
+      .select('date')
+      .not('finalized_at', 'is', null)
+      .gt('date', date)
+      .order('date', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ])
+  const pagerLink = (d?: string | null) =>
+    d ? { href: `/scribe/${d}`, title: `Scribe Archive ${scribeTitle(d)}` } : null
+
   return (
     <div className="measure">
       <article className="section">
@@ -53,6 +76,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         </div>
         <p className="scribe-preamble">{PREAMBLE}</p>
         <ScribeArchive html={data.html as string} />
+        <Pager older={pagerLink(prevRes.data?.date as string)} newer={pagerLink(nextRes.data?.date as string)} />
       </article>
     </div>
   )

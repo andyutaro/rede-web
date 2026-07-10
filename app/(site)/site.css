@@ -1242,6 +1242,49 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   border-radius: 2px;
 }
 
+/* ---- 個別ページ下部の戻る・進む(2026-07-10): 左=古い方、右=新しい方 ---- */
+.pager {
+  margin-top: 110px;
+  border-top: 1px solid var(--dot);
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 26px;
+}
+
+.pager-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  max-width: 46%;
+}
+
+.pager-newer {
+  text-align: right;
+  margin-left: auto;
+}
+
+.pager-dir {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--faint);
+}
+
+.pager-title {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--mut);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s;
+}
+
+.pager-cell:hover .pager-title {
+  color: var(--ink);
+}
+
 /* ---- Photography(§2): 見出しの下に写真1枚 ---- */
 .photo-single img {
   display: block;
