@@ -9,6 +9,9 @@ export type GridItem = {
   kind: 'article' | 'scribe' | 'photography' | 'live'
   date: string // YYYY-MM-DD
   href: string
+  // タイトルを持つもの(article/photography)はPodcastエピソードと同じ
+  // 3段ラベル(種別/タイトル2行クランプ/日付)で表示する
+  title?: string
   thumb?: string | null
   assigned?: boolean // 充当サムネイル: grayscale+opacity 0.55で見分ける(§6)
 }
@@ -77,9 +80,17 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
                   <span className="empty-cell" />
                 )}
               </Link>
-              <div className="cell-label">
-                {item.kind.toUpperCase()} {dateShort(item.date)}
-              </div>
+              {item.title ? (
+                <div className="ep-cell-label">
+                  <span className="ep-show">{item.kind.toUpperCase()}</span>
+                  <span className="ep-title">{item.title}</span>
+                  <span className="ep-date">{dateShort(item.date)}</span>
+                </div>
+              ) : (
+                <div className="cell-label">
+                  {item.kind.toUpperCase()} {dateShort(item.date)}
+                </div>
+              )}
             </div>
           )
         )}

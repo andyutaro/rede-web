@@ -78,7 +78,8 @@ export default async function ArticlePage() {
         key: `article-${a.id}`,
         kind: a.type === 'photography' ? 'photography' : 'article',
         date,
-        href: '/article', // 記事個別ページは管理画面フェーズで
+        href: `/article/${a.id}`,
+        title: (a.title as string) || '(無題)',
         thumb,
         assigned: !a.thumbnail_url && !firstImageSrc((a.html as string) ?? '') && Boolean(thumb),
       })

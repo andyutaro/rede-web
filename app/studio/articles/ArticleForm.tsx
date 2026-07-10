@@ -25,7 +25,9 @@ export default function ArticleForm({ article }: Props) {
   const [title, setTitle] = useState(article.title)
   const [type, setType] = useState(article.type)
   const [status, setStatus] = useState(article.status)
-  const [tagsText, setTagsText] = useState(article.tags.join(', '))
+  // タグは確定済みチップの配列+入力中の1語。半角スペース/Enterで確定し丸く囲む
+  const [tags, setTags] = useState<string[]>(article.tags)
+  const [tagDraft, setTagDraft] = useState('')
   const [message, setMessage] = useState('')
 
   // 保存パイプはrefで持つ(打鍵ごとのstate更新でエディタを再レンダーしない)
@@ -34,10 +36,11 @@ export default function ArticleForm({ article }: Props) {
   const baseUpdatedAtRef = useRef(article.updatedAt)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savingRef = useRef(false)
-  // フィールドの現在値をrefにも写す(タイマー発火時に古いclosureを掴まないため)
-  const fieldsRef = useRef({ title, type, status, tagsText })
+  // フィールドの現在値をrefにも写す(タイマー発火時に古いclosureを掴まないため)。
+  // 入力中の未確定タグ(tagDraft)も保存に含める(確定し忘れて閉じても失わない)
+  const fieldsRef = useRef({ title, type, status, tags, tagDraft })
   useEffect(() => {
-    fieldsRef.current = { title, type, status, tagsText }
+    fieldsRef.current = { title, type, status, tags, tagDraft }
   })
 
   async function doSave() {
@@ -47,10 +50,7 @@ export default function ArticleForm({ article }: Props) {
     }
     savingRef.current = true
     const f = fieldsRef.current
-    const tags = f.tagsText
-      .split(/[,、]/)
-      .map((t) => t.trim())
-      .filter(Boolean)
+    const tags = [...f.tags, f.tagDraft.trim()].filter(Boolean)
     try {
       const res = await fetch('/api/article/save', {
         method: 'POST',
@@ -105,7 +105,28 @@ export default function ArticleForm({ article }: Props) {
     }
     schedule()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, type, status, tagsText])
+  }, [title, type, status, tags])
+
+  function commitTagDraft(draft: string) {
+    const t = draft.trim()
+    setTagDraft('')
+    if (!t) return
+    setTags((prev) => (prev.includes(t) ? prev : [...prev, t]))
+  }
+
+  function onTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    // 半角スペース(またはEnter)で確定してチップ化。IME変換中のEnterは無視
+    if (e.key === ' ' || (e.key === 'Enter' && !e.nativeEvent.isComposing)) {
+      e.preventDefault()
+      commitTagDraft(tagDraft)
+      return
+    }
+    // 空欄でBackspace: 直前のチップを消す
+    if (e.key === 'Backspace' && tagDraft === '' && tags.length > 0) {
+      e.preventDefault()
+      setTags((prev) => prev.slice(0, -1))
+    }
+  }
 
   useEffect(() => {
     return () => {
@@ -140,13 +161,38 @@ export default function ArticleForm({ article }: Props) {
         >
           {status === 'published' ? '公開中(クリックで下書きに戻す)' : '下書き(クリックで公開)'}
         </button>
-        <input
-          className="studio-tags-input"
-          value={tagsText}
-          onChange={(e) => setTagsText(e.target.value)}
-          placeholder="タグ(カンマ区切り)"
-          aria-label="タグ"
-        />
+        <div className="studio-tag-editor" aria-label="タグ">
+          {tags.map((t) => (
+            <span className="studio-tag-chip" key={t}>
+              {t}
+              <button
+                type="button"
+                aria-label={`タグ ${t} を削除`}
+                onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+          <input
+            value={tagDraft}
+            onChange={(e) => {
+              const v = e.target.value
+              // キー入力以外(スマホの予測変換など)でスペースが入った場合もチップ化する
+              if (/\s/.test(v)) {
+                const parts = v.split(/\s+/)
+                const rest = parts.pop() ?? ''
+                parts.forEach(commitTagDraft)
+                setTagDraft(rest)
+              } else {
+                setTagDraft(v)
+              }
+            }}
+            onKeyDown={onTagKeyDown}
+            onBlur={() => commitTagDraft(tagDraft)}
+            placeholder={tags.length === 0 ? 'タグ(スペースで確定)' : ''}
+          />
+        </div>
       </div>
       <HtmlEditor
         initialHtml={article.html}

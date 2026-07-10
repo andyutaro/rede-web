@@ -649,6 +649,27 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   color: var(--live);
 }
 
+/* ---- Article個別 ---- */
+.article-date {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.article-title {
+  margin-top: 70px;
+  font-size: 21px;
+  font-weight: 300;
+  line-height: 2;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.article-title + .scribe-archive-body {
+  margin-top: 44px;
+}
+
 /* ---- scribe個別(確定アーカイブ) ---- */
 .scribe-preamble {
   margin-top: 70px;
