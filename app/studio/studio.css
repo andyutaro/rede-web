@@ -341,57 +341,7 @@
   margin-bottom: 6px;
 }
 
-/* ---- 共有エディタコア ---- */
-.html-editor-surface {
-  width: 100%;
-  font-size: 17px;
-  line-height: 1.9;
-  color: #e8e6e0;
-  outline: none;
-  white-space: pre-wrap;
-  word-break: break-word;
-  caret-color: #e8e6e0;
-  padding: 4px 0;
-}
-
-.html-editor-surface:empty::before {
-  content: attr(data-placeholder);
-  color: #4a4a4a;
-  pointer-events: none;
-}
-
-.html-editor-toolbelt {
-  position: fixed;
-  right: 18px;
-  bottom: 24px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 10;
-}
-
-.html-editor-add {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(30, 30, 30, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #6b6b6b;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.html-editor-delete {
-  padding: 9px 16px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: #d96b6b;
-  background: rgba(30, 30, 30, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  cursor: pointer;
-}
+/* 共有エディタコアのスタイルは components/HtmlEditor.tsx が内蔵する(2026-07-10移行) */
 
 /* ---- Podcast Inbox ---- */
 .inbox-filter {

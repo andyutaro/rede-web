@@ -4,12 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 import { embedConfigFor, isBareUrl } from '@/lib/scribe/embed'
 
 // 共有エディタコア(SSOT生HTML一本化、2026-07-09司令塔承認)。
-// DeskEditorの編集機能(contenteditable・data-block-id・画像/動画/PDFアップロード・
-// 埋め込みカード・URLリンク化・埋め込み選択削除)を管理画面用に切り出したもの。
-// ライブ配信・オフライン下書き・日付跨ぎはscribe(放送卓)固有なので含めない。
+// 放送卓(/desk)と管理画面(/studio)の両方がこの1系統を使う(2026-07-10載せ替え完了)。
+// 中身: contenteditable・data-block-id焼き込み・画像/動画/PDFアップロード・
+// 埋め込みカード・URLリンク化・埋め込み選択削除。
+// 放送卓固有の関心(ライブ配信・オフライン下書き・楽観ロック・日付跨ぎ)は
+// DeskEditor側がprops/controller経由で載せる。
 // アップロードは/api/scribe/upload-url(認証済みセッション→署名URL)を共用する。
 
-const EMBED_CSS = `
+// クラス名は旧scribe・/watchサニタイザのホワイトリストと一致させている。
+// スタイルはコンポーネント自身が持つ(desk/studioどちらのページCSSにも依存しない)
+const EDITOR_CSS = `
 .embed-image { display: block; max-width: 100%; border-radius: 6px; margin: 14px 0; cursor: pointer; }
 .embed-pdf { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin: 10px 0;
   background: rgba(255,255,255,0.04); border-radius: 8px; color: #e8e6e0; text-decoration: none;
@@ -22,35 +26,69 @@ const EMBED_CSS = `
 a.plain-link { color: #7fb0e0; text-decoration: underline; word-break: break-all; }
 .upload-placeholder { display: block; width: fit-content; padding: 10px 14px; margin: 10px 0;
   background: rgba(255,255,255,0.04); border-radius: 8px; color: #6b6b6b; font-size: 14px; }
+.html-editor-surface { width: 100%; font-size: 17px; line-height: 1.9; color: #e8e6e0;
+  outline: none; white-space: pre-wrap; word-break: break-word; caret-color: #e8e6e0; padding: 4px 0; }
+.html-editor-surface:empty::before { content: attr(data-placeholder); color: #4a4a4a; pointer-events: none; }
+.html-editor-toolbelt { position: fixed; right: 18px; bottom: 24px; display: flex;
+  align-items: center; gap: 12px; z-index: 10; }
+.html-editor-add { width: 44px; height: 44px; border-radius: 50%; background: rgba(30,30,30,0.92);
+  border: 1px solid rgba(255,255,255,0.14); color: #6b6b6b; font-size: 22px; line-height: 1; cursor: pointer; }
+.html-editor-delete { padding: 9px 16px; font-size: 12px; letter-spacing: 0.06em; color: #d96b6b;
+  background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; cursor: pointer; }
 `
+
+// 外側(DeskEditor等)からの命令的操作。他端末の内容の取り込み(applyRemote)と
+// sendBeacon用の保存HTML取得に使う
+export type HtmlEditorController = {
+  // 内容を丸ごと差し替える(選択状態は破棄、ブロックID焼き込み、キャレットは末尾)
+  setHtml: (html: string) => void
+  // 保存用HTML(選択表示・進行中アップロードプレースホルダ除去済み)
+  getSaveableHtml: () => string
+}
 
 type Props = {
   initialHtml: string
-  // 編集のたびに保存用HTML(選択表示・進行中プレースホルダ除去済み)を渡す。
-  // デバウンスは呼び出し側の責務
+  // 編集のたびに保存用HTMLを渡す。デバウンスは呼び出し側の責務
   onChange: (html: string) => void
+  // DOM変化のたびに生のinnerHTMLを渡す(ライブ配信の全量スナップショット用。
+  // アップロード進捗プレースホルダも含む=watch側に進捗が見える)
+  onRawChange?: (rawHtml: string) => void
   onError?: (message: string) => void
   placeholder?: string
   minHeight?: string
+  // 面のタイポグラフィ上書き(deskは18px等)
+  surfaceStyle?: React.CSSProperties
+  // マウント時に末尾へキャレットを置いてフォーカス(desk)
+  autoFocus?: boolean
+  // カーソルが画面下55%より下に来たら40%あたりまで能動スクロール(desk)
+  keepCaretCentered?: boolean
+  controllerRef?: React.MutableRefObject<HtmlEditorController | null>
 }
 
 export default function HtmlEditor({
   initialHtml,
   onChange,
+  onRawChange,
   onError,
   placeholder = 'ここに書く',
   minHeight = '40vh',
+  surfaceStyle,
+  autoFocus = false,
+  keepCaretCentered = false,
+  controllerRef,
 }: Props) {
   const editorRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [embedSelected, setEmbedSelected] = useState(false)
   const uploadFilesRef = useRef<(files: FileList | File[]) => void>(() => {})
   const deleteEmbedRef = useRef<() => void>(() => {})
-  // onChange/onErrorは毎レンダー新しい参照になりうるのでrefで持つ(メインeffectは初回のみ)
+  // コールバックは毎レンダー新しい参照になりうるのでrefで持つ(メインeffectは初回のみ)
   const onChangeRef = useRef(onChange)
+  const onRawChangeRef = useRef(onRawChange)
   const onErrorRef = useRef(onError)
   useEffect(() => {
     onChangeRef.current = onChange
+    onRawChangeRef.current = onRawChange
     onErrorRef.current = onError
   })
 
@@ -81,6 +119,16 @@ export default function HtmlEditor({
       onErrorRef.current?.(message)
     }
 
+    function placeCaretAtEnd() {
+      editor!.focus()
+      const range = document.createRange()
+      range.selectNodeContents(editor!)
+      range.collapse(false)
+      const sel = window.getSelection()
+      sel?.removeAllRanges()
+      sel?.addRange(range)
+    }
+
     function insertNodeAtCaret(node: Node) {
       const sel = window.getSelection()
       if (!sel || !sel.rangeCount || !editor!.contains(sel.anchorNode)) {
@@ -96,6 +144,8 @@ export default function HtmlEditor({
       sel.addRange(range)
     }
 
+    // スマホ写真は5〜10MBあるため、表示用途に十分な大きさへ縮小してから上げる
+    // (Supabase無料枠1GBの節約と森の回線への配慮)。gif(アニメ保持)とHEICはそのまま
     async function downscaleImage(file: File): Promise<Blob> {
       if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file
       try {
@@ -114,6 +164,7 @@ export default function HtmlEditor({
       }
     }
 
+    // 進捗イベントを取るためsupabase-jsではなくXHRで署名URLへPUTする
     function putWithProgress(url: string, blob: Blob, onProgress: (pct: number) => void) {
       return new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
@@ -128,7 +179,7 @@ export default function HtmlEditor({
       })
     }
 
-    const MAX_UPLOAD = 50 * 1024 * 1024
+    const MAX_UPLOAD = 50 * 1024 * 1024 // Supabase無料枠のファイル上限
 
     async function uploadFile(file: File) {
       const isImage = file.type.startsWith('image/')
@@ -136,6 +187,9 @@ export default function HtmlEditor({
       const isPdf = file.type === 'application/pdf'
       if (!isImage && !isVideo && !isPdf) return
 
+      // 進捗プレースホルダ。DOMに入れることでライブ配信に乗り、
+      // deskとwatchの両方で同じ進捗が見える。アーカイブ保存からは
+      // saveableHtml()が除外するので、失敗の痕跡はDBに残らない
       const ph = document.createElement('div')
       ph.className = 'upload-placeholder'
       ph.contentEditable = 'false'
@@ -158,6 +212,7 @@ export default function HtmlEditor({
 
         let lastShown = -5
         await putWithProgress(signedUrl, blob, (pct) => {
+          // 5%刻みで更新(全量スナップショット配信なので更新頻度を抑える)
           if (pct - lastShown >= 5 || pct === 100) {
             lastShown = pct
             ph.textContent = `アップロード中… ${pct}%`
@@ -201,6 +256,8 @@ export default function HtmlEditor({
     }
     uploadFilesRef.current = uploadFiles
 
+    // ペースト: 画像ファイル(Gboardのクリップボード等) or 単体URL(カード化/リンク化)。
+    // それ以外は通常のペーストに任せる(inputイベント経由で保存される)
     function onPaste(e: ClipboardEvent) {
       const files = e.clipboardData?.files
       if (files && files.length > 0) {
@@ -245,6 +302,8 @@ export default function HtmlEditor({
       if (e.dataTransfer?.files) uploadFiles(e.dataTransfer.files)
     }
 
+    // 埋め込みの選択と削除: contenteditable=falseの島は通常のテキスト削除ができないため、
+    // クリック選択 -> Backspace/Delete、またはモバイル用の削除チップで消す
     let selectedEmbed: HTMLElement | null = null
     function setSelected(el: HTMLElement | null) {
       if (selectedEmbed && selectedEmbed !== el) selectedEmbed.classList.remove('embed-selected')
@@ -261,7 +320,7 @@ export default function HtmlEditor({
     function onEditorClick(e: MouseEvent) {
       const embed = (e.target as HTMLElement).closest?.('.embed-image, .embed-pdf, .embed-podcast, .embed-video') as HTMLElement | null
       if (embed) {
-        if (embed.classList.contains('embed-pdf')) e.preventDefault()
+        if (embed.classList.contains('embed-pdf')) e.preventDefault() // シングルクリックは選択のみ
         setSelected(embed)
       } else {
         setSelected(null)
@@ -281,11 +340,39 @@ export default function HtmlEditor({
       if (!editor!.contains(e.target as Node)) setSelected(null)
     }
 
+    // カーソルが画面下55%より下に来たら、40%あたりまで能動的にスクロールする(desk)
+    function centerCaret() {
+      const sel = window.getSelection()
+      if (!sel || !sel.rangeCount) return
+      const range = sel.getRangeAt(0).cloneRange()
+      range.collapse(true)
+      const rect = range.getClientRects()[0]
+      if (!rect) return
+      const viewportHeight = window.innerHeight
+      if (rect.top > viewportHeight * 0.55) {
+        window.scrollBy({ top: rect.top - viewportHeight * 0.4 })
+      }
+    }
+
     editor.innerHTML = initialHtml
     assignBlockIds()
+    if (autoFocus) placeCaretAtEnd()
+
+    if (controllerRef) {
+      controllerRef.current = {
+        setHtml(html: string) {
+          setSelected(null) // DOMを差し替えるので選択状態を破棄
+          editor.innerHTML = html
+          assignBlockIds()
+          placeCaretAtEnd()
+        },
+        getSaveableHtml: saveableHtml,
+      }
+    }
 
     function onInput() {
       emitChange()
+      if (keepCaretCentered) centerCaret()
     }
     editor.addEventListener('input', onInput)
     editor.addEventListener('paste', onPaste)
@@ -296,9 +383,13 @@ export default function HtmlEditor({
     editor.addEventListener('keydown', onEditorKeydown)
     document.addEventListener('click', onDocumentClick)
 
-    // 段落生成のたびにブロックIDを焼き込む(初日から、の原則をArticleにも適用)
-    const observer = new MutationObserver(() => assignBlockIds())
-    observer.observe(editor, { childList: true, subtree: true })
+    // 段落生成のたびにブロックIDを焼き込む。ライブ配信(onRawChange)は
+    // deskの旧実装と同じく「DOM変化ごと・デバウンスなし・全量スナップショット」
+    const observer = new MutationObserver(() => {
+      assignBlockIds()
+      onRawChangeRef.current?.(editor.innerHTML)
+    })
+    observer.observe(editor, { childList: true, characterData: true, subtree: true })
 
     return () => {
       editor.removeEventListener('input', onInput)
@@ -310,14 +401,15 @@ export default function HtmlEditor({
       editor.removeEventListener('keydown', onEditorKeydown)
       document.removeEventListener('click', onDocumentClick)
       observer.disconnect()
+      if (controllerRef) controllerRef.current = null
     }
-    // 初回マウント時のみ(initialHtmlは初回描画専用)
+    // 初回マウント時のみ(initialHtml等は初回描画専用)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
     <div className="html-editor">
-      <style>{EMBED_CSS}</style>
+      <style>{EDITOR_CSS}</style>
       <input
         ref={fileInputRef}
         type="file"
@@ -326,7 +418,7 @@ export default function HtmlEditor({
         style={{ display: 'none' }}
         onChange={(e) => {
           if (e.target.files?.length) uploadFilesRef.current(e.target.files)
-          e.target.value = ''
+          e.target.value = '' // 同じファイルを続けて選べるようにリセット
         }}
       />
       <div
@@ -335,9 +427,14 @@ export default function HtmlEditor({
         suppressContentEditableWarning
         data-placeholder={placeholder}
         className="html-editor-surface"
-        style={{ minHeight }}
+        style={{ minHeight, ...surfaceStyle }}
       />
       <div className="html-editor-toolbelt">
+        {embedSelected && (
+          <button type="button" onClick={() => deleteEmbedRef.current()} className="html-editor-delete">
+            選択した埋め込みを削除
+          </button>
+        )}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -346,11 +443,6 @@ export default function HtmlEditor({
         >
           +
         </button>
-        {embedSelected && (
-          <button type="button" onClick={() => deleteEmbedRef.current()} className="html-editor-delete">
-            選択した埋め込みを削除
-          </button>
-        )}
       </div>
     </div>
   )

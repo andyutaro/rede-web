@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import HtmlEditor from '../HtmlEditor'
+import HtmlEditor from '@/components/HtmlEditor'
 
 const SAVE_DELAY = 1500
 
