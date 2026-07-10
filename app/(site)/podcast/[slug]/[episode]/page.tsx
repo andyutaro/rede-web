@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { dateDots } from '@/lib/site/text'
+import Accordion from '../../../about/Accordion'
 import EpisodeNotes from '../../EpisodeNotes'
 import AudioPlayer from '../../AudioPlayer'
 import PlatformLinks from '../../PlatformLinks'
@@ -68,7 +69,22 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
             </div>
           )}
         </div>
-        {ep.description && <EpisodeNotes html={ep.description} />}
+        {/* ショーノートとROLEはアコーディオン格納(2026-07-10、デフォルト閉)。
+            タイトル・プレイヤー・配信先は畳まない(格納するのは長文だけ) */}
+        {(ep.description || show.role) && (
+          <div className="podcast-fold">
+            {ep.description && (
+              <Accordion label="SHOW NOTES">
+                <EpisodeNotes html={ep.description} />
+              </Accordion>
+            )}
+            {show.role && (
+              <Accordion label="ROLE">
+                <p className="show-role">{show.role}</p>
+              </Accordion>
+            )}
+          </div>
+        )}
       </article>
     </div>
   )

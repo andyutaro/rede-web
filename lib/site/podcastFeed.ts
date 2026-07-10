@@ -67,6 +67,19 @@ export async function channelInfo(
   return { image: feed?.image ?? null, latest: feed?.latest ?? null }
 }
 
+// channel説明はプレーンテキストとして描画するため、基本エンティティをここで解く
+// (エピソードdescriptionは生HTMLのままサニタイザに渡すので対象外)。
+// &amp;は最後(先に解くと&amp;lt;が二重デコードされる)
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+}
+
 function unwrapCdata(s: string): string {
   const m = s.match(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/)
   return (m ? m[1] : s).trim()
@@ -109,7 +122,7 @@ function parseFeed(xml: string): ShowFeed {
     if (!id || !title || !date) continue
     episodes.push({
       id,
-      title,
+      title: decodeEntities(title),
       date,
       description: tagText(item, 'description') ?? '',
       image: httpsUrl(item.match(/<itunes:image[^>]*\bhref\s*=\s*["']([^"']+)["']/i)?.[1] ?? null),
@@ -120,8 +133,8 @@ function parseFeed(xml: string): ShowFeed {
   }
 
   return {
-    title: tagText(head, 'title') ?? '',
-    description: tagText(head, 'description') ?? '',
+    title: decodeEntities(tagText(head, 'title') ?? ''),
+    description: decodeEntities(tagText(head, 'description') ?? ''),
     image,
     latest: episodes[0]?.date ?? null,
     episodes,

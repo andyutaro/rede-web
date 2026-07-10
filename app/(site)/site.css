@@ -855,9 +855,21 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 }
 
 .episode-notes {
-  margin-top: 70px;
   font-size: 13px;
   line-height: 2.4;
+}
+
+/* ---- Podcastのショーノート/ROLE格納(2026-07-10): 長文はアコーディオンに畳む。
+   デフォルト閉。番組ヘッダーは中央寄せなので、格納部だけ左寄せに戻す ---- */
+.podcast-fold {
+  margin-top: 56px;
+  text-align: left;
+}
+
+.podcast-fold .show-description,
+.podcast-fold .show-role {
+  margin-top: 0;
+  text-align: left;
 }
 
 .episode-notes > div {

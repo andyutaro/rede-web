@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { dateDots } from '@/lib/site/text'
+import Accordion from '../../about/Accordion'
 import PlatformLinks from '../PlatformLinks'
 
 // ISR: 30分ごとに再検証し、新エピソードを自動で番組ページに反映する
@@ -46,10 +47,17 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
           </div>
         )}
         <h1 className="show-title">{feed?.title || show.name}</h1>
-        {/* channel説明はプレーンテキスト(改行保持)。外部由来なのでテキストとして描画 */}
-        {feed?.description && <p className="show-description">{feed.description}</p>}
         {/* 配信先(番組単位)。設定された分だけ */}
         <PlatformLinks platforms={show.platforms} />
+        {/* ショーノート(channel説明)は長いのでアコーディオン格納(2026-07-10、デフォルト閉)。
+            プレーンテキスト(改行保持)。外部由来なのでテキストとして描画 */}
+        {feed?.description && (
+          <div className="podcast-fold">
+            <Accordion label="SHOW NOTES">
+              <p className="show-description">{feed.description}</p>
+            </Accordion>
+          </div>
+        )}
       </section>
 
       {/* ROLE: 番組カタログがポートフォリオを兼ねる(旧サイト移植)。文言未設定なら出さない */}
