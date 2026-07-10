@@ -144,6 +144,23 @@ export default function ArticleForm({ article }: Props) {
     }
   }, [])
 
+  // ゴミ箱へ(完全消去ではない。TRASHタブから戻せる)
+  async function moveToTrash() {
+    if (!idRef.current) return // 未保存の新規はそのまま離脱すればよい
+    if (!window.confirm('この記事をゴミ箱に移動しますか？(TRASHタブから戻せます)')) return
+    if (timerRef.current) clearTimeout(timerRef.current)
+    try {
+      const res = await fetch('/api/article/delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids: [idRef.current], action: 'trash' }),
+      })
+      if (!res.ok) throw new Error()
+      location.href = '/studio/articles'
+    } catch {
+      setMessage('ゴミ箱への移動に失敗しました')
+    }
+  }
+
   return (
     <>
       <div className="studio-status-line">{message}</div>
@@ -203,6 +220,9 @@ export default function ArticleForm({ article }: Props) {
             placeholder={tags.length === 0 ? 'タグ(スペースで確定)' : ''}
           />
         </div>
+        <button type="button" className="studio-trash-btn" onClick={moveToTrash}>
+          ゴミ箱へ
+        </button>
       </div>
       <HtmlEditor
         initialHtml={article.html}

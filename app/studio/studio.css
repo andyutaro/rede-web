@@ -196,6 +196,92 @@
   letter-spacing: 0.08em;
 }
 
+/* ---- 一括操作バー(選択→ゴミ箱/復元/完全消去) ---- */
+.studio-bulkbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: #6b6b6b;
+  flex-wrap: wrap;
+}
+
+.studio-bulkbar .bulk-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bulk-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #a8a49c;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.bulk-btn:hover:not(:disabled) {
+  color: #e8e6e0;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.bulk-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.bulk-btn.bulk-danger {
+  color: #d96b6b;
+  border-color: rgba(217, 107, 107, 0.35);
+}
+
+.bulk-btn.bulk-danger:hover:not(:disabled) {
+  color: #ff8f8f;
+  border-color: rgba(217, 107, 107, 0.7);
+}
+
+.bulk-message {
+  color: #d96b6b;
+}
+
+.studio-row .row-check {
+  flex: none;
+  accent-color: #a8a49c;
+  cursor: pointer;
+}
+
+.studio-row .row-title-trash {
+  color: #6b6b6b;
+}
+
+/* エディタのゴミ箱ボタン(メタ行の右端) */
+.studio-trash-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #6b6b6b;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.studio-trash-btn:hover {
+  color: #d96b6b;
+  border-color: rgba(217, 107, 107, 0.5);
+}
+
 /* ---- Articleエディタ ---- */
 .studio-form-head {
   display: flex;
