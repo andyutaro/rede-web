@@ -63,7 +63,12 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
                   <span className="core" aria-hidden="true" />
                 </span>
               </Link>
-              <div className="cell-label is-live">SCRIBE — LIVE {dateShort(item.date)}</div>
+              {/* ラベルは他セルと同じ3段構成で揃える(LIVE行だけ赤) */}
+              <div className="ep-cell-label">
+                <span className="ep-show">SCRIBE</span>
+                <span className="ep-title is-live">LIVE</span>
+                <span className="ep-date">{dateShort(item.date)}</span>
+              </div>
             </div>
           ) : (
             <div key={item.key}>
@@ -80,17 +85,15 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
                   <span className="empty-cell" />
                 )}
               </Link>
-              {item.title ? (
-                <div className="ep-cell-label">
-                  <span className="ep-show">{item.kind.toUpperCase()}</span>
-                  <span className="ep-title">{item.title}</span>
-                  <span className="ep-date">{dateShort(item.date)}</span>
-                </div>
-              ) : (
-                <div className="cell-label">
-                  {item.kind.toUpperCase()} {dateShort(item.date)}
-                </div>
-              )}
+              {/* 全セル共通の3段ラベル(種別/タイトル/日付)。
+                  確定scribeはタイトルを持たないため規則名「Archive」を置く */}
+              <div className="ep-cell-label">
+                <span className="ep-show">{item.kind.toUpperCase()}</span>
+                <span className="ep-title">
+                  {item.title ?? (item.kind === 'scribe' ? 'Archive' : '')}
+                </span>
+                <span className="ep-date">{dateShort(item.date)}</span>
+              </div>
             </div>
           )
         )}

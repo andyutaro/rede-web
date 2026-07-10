@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { dateDots, dateShort } from '@/lib/site/text'
+import { dateShort } from '@/lib/site/text'
 
 export type CoverShow = {
   slug: string
@@ -12,8 +12,8 @@ export type CoverShow = {
 
 // Podcastカバーのグリッド(Home / /podcast棚 共通)。カバーは番組ページへリンク。
 // cover-frame: 白背景ロゴがページの地に溶けないための細枠。
-// タイル下は「番組名(Andy指定の表記) + 最新エピソード日付」、
-// 終了番組は最終更新がいつの年か分かるよう年入り(2024.02.17)。
+// タイル下は「番組名(Andy指定の表記) + 最新エピソード日付」。
+// 昨年以前の日付はdateShortの規則(2026-07-10)が自動で年入りにする(終了番組もこれで賄う)。
 export default function CoverGrid({
   heading,
   shows,
@@ -36,9 +36,7 @@ export default function CoverGrid({
             {show.latest && (
               <div className="cover-label">
                 <span className="cover-name">{show.display ?? show.slug.toUpperCase()}</span>
-                <span className="latest-date">
-                  {show.ended ? dateDots(show.latest) : dateShort(show.latest)}
-                </span>
+                <span className="latest-date">{dateShort(show.latest)}</span>
               </div>
             )}
           </div>

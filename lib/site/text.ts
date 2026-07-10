@@ -35,6 +35,13 @@ export function scribeTitle(isoDate: string): string {
   return isoDate.replaceAll('-', '')
 }
 
+// 一覧の日付表記規則(2026-07-10): 今年のものは「07.09」、
+// 今年より前のものは年入り「2025.07.09」(Article/scribe/Podcast共通)
 export function dateShort(isoDate: string): string {
-  return isoDate.slice(5).replace('-', '.')
+  const currentYear = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' })
+    .format(new Date())
+    .slice(0, 4)
+  return isoDate.startsWith(currentYear)
+    ? isoDate.slice(5).replace('-', '.')
+    : isoDate.replaceAll('-', '.')
 }

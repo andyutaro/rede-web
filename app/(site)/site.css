@@ -1342,6 +1342,11 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   margin-top: 2px;
 }
 
+/* 当日LIVEセルのタイトル行(サイト唯一の彩色=LIVE赤) */
+.ep-cell-label .ep-title.is-live {
+  color: var(--live);
+}
+
 /* ---- Podcastエピソードグリッドのヘッダー行・タブ・検索 ---- */
 .podcast-ep-head {
   display: flex;

@@ -21,7 +21,8 @@ export async function generateMetadata({
   params: Promise<Params>
 }): Promise<Metadata> {
   const { date } = await params
-  return { title: `scribe ${scribeTitle(date)}` }
+  // 確定scribeのタイトル規則(2026-07-10): 「Scribe Archive + 日付導出タイトル」
+  return { title: `Scribe Archive ${scribeTitle(date)}` }
 }
 
 export default async function ScribeDayPage({ params }: { params: Promise<Params> }) {
@@ -48,7 +49,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
       <article className="section">
         {/* scribeのタイトルは日付導出(20260706)。日付はdatetimeとして併記 */}
         <div className="section-head">
-          <span>SCRIBE — {scribeTitle(date)}</span>
+          <span>SCRIBE ARCHIVE — {scribeTitle(date)}</span>
         </div>
         <p className="scribe-preamble">{PREAMBLE}</p>
         <ScribeArchive html={data.html as string} />
