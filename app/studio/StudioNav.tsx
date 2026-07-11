@@ -11,6 +11,7 @@ const ROOMS = [
   { href: '/studio/updates', label: 'UPDATES' },
   { href: '/studio/thumbnails', label: 'THUMBNAILS' },
   { href: '/studio/tags', label: 'TAGS' },
+  { href: '/studio/usage', label: 'USAGE' },
 ] as const
 
 export default function StudioNav() {

@@ -5,10 +5,18 @@ export type PagerLink = {
   title: string
 } | null
 
-// 個別ページ下部の「戻る・進む」ナビ(scribe/Article/Podcastエピソード共通)。
-// 左=ひとつ古いもの、右=ひとつ新しいもの。タイトル付き・1行ellipsis。
-export default function Pager({ older, newer }: { older: PagerLink; newer: PagerLink }) {
-  if (!older && !newer) return null
+// 個別ページ下部の「戻る・進む」ナビ(scribe/Notes/Photography/Podcastエピソード共通)。
+// 左=ひとつ古いもの、中央=一覧に戻る、右=ひとつ新しいもの。タイトル付き・1行ellipsis。
+export default function Pager({
+  older,
+  newer,
+  back,
+}: {
+  older: PagerLink
+  newer: PagerLink
+  back?: PagerLink
+}) {
+  if (!older && !newer && !back) return null
   return (
     <nav className="pager" aria-label="前後のページ">
       {older ? (
@@ -18,6 +26,12 @@ export default function Pager({ older, newer }: { older: PagerLink; newer: Pager
         </Link>
       ) : (
         <span className="pager-cell" aria-hidden="true" />
+      )}
+      {back && (
+        <Link href={back.href} className="pager-cell pager-back">
+          <span className="pager-dir">一覧に戻る</span>
+          <span className="pager-title">{back.title}</span>
+        </Link>
       )}
       {newer ? (
         <Link href={newer.href} className="pager-cell pager-newer">

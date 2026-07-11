@@ -5,10 +5,10 @@
 // 番組の配信先(番組単位のリスニングページ)。RSSにはエピソード単位のリンクが
 // 無いため番組単位で持つ。設定された分だけボタンを出す(番組ごとに配信先が違う)。
 // エピソード個別の再生はネイティブプレイヤー(enclosure)が担う。
+// Amazon Musicは掲載しない(2026-07-11 Andy決定)
 export type Platforms = {
   spotify?: string
   apple?: string
-  amazon?: string
   listen?: string
 }
 

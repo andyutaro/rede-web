@@ -78,7 +78,15 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
         </div>
         <h1 className="article-title">{a.title || '(無題)'}</h1>
         <ScribeArchive html={(a.html as string) ?? ''} />
-        <Pager older={pagerLink(prevRes.data)} newer={pagerLink(nextRes.data)} />
+        <Pager
+          older={pagerLink(prevRes.data)}
+          newer={pagerLink(nextRes.data)}
+          back={
+            shelf === 'photography'
+              ? { href: '/photography', title: 'PHOTOGRAPHY' }
+              : { href: '/notes', title: 'NOTES' }
+          }
+        />
       </article>
     </div>
   )

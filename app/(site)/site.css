@@ -1258,12 +1258,19 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  max-width: 46%;
+  max-width: 32%;
 }
 
 .pager-newer {
   text-align: right;
   margin-left: auto;
+}
+
+/* 中央の「一覧に戻る」 */
+.pager-back {
+  text-align: center;
+  margin: 0 auto;
+  flex: none;
 }
 
 .pager-dir {

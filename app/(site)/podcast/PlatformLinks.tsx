@@ -2,10 +2,10 @@ import type { Platforms } from '@/lib/site/shows'
 
 // 番組の配信先へ送客するボタン群。設定された配信先だけを一定の順序で並べる。
 // リンク先は番組単位(RSSにエピソード単位のリンクが無いため)。
+// Amazon Musicは掲載しない(2026-07-11 Andy決定)
 const ORDER: { key: keyof Platforms; label: string }[] = [
   { key: 'spotify', label: 'Spotify' },
   { key: 'apple', label: 'Apple Podcasts' },
-  { key: 'amazon', label: 'Amazon Music' },
   { key: 'listen', label: 'LISTEN' },
 ]
 

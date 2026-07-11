@@ -75,7 +75,11 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         </div>
         <p className="scribe-preamble">{PREAMBLE}</p>
         <ScribeArchive html={data.html as string} />
-        <Pager older={pagerLink(prevRes.data?.date as string)} newer={pagerLink(nextRes.data?.date as string)} />
+        <Pager
+          older={pagerLink(prevRes.data?.date as string)}
+          newer={pagerLink(nextRes.data?.date as string)}
+          back={{ href: '/notes', title: 'NOTES' }}
+        />
       </article>
     </div>
   )

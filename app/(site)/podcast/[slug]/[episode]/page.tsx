@@ -93,7 +93,11 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
             )}
           </div>
         )}
-        <Pager older={pagerLink(olderEp)} newer={pagerLink(newerEp)} />
+        <Pager
+          older={pagerLink(olderEp)}
+          newer={pagerLink(newerEp)}
+          back={{ href: `/podcast/${show.slug}`, title: show.display ?? show.name }}
+        />
       </article>
     </div>
   )
