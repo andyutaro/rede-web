@@ -262,6 +262,47 @@
   color: #6b6b6b;
 }
 
+/* ---- TagPicker: 既存タグのサジェスト(タイポ・記憶違い防止) ---- */
+.tag-picker {
+  flex: 1;
+  min-width: 200px;
+}
+
+.tag-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 2px 2px;
+}
+
+.tag-suggest-chip {
+  background: none;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11px;
+  color: #6b6b6b;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tag-suggest-chip:hover {
+  color: #e8e6e0;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Inboxの行内では折り返しレイアウトに馴染ませる */
+.inbox-tagpicker {
+  flex: 1;
+  min-width: 200px;
+}
+
+.inbox-tagpicker .studio-tag-editor {
+  min-width: 0;
+}
+
 /* ---- UPDATES室: 手動投稿フォーム ---- */
 .update-post-form {
   display: flex;

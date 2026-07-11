@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { dateDots } from '@/lib/site/text'
+import TagPicker from '../TagPicker'
 
 export type InboxRow = {
   showSlug: string
@@ -16,9 +17,9 @@ export type InboxRow = {
 
 type Filter = 'untagged' | 'all' | 'trash'
 
-// 未タグ/全件/ゴミ箱の切替+行ごとのタグ入力+チェックボックス一括操作。
-// タグ保存は行単位(保存ボタン or Enter)。ゴミ箱=hiddenフラグ(いつでも戻せる)。
-export default function PodcastInbox({ rows }: { rows: InboxRow[] }) {
+// 未タグ/全件/ゴミ箱の切替+行ごとのタグ付け(TagPicker=既存タグのサジェスト付き)
+// +チェックボックス一括操作。タグ保存は行単位。ゴミ箱=hiddenフラグ(いつでも戻せる)。
+export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]; tagVocabulary: string[] }) {
   const router = useRouter()
   const [filter, setFilter] = useState<Filter>('untagged')
   const [saved, setSaved] = useState<Map<string, string[]>>(
@@ -27,7 +28,9 @@ export default function PodcastInbox({ rows }: { rows: InboxRow[] }) {
   const [hiddenMap, setHiddenMap] = useState<Map<string, boolean>>(
     () => new Map(rows.map((r) => [key(r), r.hidden]))
   )
-  const [editing, setEditing] = useState<Map<string, string>>(() => new Map())
+  const [editing, setEditing] = useState<Map<string, string[]>>(() => new Map())
+  // 行ごとの未確定入力(保存時に含める=打ちかけでも保存ボタンで拾う)
+  const draftsRef = useRef<Map<string, string>>(new Map())
   const [status, setStatus] = useState<Map<string, 'saving' | 'saved' | 'error'>>(() => new Map())
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState(false)
@@ -39,11 +42,9 @@ export default function PodcastInbox({ rows }: { rows: InboxRow[] }) {
 
   async function saveTags(r: InboxRow) {
     const k = key(r)
-    const text = editing.get(k) ?? (saved.get(k) ?? []).join(', ')
-    const tags = text
-      .split(/[,、]/)
-      .map((t) => t.trim())
-      .filter(Boolean)
+    const draft = (draftsRef.current.get(k) ?? '').trim()
+    const tags = [...(editing.get(k) ?? saved.get(k) ?? [])]
+    if (draft && !tags.includes(draft)) tags.push(draft)
     setStatus((m) => new Map(m).set(k, 'saving'))
     try {
       const res = await fetch('/api/episode-tags', {
@@ -52,6 +53,7 @@ export default function PodcastInbox({ rows }: { rows: InboxRow[] }) {
       })
       if (!res.ok) throw new Error()
       setSaved((m) => new Map(m).set(k, tags))
+      setEditing((m) => new Map(m).set(k, tags)) // 打ちかけ分を含めた確定形をチップに反映
       setStatus((m) => new Map(m).set(k, 'saved'))
     } catch {
       setStatus((m) => new Map(m).set(k, 'error'))
@@ -192,15 +194,15 @@ export default function PodcastInbox({ rows }: { rows: InboxRow[] }) {
               </span>
               {filter !== 'trash' && (
                 <>
-                  <input
-                    value={editing.get(k) ?? (saved.get(k) ?? []).join(', ')}
-                    onChange={(e) => setEditing((m) => new Map(m).set(k, e.target.value))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveTags(r)
-                    }}
-                    placeholder="タグ(カンマ区切り)"
-                    aria-label={`${r.title} のタグ`}
-                  />
+                  <div className="inbox-tagpicker">
+                    <TagPicker
+                      value={editing.get(k) ?? saved.get(k) ?? []}
+                      onChange={(tags) => setEditing((m) => new Map(m).set(k, tags))}
+                      vocabulary={tagVocabulary}
+                      placeholder="タグ"
+                      onDraftChange={(d) => draftsRef.current.set(k, d)}
+                    />
+                  </div>
                   <button
                     type="button"
                     className={`row-save${st === 'saved' ? ' saved' : ''}`}

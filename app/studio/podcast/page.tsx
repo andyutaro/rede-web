@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { SHOWS } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
+import { getTagVocabulary } from '@/lib/studio/tagVocabulary'
 import PodcastInbox, { type InboxRow } from './PodcastInbox'
 
 export const dynamic = 'force-dynamic'
@@ -10,10 +11,11 @@ export const dynamic = 'force-dynamic'
 export default async function StudioPodcast() {
   const supabase = await createClient()
 
-  const [feeds, { data: tagRows }] = await Promise.all([
+  const [feeds, { data: tagRows }, tagVocabulary] = await Promise.all([
     Promise.all(SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))),
     // hidden列はマイグレーション後に存在する。'*'なら未実行でも壊れない
     supabase.from('episode_tags').select('*'),
+    getTagVocabulary(supabase),
   ])
 
   const tagMap = new Map<string, { tags: string[]; hidden: boolean }>()
@@ -46,7 +48,7 @@ export default async function StudioPodcast() {
   return (
     <>
       <h1 className="studio-h1">PODCAST INBOX</h1>
-      <PodcastInbox rows={rows} />
+      <PodcastInbox rows={rows} tagVocabulary={tagVocabulary} />
     </>
   )
 }
