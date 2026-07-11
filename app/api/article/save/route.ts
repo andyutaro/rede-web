@@ -22,6 +22,8 @@ export async function POST(request: Request) {
     type?: string
     status?: string
     tags?: string[]
+    photoKind?: string | null // photographyの下位区分(artwork/photolog)
+    description?: string // 写真の小さな説明(photographyで使用)
     baseUpdatedAt?: string | null
   }
   try {
@@ -37,7 +39,10 @@ export async function POST(request: Request) {
     !['article', 'photography'].includes(body.type ?? '') ||
     !['draft', 'published'].includes(body.status ?? '') ||
     !Array.isArray(body.tags) ||
-    body.tags.some((t) => typeof t !== 'string')
+    body.tags.some((t) => typeof t !== 'string') ||
+    (body.photoKind != null && !['artwork', 'photolog'].includes(body.photoKind)) ||
+    (body.description != null && typeof body.description !== 'string') ||
+    (body.description ?? '').length > 500
   ) {
     return NextResponse.json({ error: 'invalid fields' }, { status: 400 })
   }
@@ -49,6 +54,9 @@ export async function POST(request: Request) {
     type: body.type,
     status: body.status,
     tags: body.tags,
+    // photographyの区分。articleではnullのまま
+    photo_kind: body.type === 'photography' ? (body.photoKind ?? 'photolog') : null,
+    description: (body.description ?? '').trim(),
     updated_at: now,
   }
 

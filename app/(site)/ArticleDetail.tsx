@@ -16,14 +16,15 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export async function loadPublishedArticle(id: string) {
   if (!UUID_RE.test(id)) return null
   const service = createService()
-  // publishedのみ絞り込み厳守(draftはサービスクライアントでも公開しない)
+  // publishedのみ絞り込み厳守(draftはサービスクライアントでも公開しない)。
+  // '*': photo_kind/description等の後発列がマイグレーション未実行でも壊れない
   const { data } = await service
     .from('articles')
-    .select('id, title, html, type, published_at')
+    .select('*')
     .eq('id', id)
     .eq('status', 'published')
     .maybeSingle()
-  return data
+  return data && !data.deleted_at ? data : null
 }
 
 function shelfOf(type: string): Shelf {
@@ -73,10 +74,19 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
     <div className="measure">
       <article className="section">
         <div className="section-head">
-          <span>{a.type === 'photography' ? 'PHOTOGRAPHY' : 'ARTICLE'}</span>
+          {/* photographyは下位区分(ARTWORK/PHOTOLOG)を種別として掲げる(2026-07-11) */}
+          <span>
+            {a.type === 'photography'
+              ? ((a.photo_kind as string | null) ?? 'photolog').toUpperCase()
+              : 'ARTICLE'}
+          </span>
           {date && <span className="article-date">{dateDots(date)}</span>}
         </div>
         <h1 className="article-title">{a.title || '(無題)'}</h1>
+        {/* 写真の小さな説明(任意)。タイトル下に控えめに */}
+        {a.type === 'photography' && (a.description as string | undefined)?.trim() && (
+          <p className="article-description">{(a.description as string).trim()}</p>
+        )}
         <ScribeArchive html={(a.html as string) ?? ''} />
         <Pager
           older={pagerLink(prevRes.data)}

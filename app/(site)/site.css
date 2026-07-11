@@ -671,6 +671,18 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   margin-top: 44px;
 }
 
+/* 写真の小さな説明(タイトル下、控えめ) */
+.article-description {
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 2.1;
+  color: var(--mut);
+}
+
+.article-description + .scribe-archive-body {
+  margin-top: 44px;
+}
+
 /* ---- scribe個別(確定アーカイブ) ---- */
 .scribe-preamble {
   margin-top: 70px;

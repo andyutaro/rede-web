@@ -14,6 +14,8 @@ type Props = {
     status: 'draft' | 'published'
     tags: string[]
     updatedAt: string | null
+    photoKind?: 'artwork' | 'photolog' // photographyの下位区分
+    description?: string // 写真の小さな説明
   }
   // typeは部屋で決まる(2026-07-10: PHOTOGRAPHYを独立室に。編集画面での選択は廃止)
   fixedType: 'article' | 'photography'
@@ -31,6 +33,9 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
   // タグの付け外し・サジェストはTagPicker(共通部品)。未確定入力はrefで保存に含める
   const [tags, setTags] = useState<string[]>(article.tags)
   const tagDraftRef = useRef('')
+  // photographyの区分と小さな説明(NotesのARTICLE/SCRIBE同様の下位区分、2026-07-11)
+  const [photoKind, setPhotoKind] = useState<'artwork' | 'photolog'>(article.photoKind ?? 'photolog')
+  const [description, setDescription] = useState(article.description ?? '')
   const [message, setMessage] = useState('')
 
   // 保存パイプはrefで持つ(打鍵ごとのstate更新でエディタを再レンダーしない)
@@ -41,9 +46,9 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
   const savingRef = useRef(false)
   // フィールドの現在値をrefにも写す(タイマー発火時に古いclosureを掴まないため)。
   // 入力中の未確定タグ(tagDraftRef)も保存に含める(確定し忘れて閉じても失わない)
-  const fieldsRef = useRef({ title, status, tags })
+  const fieldsRef = useRef({ title, status, tags, photoKind, description })
   useEffect(() => {
-    fieldsRef.current = { title, status, tags }
+    fieldsRef.current = { title, status, tags, photoKind, description }
   })
 
   async function doSave(rebased = false) {
@@ -64,6 +69,8 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
           type: fixedType,
           status: f.status,
           tags,
+          photoKind: fixedType === 'photography' ? f.photoKind : null,
+          description: fixedType === 'photography' ? f.description : '',
           baseUpdatedAt: baseUpdatedAtRef.current,
         }),
       })
@@ -120,7 +127,7 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
     }
     schedule()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, status, tags])
+  }, [title, status, tags, photoKind, description])
 
   useEffect(() => {
     return () => {
@@ -156,6 +163,22 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
         aria-label="タイトル"
       />
       <div className="studio-meta">
+        {fixedType === 'photography' && (
+          <div className="studio-kind-switch" role="radiogroup" aria-label="区分">
+            {(['artwork', 'photolog'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={photoKind === k}
+                className={photoKind === k ? 'active' : ''}
+                onClick={() => setPhotoKind(k)}
+              >
+                {k.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
         <button
           type="button"
           className={`studio-publish${status === 'published' ? ' is-published' : ''}`}
@@ -175,6 +198,17 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
           ゴミ箱へ
         </button>
       </div>
+      {fixedType === 'photography' && (
+        <textarea
+          className="studio-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="説明(小さく表示されます。任意)"
+          aria-label="説明"
+          maxLength={500}
+          rows={2}
+        />
+      )}
       <HtmlEditor
         initialHtml={article.html}
         onChange={(html) => {

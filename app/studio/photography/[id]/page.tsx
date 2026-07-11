@@ -10,7 +10,7 @@ export default async function EditPhotography({ params }: { params: Promise<{ id
   const supabase = await createClient()
   const { data: a } = await supabase
     .from('articles')
-    .select('id, title, html, type, status, tags, updated_at, deleted_at')
+    .select('*')
     .eq('id', id)
     .maybeSingle()
   if (!a || a.deleted_at) notFound() // ゴミ箱内は編集不可(TRASHタブから戻す)
@@ -30,6 +30,8 @@ export default async function EditPhotography({ params }: { params: Promise<{ id
         status: a.status as 'draft' | 'published',
         tags: (a.tags as string[]) ?? [],
         updatedAt: (a.updated_at as string) ?? null,
+        photoKind: (a.photo_kind as 'artwork' | 'photolog' | null) ?? 'photolog',
+        description: (a.description as string) ?? '',
       }}
     />
   )

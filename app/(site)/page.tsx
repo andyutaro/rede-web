@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { recentUpdates } from '@/lib/site/updates'
-import { listAllImages, randomOf } from '@/lib/site/photos'
+import { randomPhotoWithHref } from '@/lib/site/photos'
 import { SHOWS } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import CoverGrid from './CoverGrid'
@@ -19,10 +19,11 @@ export default async function Home() {
   const today = todayInTokyo()
   const service = createService()
 
-  const [todayRes, updates, images, covers] = await Promise.all([
+  const [todayRes, updates, photo, covers] = await Promise.all([
     service.from('scribe_days').select('html').eq('date', today).maybeSingle(),
     recentUpdates(10, true), // HomeのLAST 10 DAYSはミニマル表記
-    listAllImages(),
+    // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
+    randomPhotoWithHref(),
     // 番組カバー+最新エピソード日付はRSSから自動取得
     // (カバーは番組全体のアート。エピソード画像ではない)
     Promise.all(
@@ -33,7 +34,6 @@ export default async function Home() {
   ])
 
   const initialHtml = todayRes.data?.html || null
-  const photo = randomOf(images)
   // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
   // 並びは各群とも最新エピソードが新しい順(左が最新)
   const withArt = SHOWS.map((s, i) => ({
@@ -75,19 +75,17 @@ export default async function Home() {
             <span>PHOTOGRAPHY</span>
           </div>
           <div className="section-body photo-single">
-            {/* URLパスから日付(YYYY-MM-DD)を抽出し当該scribeページへリンク */}
-            {(() => {
-              const date = photo.match(/scribe-media\/(\d{4}-\d{2}-\d{2})\//)?.[1]
-              return date ? (
-                <Link href={`/scribe/${date}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photo} alt="" />
-                </Link>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photo} alt="" />
-              )
-            })()}
+            {/* 掲載ページ(Photography作品/Notes記事/scribe)へのリンクは
+                randomPhotoWithHrefが本文照合で解決済み */}
+            {photo.href ? (
+              <Link href={photo.href}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.url} alt="" />
+              </Link>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photo.url} alt="" />
+            )}
           </div>
         </section>
       )}

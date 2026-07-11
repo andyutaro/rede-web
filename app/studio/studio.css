@@ -717,6 +717,55 @@
   border-color: rgba(127, 176, 138, 0.4);
 }
 
+/* photographyの区分スイッチ(ARTWORK/PHOTOLOG) */
+.studio-kind-switch {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.studio-kind-switch button {
+  background: none;
+  border: none;
+  color: #6b6b6b;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, background 0.15s;
+}
+
+.studio-kind-switch button.active {
+  color: #e8e6e0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 写真の小さな説明の入力 */
+.studio-description {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #a8a49c;
+  font-size: 13px;
+  line-height: 1.9;
+  padding: 8px 2px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 22px;
+}
+
+.studio-description:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.studio-description::placeholder {
+  color: #4a4a4a;
+}
+
 .studio-status-line {
   font-size: 11px;
   color: #6b6b6b;

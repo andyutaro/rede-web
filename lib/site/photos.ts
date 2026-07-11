@@ -37,6 +37,31 @@ export function randomOf(urls: string[]): string | null {
   return urls[Math.floor(Math.random() * urls.length)]
 }
 
+// Homeのランダム写真: 画像を1枚選び、それが載っているページへのリンクを解決する。
+// 優先順位: Photography作品 > Notes記事 > scribeアーカイブ(公開中のものだけ)。
+// どこにも載っていない画像(直後にGCされる類)はリンクなし。
+export async function randomPhotoWithHref(): Promise<{ url: string; href: string | null } | null> {
+  const urls = await listAllImages()
+  const url = randomOf(urls)
+  if (!url) return null
+
+  const service = createService()
+  // '*': deleted_at等の後発列がマイグレーション未実行でも壊れない
+  const [{ data: arts }, { data: days }] = await Promise.all([
+    service.from('articles').select('*').eq('status', 'published'),
+    service.from('scribe_days').select('*').not('finalized_at', 'is', null),
+  ])
+
+  const liveArts = (arts ?? []).filter((a) => !a.deleted_at && (a.html as string)?.includes(url))
+  const photo = liveArts.find((a) => a.type === 'photography')
+  if (photo) return { url, href: `/photography/${photo.id}` }
+  if (liveArts[0]) return { url, href: `/notes/${liveArts[0].id}` }
+
+  const day = (days ?? []).find((d) => !d.deleted_at && (d.html as string)?.includes(url))
+  if (day) return { url, href: `/scribe/${day.date}` }
+  return { url, href: null }
+}
+
 // 充当サムネイル(handoff-notes §11): プールから決定的に1枚選ぶ。
 // DBのthumbnail_url列が使えるようになるまでの間も「一度決まったら固定」に
 // 近づけるため、キー(日付やID)のハッシュで選ぶ(プールが増えない限り不変)。
