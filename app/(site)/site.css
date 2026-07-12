@@ -1736,11 +1736,12 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   border-color: var(--body);
 }
 
-/* 未入力時は押せないと分かるよう、塗りをやめて輪郭のグレーに落とす */
+/* 未入力時(disabled)。押せないと分かりつつ「送信ボタン」とはっきり読めるよう、
+   薄塗り+見える枠+読める文字にする(2026-07-12。ダークで枠が地に沈む問題の対策) */
 .cf-submit:disabled {
-  background: none;
-  color: var(--faint);
-  border-color: var(--dot);
+  background: var(--sel);
+  color: var(--mut);
+  border-color: var(--mut);
   cursor: default;
 }
 
