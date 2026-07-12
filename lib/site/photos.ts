@@ -37,14 +37,28 @@ export function randomOf(urls: string[]): string | null {
   return urls[Math.floor(Math.random() * urls.length)]
 }
 
-// Homeのランダム写真: 画像を1枚選び、それが載っているページへのリンクを解決する。
-// 優先順位: Photography > Physical > Notes > scribe(公開中のものだけ)。
-// どこにも載っていない画像(直後にGCされる類)はリンクなし。
-export async function randomPhotoWithHref(): Promise<{ url: string; href: string | null } | null> {
-  const urls = await listAllImages()
-  const url = randomOf(urls)
-  if (!url) return null
+// 記事typeから公開棚のパスを導く「唯一の対応表」。
+// 新しいtype(棚)を足すときはここだけ直せばHomeのリンクも自動で追従する。
+// article→/notes、それ以外はtype名がそのまま棚(/photography /physical …)。
+export function shelfPathForType(type: string): string {
+  return type === 'article' ? '/notes' : `/${type}`
+}
 
+// 本文HTMLから、scribe-mediaの画像URLを列挙する(<img src>のみ。動画・PDFは除く)。
+function imageUrlsInHtml(html: string): string[] {
+  const urls: string[] = []
+  for (const m of (html || '').matchAll(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) {
+    if (/scribe-media/.test(m[1]) && IMG_RE.test(m[1])) urls.push(m[1])
+  }
+  return urls
+}
+
+// Homeのランダム写真: 「公開中コンテンツの本文に実際に載っている画像」だけから選ぶ。
+// こうすると選ばれた写真は必ずその掲載ページへリンクでき、tapして飛べない事故が
+// 起きない(下書き・孤児画像は母集団に入らない)。優先度: 作品棚(article以外) >
+// Notes > scribe。同じ画像が複数ページにある場合は先勝ち。
+// type→パスはshelfPathForType一本に集約=新しい棚を足しても自動で正しく張られる。
+export async function randomPhotoWithHref(): Promise<{ url: string; href: string } | null> {
   const service = createService()
   // '*': deleted_at等の後発列がマイグレーション未実行でも壊れない
   const [{ data: arts }, { data: days }] = await Promise.all([
@@ -52,16 +66,30 @@ export async function randomPhotoWithHref(): Promise<{ url: string; href: string
     service.from('scribe_days').select('*').not('finalized_at', 'is', null),
   ])
 
-  const liveArts = (arts ?? []).filter((a) => !a.deleted_at && (a.html as string)?.includes(url))
-  const photo = liveArts.find((a) => a.type === 'photography')
-  if (photo) return { url, href: `/photography/${photo.id}` }
-  const physical = liveArts.find((a) => a.type === 'physical')
-  if (physical) return { url, href: `/physical/${physical.id}` }
-  if (liveArts[0]) return { url, href: `/notes/${liveArts[0].id}` }
+  const candidates: { url: string; href: string }[] = []
+  const seen = new Set<string>()
+  const add = (html: string, href: string) => {
+    for (const url of imageUrlsInHtml(html)) {
+      if (seen.has(url)) continue
+      seen.add(url)
+      candidates.push({ url, href })
+    }
+  }
 
-  const day = (days ?? []).find((d) => !d.deleted_at && (d.html as string)?.includes(url))
-  if (day) return { url, href: `/scribe/${day.date}` }
-  return { url, href: null }
+  const liveArts = (arts ?? []).filter((a) => !a.deleted_at)
+  // 作品棚(photography/physical/将来のtype)を先に、Notes(article)を後に、scribeを最後に
+  for (const a of liveArts.filter((a) => a.type !== 'article')) {
+    add(a.html as string, `${shelfPathForType(a.type as string)}/${a.id}`)
+  }
+  for (const a of liveArts.filter((a) => a.type === 'article')) {
+    add(a.html as string, `${shelfPathForType(a.type as string)}/${a.id}`)
+  }
+  for (const d of (days ?? []).filter((d) => !d.deleted_at)) {
+    add(d.html as string, `/scribe/${d.date}`)
+  }
+
+  if (candidates.length === 0) return null
+  return candidates[Math.floor(Math.random() * candidates.length)]
 }
 
 // 充当サムネイル(handoff-notes §11): プールから決定的に1枚選ぶ。

@@ -294,6 +294,84 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   }
 }
 
+/* ---- MENUボタン(2026-07-12): Contactピルの下・同サイズ。
+   押すとナビをオーバーレイで縦展開。開くと枠が反転して"閉じる"と分かる ---- */
+.menu-toggle {
+  position: fixed;
+  top: 100px; /* テーマ(20)→Contact(60)→MENU(100) の縦積み */
+  right: 22px;
+  width: 72px;
+  height: 30px;
+  border: 1px solid var(--mut);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em; /* letter-spacingの右アキ分を中央に寄せ戻す */
+  cursor: pointer;
+  z-index: 40; /* オーバーレイ(30)より前=開いてる間も押せる */
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.menu-toggle:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+.menu-toggle.open {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+/* オーバーレイ: ページをうっすら覆う(テーマに追従する半透明の地)。
+   開閉(opacity/visibility/pointer-events)はコンポーネントがインラインで駆動する。
+   ここは位置・地・トランジションだけを定義する */
+.site-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* ナビは右上から縦一列。ボタン群の下・右端に揃えて立ち上がる */
+.site-menu-nav {
+  position: absolute;
+  top: 150px;
+  right: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 22px;
+  text-align: right;
+}
+
+/* opacity/transformの初期値はインラインで与える。ここはトランジションだけ */
+.site-menu-link {
+  font-size: 15px;
+  font-weight: 200;
+  letter-spacing: 0.28em;
+  color: var(--body);
+  transition: opacity 0.32s ease, transform 0.32s ease, color 0.2s;
+}
+
+.site-menu-link:hover {
+  color: var(--ink);
+}
+
+.site-menu-link[aria-current='page'] {
+  color: var(--ink);
+}
+
 /* ---- 更新リスト(§4): 日付+種別ラベル+(scribeのみ)冒頭抜粋を1行ellipsis ---- */
 .update-row {
   display: flex;
@@ -1844,6 +1922,24 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     width: 62px;
     height: 27px;
     font-size: 9px;
+  }
+
+  .menu-toggle {
+    top: 82px; /* Contact(47+27)の下に8px */
+    right: 12px;
+    width: 62px;
+    height: 27px;
+    font-size: 9px;
+  }
+
+  .site-menu-nav {
+    top: 124px;
+    right: 12px;
+    gap: 20px;
+  }
+
+  .site-menu-link {
+    font-size: 14px;
   }
 
   .section {

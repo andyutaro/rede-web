@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Noto_Sans_JP } from 'next/font/google'
 import NavLinks from './NavLinks'
 import ThemeToggle from './ThemeToggle'
+import SiteMenu from './SiteMenu'
 import ImageLightbox from './ImageLightbox'
 import './site.css'
 
@@ -29,20 +30,21 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className={`site ${noto.variable}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      {/* 右上の縦積みUI(上から): テーマスイッチ → Contactピル → MENU */}
       <ThemeToggle />
       {/* Contactはナビから外し、テーマトグルの下に固定ピルとして置く(2026-07-12)。
           穏やかに明滅して存在を知らせる。ホバーで明滅停止。 */}
       <Link href="/contact" className="contact-pill">
         Contact
       </Link>
+      {/* ナビはMENUに格納(2026-07-12)。押すとオーバーレイで縦一列に展開 */}
+      <SiteMenu />
       <header className="site-header measure">
         <div className="wordmark">
           <Link href="/">
             Andy<span className="wm-role">〔 Podcaster 〕</span>
           </Link>
         </div>
-        {/* ヘッダーはContactを出さない。フッターは全項目 */}
-        <NavLinks includeContact={false} />
       </header>
       <ImageLightbox>
         <main>{children}</main>
