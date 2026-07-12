@@ -221,8 +221,8 @@ html[data-theme='dark'] .theme-toggle .tt-thumb {
 }
 
 .theme-toggle .glyph-sun {
-  color: #c0392b;
-  font-size: 13px;
+  color: #f5921b; /* はっきりオレンジ(2026-07-12。太陽と分かる明度) */
+  font-size: 14px;
   line-height: 1;
 }
 
@@ -257,38 +257,40 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   right: 22px;
   width: 72px;
   height: 30px;
-  border: 1px solid var(--dot);
+  /* 存在感を上げる(2026-07-12): 塗り+濃いめの枠+ink文字。初見でも押せると分かる */
+  border: 1px solid var(--mut);
   border-radius: 999px;
-  background: var(--bg);
+  background: var(--sel);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   letter-spacing: 0.16em;
-  color: var(--mut);
+  color: var(--ink);
   z-index: 20;
-  animation: pill-breathe 5s ease-in-out infinite;
-  transition: color 0.2s, border-color 0.2s, background 0.3s ease;
+  animation: pill-breathe 3.4s ease-in-out infinite;
+  transition: color 0.2s, border-color 0.2s, background 0.2s ease;
 }
 
 .contact-pill:hover {
-  color: var(--ink);
-  border-color: var(--mut);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
   animation: none;
 }
 
 .contact-pill[aria-current='page'] {
-  color: var(--ink);
   animation: none;
 }
 
+/* 全体を消しすぎず、静かに脈打つ程度に留める(存在は常に見える) */
 @keyframes pill-breathe {
   0%,
   100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.78;
   }
 }
 
@@ -1598,6 +1600,10 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   flex-direction: column;
   gap: 34px;
   max-width: 560px;
+  /* 区切りが無く分かりにくかったため枠に納める(2026-07-12) */
+  border: 1px solid var(--dot);
+  border-radius: 12px;
+  padding: 40px 36px;
 }
 
 .cf-field {
@@ -1650,16 +1656,49 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 
 .cf-topic {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 11px;
   font-size: 13px;
   color: var(--body);
   cursor: pointer;
 }
 
-.cf-topic input {
-  accent-color: var(--ink);
+/* カスタムチェックボックス(2026-07-12): 未チェック=細枠の□、
+   チェック=ink塗り+白レ点。ネイティブのaccent-colorだと黒塗りで
+   「□かチェックボックスか」判別しづらかったため自前描画にする */
+.cf-topic input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--faint);
+  border-radius: 3px;
+  background: var(--bg);
   cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cf-topic input[type='checkbox']:hover {
+  border-color: var(--mut);
+}
+
+.cf-topic input[type='checkbox']:checked {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.cf-topic input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--bg);
+  border-width: 0 1.6px 1.6px 0;
+  transform: rotate(45deg);
 }
 
 /* honeypot: 視覚・支援技術の両方から隠す(人間は触れない) */
@@ -1678,26 +1717,30 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   gap: 16px;
 }
 
+/* 主要アクションなので塗りボタンで明確に(2026-07-12。薄すぎ対策) */
 .cf-submit {
-  border: 1px solid var(--dot);
-  background: none;
-  color: var(--body);
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--bg);
   font: inherit;
   font-size: 12px;
   letter-spacing: 0.5em;
   text-indent: 0.5em;
-  padding: 13px 52px;
+  padding: 14px 56px;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .cf-submit:hover:not(:disabled) {
-  border-color: var(--mut);
-  color: var(--ink);
+  background: var(--body);
+  border-color: var(--body);
 }
 
+/* 未入力時は押せないと分かるよう、塗りをやめて輪郭のグレーに落とす */
 .cf-submit:disabled {
-  opacity: 0.4;
+  background: none;
+  color: var(--faint);
+  border-color: var(--dot);
   cursor: default;
 }
 
