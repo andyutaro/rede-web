@@ -168,41 +168,65 @@
   color: var(--faint);
 }
 
-/* ---- ダークモードトグル(§8): 枠の見える横長ピル72×30。
-   グリフは約5秒周期で控えめに明滅して現在のモードを示す ---- */
+/* ---- テーマ切替スイッチ(§8、2026-07-12改: スライドノブ付きの「スイッチ」形状)。
+   空の枠に見えて初見で気づかれない問題への対策。トラックに薄い塗り+丸いノブが
+   光(左)⇄闇(右)に滑る。ノブの中のグリフが現在のモードを示す。 ---- */
 .theme-toggle {
   position: fixed;
   top: 20px;
   right: 22px;
   width: 72px;
   height: 30px;
-  border: 1px solid var(--dot);
-  border-radius: 999px;
-  background: var(--bg);
+  border: none;
+  background: none;
   cursor: pointer;
   padding: 0;
   z-index: 20;
+}
+
+.theme-toggle .tt-track {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--dot);
+  border-radius: 999px;
+  /* トラックを薄く塗って「空の枠」に見えないようにする(視認性) */
+  background: var(--sel);
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-.theme-toggle .glyph {
+/* スライドするノブ(つまみ)。ライト=左、ダーク=右 */
+.theme-toggle .tt-thumb {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--dot);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.28s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+html[data-theme='dark'] .theme-toggle .tt-thumb {
+  left: calc(100% - 27px);
+}
+
+.theme-toggle .glyph {
   display: flex;
   align-items: center;
   animation: glyph-breathe 5s ease-in-out infinite;
 }
 
 .theme-toggle .glyph-sun {
-  left: 11px;
   color: #c0392b;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1;
 }
 
 .theme-toggle .glyph-moon {
-  right: 11px;
   color: #d9b44a;
   display: none;
 }
@@ -218,10 +242,53 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 @keyframes glyph-breathe {
   0%,
   100% {
-    opacity: 0.9;
+    opacity: 0.95;
   }
   50% {
-    opacity: 0.35;
+    opacity: 0.5;
+  }
+}
+
+/* ---- Contactピル(2026-07-12): テーマスイッチの直下・同サイズ。
+   穏やかに明滅して存在を知らせる。ホバーで明滅を止めて応答する。 ---- */
+.contact-pill {
+  position: fixed;
+  top: 60px; /* テーマスイッチ(top20+高さ30)の下に10px空ける */
+  right: 22px;
+  width: 72px;
+  height: 30px;
+  border: 1px solid var(--dot);
+  border-radius: 999px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--mut);
+  z-index: 20;
+  animation: pill-breathe 5s ease-in-out infinite;
+  transition: color 0.2s, border-color 0.2s, background 0.3s ease;
+}
+
+.contact-pill:hover {
+  color: var(--ink);
+  border-color: var(--mut);
+  animation: none;
+}
+
+.contact-pill[aria-current='page'] {
+  color: var(--ink);
+  animation: none;
+}
+
+@keyframes pill-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 
@@ -1715,6 +1782,24 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     right: 12px;
     width: 62px;
     height: 27px;
+  }
+
+  .theme-toggle .tt-thumb {
+    width: 21px;
+    height: 21px;
+  }
+
+  html[data-theme='dark'] .theme-toggle .tt-thumb {
+    left: calc(100% - 24px);
+  }
+
+  /* Contactピルはスイッチ(top12+高さ27)の下に8px空ける */
+  .contact-pill {
+    top: 47px;
+    right: 12px;
+    width: 62px;
+    height: 27px;
+    font-size: 9px;
   }
 
   .section {

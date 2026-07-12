@@ -30,13 +30,19 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     <div className={`site ${noto.variable}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       <ThemeToggle />
+      {/* Contactはナビから外し、テーマトグルの下に固定ピルとして置く(2026-07-12)。
+          穏やかに明滅して存在を知らせる。ホバーで明滅停止。 */}
+      <Link href="/contact" className="contact-pill">
+        Contact
+      </Link>
       <header className="site-header measure">
         <div className="wordmark">
           <Link href="/">
             Andy<span className="wm-role">〔 Podcaster 〕</span>
           </Link>
         </div>
-        <NavLinks />
+        {/* ヘッダーはContactを出さない。フッターは全項目 */}
+        <NavLinks includeContact={false} />
       </header>
       <ImageLightbox>
         <main>{children}</main>
