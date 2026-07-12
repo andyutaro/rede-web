@@ -38,7 +38,7 @@ export function randomOf(urls: string[]): string | null {
 }
 
 // Homeのランダム写真: 画像を1枚選び、それが載っているページへのリンクを解決する。
-// 優先順位: Photography作品 > Notes記事 > scribeアーカイブ(公開中のものだけ)。
+// 優先順位: Photography > Physical > Notes > scribe(公開中のものだけ)。
 // どこにも載っていない画像(直後にGCされる類)はリンクなし。
 export async function randomPhotoWithHref(): Promise<{ url: string; href: string | null } | null> {
   const urls = await listAllImages()
@@ -55,6 +55,8 @@ export async function randomPhotoWithHref(): Promise<{ url: string; href: string
   const liveArts = (arts ?? []).filter((a) => !a.deleted_at && (a.html as string)?.includes(url))
   const photo = liveArts.find((a) => a.type === 'photography')
   if (photo) return { url, href: `/photography/${photo.id}` }
+  const physical = liveArts.find((a) => a.type === 'physical')
+  if (physical) return { url, href: `/physical/${physical.id}` }
   if (liveArts[0]) return { url, href: `/notes/${liveArts[0].id}` }
 
   const day = (days ?? []).find((d) => !d.deleted_at && (d.html as string)?.includes(url))

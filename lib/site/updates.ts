@@ -9,7 +9,7 @@ import { fetchShowFeed } from './podcastFeed'
 // Article/Photographyはラベルのみ。labelが無ければkindを大文字表示。
 export type UpdateRow = {
   date: string // YYYY-MM-DD
-  kind: 'scribe' | 'Article' | 'Photography' | 'Podcast' | 'News'
+  kind: 'scribe' | 'Article' | 'Photography' | 'Physical' | 'Podcast' | 'News'
   label?: string // ラベル列の表示を上書き(Podcast=番組名など)
   excerpt?: string // タイトル列
   href: string // 空文字=リンクなし(手動投稿でリンク先を持たない行)
@@ -81,19 +81,22 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
       if (!a.published_at) continue
       // タイトルは現在値を都度読む(後から付けたタイトルもここに反映される)。
       // 空のまま公開された記事は空欄ではなく(無題)を出す。
-      // ラベル=棚名: Notesの記事はNOTES+種別『…』、Photographyは独立棚(2026-07-10格上げ)
-      // なのでPHOTOGRAPHY+『…』
+      // ラベル=棚名: Notesの記事はNOTES+ARTICLE『…』、
+      // Photography/Physicalは独立棚なので棚名+『…』
       const title = ((a.title as string) ?? '').trim() || '無題'
-      const isPhoto = a.type === 'photography'
       const clipped = compact ? clip(title, HOME_TITLE_MAX) : title
+      const type = a.type as string
+      const row =
+        type === 'photography'
+          ? { kind: 'Photography' as const, label: 'PHOTOGRAPHY', excerpt: `『${clipped}』`, href: `/photography/${a.id}` }
+          : type === 'physical'
+            ? { kind: 'Physical' as const, label: 'PHYSICAL', excerpt: `『${clipped}』`, href: `/physical/${a.id}` }
+            : { kind: 'Article' as const, label: 'NOTES', excerpt: `ARTICLE『${clipped}』`, href: `/notes/${a.id}` }
       rows.push({
         date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
           new Date(a.published_at as string)
         ),
-        kind: isPhoto ? 'Photography' : 'Article',
-        label: isPhoto ? 'PHOTOGRAPHY' : 'NOTES',
-        excerpt: isPhoto ? `『${clipped}』` : `ARTICLE『${clipped}』`,
-        href: isPhoto ? `/photography/${a.id}` : `/notes/${a.id}`,
+        ...row,
       })
     }
   }

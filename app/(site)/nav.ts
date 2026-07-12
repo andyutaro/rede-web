@@ -9,5 +9,9 @@ export const NAV = [
   { label: 'Notes', href: '/notes' },
   // Photographyは独立棚(2026-07-10格上げ: Podcast/Notesと並ぶ存在に)
   { label: 'Photography', href: '/photography' },
+  // Physical=物理的な作品のアーカイブ棚(2026-07-12、位置はPhotographyの右・Aboutの左)
+  { label: 'Physical', href: '/physical' },
   { label: 'About', href: '/about' },
+  // Contact=旧andyutaro.comの受注装置を移植(2026-07-12)
+  { label: 'Contact', href: '/contact' },
 ] as const

@@ -1504,6 +1504,147 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 }
 
 
+/* ---- Contact(2026-07-12): 旧サイトの受注装置。彩色なし・下線1本の文法 ---- */
+.contact-intro p {
+  font-size: 13px;
+  line-height: 2.4;
+  color: var(--body);
+  margin-bottom: 0.6em;
+}
+
+.contact-intro a {
+  text-decoration: underline;
+}
+
+.contact-condition {
+  color: var(--mut);
+  font-size: 12px;
+  margin-top: 1.4em;
+}
+
+.contact-qa .about-prose p {
+  white-space: pre-line;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  max-width: 560px;
+}
+
+.cf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cf-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--mut);
+}
+
+.contact-form input:not([type='checkbox']),
+.contact-form textarea {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--dot);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 2;
+  padding: 8px 2px;
+}
+
+.contact-form textarea {
+  border: 1px solid var(--dot);
+  padding: 12px 14px;
+  resize: vertical;
+  line-height: 2.2;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: var(--mut);
+}
+
+.contact-form ::placeholder {
+  color: var(--faint);
+}
+
+.cf-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.cf-topic {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--body);
+  cursor: pointer;
+}
+
+.cf-topic input {
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+/* honeypot: 視覚・支援技術の両方から隠す(人間は触れない) */
+.cf-hp {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cf-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cf-submit {
+  border: 1px solid var(--dot);
+  background: none;
+  color: var(--body);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+  padding: 13px 52px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.cf-submit:hover:not(:disabled) {
+  border-color: var(--mut);
+  color: var(--ink);
+}
+
+.cf-submit:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cf-error {
+  font-size: 11px;
+  color: var(--mut);
+}
+
+.contact-done {
+  font-size: 13px;
+  line-height: 2.4;
+  color: var(--body);
+}
+
 /* ==== スマホ(≦640px、2026-07-11) ====
    方針: 2列ないし1列基調に落とすが、ミニマルな印象(細字・余白・無彩色・
    細罫線)は厳守。余白は比率を保ったまま圧縮し、要素の削除はしない。 */

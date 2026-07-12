@@ -1,5 +1,12 @@
 import type { SelectRow } from './SelectTable'
 
+// typeに対応するstudioの部屋パス(部屋違いURLの救済リダイレクト用)
+export function studioShelfPath(type: string): string {
+  if (type === 'photography') return '/studio/photography'
+  if (type === 'physical') return '/studio/physical'
+  return '/studio/articles'
+}
+
 // articlesの行をSelectTable行へ変換(Articles室/Photography室で共用)。
 // hrefBase=nullでリンクなし(ゴミ箱=戻してから編集)
 type ArticleRecord = {

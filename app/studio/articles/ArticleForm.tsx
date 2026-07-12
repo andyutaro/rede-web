@@ -17,8 +17,8 @@ type Props = {
     photoKind?: 'artwork' | 'photolog' // photographyの下位区分
     description?: string // 写真の小さな説明
   }
-  // typeは部屋で決まる(2026-07-10: PHOTOGRAPHYを独立室に。編集画面での選択は廃止)
-  fixedType: 'article' | 'photography'
+  // typeは部屋で決まる(編集画面での選択は廃止。部屋=Articles/Photography/Physical)
+  fixedType: 'article' | 'photography' | 'physical'
   // 部屋のベースパス(/studio/articles | /studio/photography)。URL書き換えとゴミ箱後の戻り先
   basePath: string
   // 既存タグの語彙(頻度降順)。TagPickerのサジェスト源
@@ -70,7 +70,7 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
           status: f.status,
           tags,
           photoKind: fixedType === 'photography' ? f.photoKind : null,
-          description: fixedType === 'photography' ? f.description : '',
+          description: fixedType !== 'article' ? f.description : '',
           baseUpdatedAt: baseUpdatedAtRef.current,
         }),
       })
@@ -198,7 +198,7 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
           ゴミ箱へ
         </button>
       </div>
-      {fixedType === 'photography' && (
+      {fixedType !== 'article' && (
         <textarea
           className="studio-description"
           value={description}

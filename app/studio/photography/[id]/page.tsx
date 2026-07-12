@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ArticleForm from '../../articles/ArticleForm'
 import { getTagVocabulary } from '@/lib/studio/tagVocabulary'
+import { studioShelfPath } from '../../articleRows'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,8 +16,8 @@ export default async function EditPhotography({ params }: { params: Promise<{ id
     .maybeSingle()
   if (!a || a.deleted_at) notFound() // ゴミ箱内は編集不可(TRASHタブから戻す)
   const tagVocabulary = await getTagVocabulary(supabase)
-  // articleはArticles室で編集する(部屋違いのURL救済)
-  if (a.type !== 'photography') redirect(`/studio/articles/${id}`)
+  // 部屋違いのURLは正しい部屋へ(旧リンク救済)
+  if (a.type !== 'photography') redirect(`${studioShelfPath(a.type as string)}/${id}`)
 
   return (
     <ArticleForm

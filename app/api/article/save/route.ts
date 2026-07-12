@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   if (
     typeof body.title !== 'string' ||
     typeof body.html !== 'string' ||
-    !['article', 'photography'].includes(body.type ?? '') ||
+    !['article', 'photography', 'physical'].includes(body.type ?? '') ||
     !['draft', 'published'].includes(body.status ?? '') ||
     !Array.isArray(body.tags) ||
     body.tags.some((t) => typeof t !== 'string') ||
@@ -110,6 +110,7 @@ function revalidate() {
   // 各棚とHomeはforce-dynamicだが、/updatesなどISR側があっても即反映されるように
   revalidatePath('/notes')
   revalidatePath('/photography')
+  revalidatePath('/physical')
   revalidatePath('/updates')
   revalidatePath('/')
 }

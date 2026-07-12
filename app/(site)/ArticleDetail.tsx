@@ -4,11 +4,18 @@ import { dateDots } from '@/lib/site/text'
 import Pager from './Pager'
 import ScribeArchive from './scribe/ScribeArchive'
 
-// 記事個別ページの共通実装(Notes / Photographyの2棚で共用、2026-07-10格上げ)。
+// 記事個別ページの共通実装(Notes / Photography / Physicalの3棚で共用)。
 // 本文はscribeと同じSSOT(生HTML)なので、同じサニタイザ・同じ本文スタイルで描画する。
 // 戻る・進むは同じ棚の中だけを渡り歩く。
 
-type Shelf = 'notes' | 'photography'
+type Shelf = 'notes' | 'photography' | 'physical'
+
+// 棚⇔type対応(typeがarticle以外はtype名=棚名)
+const SHELF_LABEL: Record<Shelf, string> = {
+  notes: 'NOTES',
+  photography: 'PHOTOGRAPHY',
+  physical: 'PHYSICAL',
+}
 
 // UUID以外はDBに問い合わせない(不正パスの早期404)
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -28,7 +35,9 @@ export async function loadPublishedArticle(id: string) {
 }
 
 function shelfOf(type: string): Shelf {
-  return type === 'photography' ? 'photography' : 'notes'
+  if (type === 'photography') return 'photography'
+  if (type === 'physical') return 'physical'
+  return 'notes'
 }
 
 export default async function ArticleDetail({ id, shelf }: { id: string; shelf: Shelf }) {
@@ -49,7 +58,8 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
   const service = createService()
   const shelfQuery = () => {
     const q = service.from('articles').select('id, title').eq('status', 'published')
-    return shelf === 'photography' ? q.eq('type', 'photography') : q.neq('type', 'photography')
+    // notes棚=type article。photography/physicalはtype名がそのまま棚
+    return shelf === 'notes' ? q.eq('type', 'article') : q.eq('type', shelf)
   }
   const [prevRes, nextRes] = await Promise.all([
     a.published_at
@@ -74,28 +84,27 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
     <div className="measure">
       <article className="section">
         <div className="section-head">
-          {/* photographyは下位区分(ARTWORK/PHOTOLOG)を種別として掲げる(2026-07-11) */}
+          {/* photographyは下位区分(ARTWORK/PHOTOLOG)を種別として掲げる(2026-07-11)。
+              physicalはPHYSICAL、notesはARTICLE */}
           <span>
             {a.type === 'photography'
               ? ((a.photo_kind as string | null) ?? 'photolog').toUpperCase()
-              : 'ARTICLE'}
+              : a.type === 'physical'
+                ? 'PHYSICAL'
+                : 'ARTICLE'}
           </span>
           {date && <span className="article-date">{dateDots(date)}</span>}
         </div>
         <h1 className="article-title">{a.title || '(無題)'}</h1>
-        {/* 写真の小さな説明(任意)。タイトル下に控えめに */}
-        {a.type === 'photography' && (a.description as string | undefined)?.trim() && (
+        {/* 小さな説明(任意、photography/physical)。タイトル下に控えめに */}
+        {a.type !== 'article' && (a.description as string | undefined)?.trim() && (
           <p className="article-description">{(a.description as string).trim()}</p>
         )}
         <ScribeArchive html={(a.html as string) ?? ''} />
         <Pager
           older={pagerLink(prevRes.data)}
           newer={pagerLink(nextRes.data)}
-          back={
-            shelf === 'photography'
-              ? { href: '/photography', title: 'PHOTOGRAPHY' }
-              : { href: '/notes', title: 'NOTES' }
-          }
+          back={{ href: `/${shelf}`, title: SHELF_LABEL[shelf] }}
         />
       </article>
     </div>

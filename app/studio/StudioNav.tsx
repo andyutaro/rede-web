@@ -7,10 +7,12 @@ import { usePathname } from 'next/navigation'
 const ROOMS = [
   { href: '/studio/articles', label: 'ARTICLES' },
   { href: '/studio/photography', label: 'PHOTOGRAPHY' },
+  { href: '/studio/physical', label: 'PHYSICAL' },
   { href: '/studio/podcast', label: 'PODCAST INBOX' },
   { href: '/studio/updates', label: 'UPDATES' },
   { href: '/studio/thumbnails', label: 'THUMBNAILS' },
   { href: '/studio/tags', label: 'TAGS' },
+  { href: '/studio/contact', label: 'CONTACT' },
   { href: '/studio/usage', label: 'USAGE' },
 ] as const
 

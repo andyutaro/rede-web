@@ -37,7 +37,7 @@ export default async function StudioThumbnails() {
     items.push({
       target: 'article',
       id: a.id as string,
-      title: `${a.type === 'photography' ? 'PHOTOGRAPHY' : 'ARTICLE'} — ${((a.title as string) || '').trim() || '(無題)'}`,
+      title: `${(a.type as string) === 'article' ? 'ARTICLE' : (a.type as string).toUpperCase()} — ${((a.title as string) || '').trim() || '(無題)'}`,
       thumb,
       source,
     })
