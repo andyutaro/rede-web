@@ -1645,6 +1645,50 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   color: var(--body);
 }
 
+/* ---- プライバシーポリシー/著作権(2026-07-12): 平文の規約ページ ---- */
+.policy p {
+  font-size: 13px;
+  line-height: 2.4;
+  color: var(--body);
+  margin-bottom: 1.2em;
+}
+
+.policy h2 {
+  margin-top: 44px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.24em;
+  color: var(--mut);
+}
+
+.policy ul {
+  list-style: none;
+  margin-bottom: 1.2em;
+  font-size: 13px;
+  line-height: 2.4;
+  color: var(--body);
+}
+
+.policy li::before {
+  content: '・';
+  color: var(--faint);
+}
+
+.cf-privacy-link {
+  text-decoration: underline;
+}
+
+.footer-privacy {
+  margin-left: 1.8em;
+  color: var(--faint);
+  letter-spacing: 0.22em;
+}
+
+.footer-privacy:hover {
+  color: var(--mut);
+}
+
 /* ==== スマホ(≦640px、2026-07-11) ====
    方針: 2列ないし1列基調に落とすが、ミニマルな印象(細字・余白・無彩色・
    細罫線)は厳守。余白は比率を保ったまま圧縮し、要素の削除はしない。 */

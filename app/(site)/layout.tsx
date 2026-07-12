@@ -44,7 +44,12 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <footer className="site-footer">
         <div className="measure">
           <NavLinks />
-          <div className="copyright">© 2026 YUTARO YASUDA</div>
+          <div className="copyright">
+            © 2026 YUTARO YASUDA
+            <Link href="/privacy" className="footer-privacy">
+              PRIVACY POLICY
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

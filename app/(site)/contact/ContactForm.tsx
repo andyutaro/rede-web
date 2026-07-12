@@ -94,7 +94,12 @@ export default function ContactForm() {
       />
       <label className="cf-topic cf-agree">
         <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-        <span>個人情報の取り扱い(返信目的での利用)に同意します</span>
+        <span>
+          <a href="/privacy" target="_blank" rel="noopener" className="cf-privacy-link">
+            プライバシーポリシー
+          </a>
+          に同意します
+        </span>
       </label>
       <div className="cf-actions">
         <button type="submit" className="cf-submit" disabled={!valid || state === 'sending'}>
