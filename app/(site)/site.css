@@ -1503,3 +1503,126 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   color: var(--faint);
 }
 
+
+/* ==== スマホ(≦640px、2026-07-11) ====
+   方針: 2列ないし1列基調に落とすが、ミニマルな印象(細字・余白・無彩色・
+   細罫線)は厳守。余白は比率を保ったまま圧縮し、要素の削除はしない。 */
+@media (max-width: 640px) {
+  .measure {
+    padding: 0 22px;
+  }
+
+  .site-header {
+    padding-top: 52px;
+  }
+
+  /* ナビ6項目は1行に収まらないため中央揃えで折り返す(はみ出し禁止) */
+  .site-nav {
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    letter-spacing: 0.2em;
+    padding: 0 16px;
+    margin-top: 32px;
+  }
+
+  .theme-toggle {
+    top: 12px;
+    right: 12px;
+    width: 62px;
+    height: 27px;
+  }
+
+  .section {
+    margin-top: 96px;
+  }
+
+  .section-body {
+    margin-top: 44px;
+  }
+
+  .site-footer {
+    margin-top: 96px;
+    padding: 40px 0 52px;
+  }
+
+  /* 4列→2列(セルが大きくなり、タイトルも読める) */
+  .grid4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px 18px;
+  }
+
+  .ep-cell-label {
+    font-size: 10px;
+  }
+
+  .cell-label {
+    font-size: 10px;
+  }
+
+  .scribe-window {
+    height: 320px;
+  }
+
+  .update-row {
+    gap: 12px;
+    padding: 10px 0;
+  }
+
+  .update-kind {
+    width: 74px;
+  }
+
+  /* 個別ページの戻る・進む: 3セルを保ちながら詰める */
+  .pager {
+    margin-top: 80px;
+    gap: 14px;
+  }
+
+  .pager-cell {
+    max-width: 31%;
+  }
+
+  .pager-title {
+    font-size: 11px;
+  }
+
+  .show-cover,
+  .episode-thumb {
+    width: 170px;
+  }
+
+  .article-tabs {
+    gap: 20px;
+  }
+
+  .article-title {
+    margin-top: 52px;
+    font-size: 19px;
+  }
+
+  .scribe-archive-body,
+  .article-title + .scribe-archive-body {
+    margin-top: 40px;
+  }
+
+  .about-movement {
+    margin-top: 96px;
+  }
+
+  .about-lead {
+    font-size: 17px;
+  }
+
+  /* 検索結果は日付+抜粋を縦に(横1行では抜粋がほぼ見えない)。
+     縦組みではnowrapの抜粋が親を押し広げるため幅を明示して切る */
+  .search-hit {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .search-snippet {
+    width: 100%;
+    max-width: 100%;
+  }
+}

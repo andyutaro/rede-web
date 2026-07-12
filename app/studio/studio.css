@@ -873,3 +873,65 @@
   color: #7fb08a;
   border-color: rgba(127, 176, 138, 0.4);
 }
+
+/* ==== スマホ(≦640px、2026-07-11) ==== */
+@media (max-width: 640px) {
+  .studio-bar {
+    gap: 12px 18px;
+    padding: 12px 14px;
+  }
+
+  .studio-nav {
+    gap: 14px;
+  }
+
+  .studio-main {
+    padding: 26px 14px 30vh;
+  }
+
+  /* 行はみ出し対策: 折り返してタイトルを2行目に落とす */
+  .studio-row {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .studio-row .row-title {
+    flex: 1 1 100%;
+    order: 10;
+    padding-left: 26px; /* チェックボックス分だけ字下げして揃える */
+  }
+
+  .studio-row .row-tags {
+    max-width: 120px;
+  }
+
+  .inbox-row {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .inbox-row .row-ep {
+    flex: 1 1 100%;
+    order: 10;
+    padding-left: 26px;
+  }
+
+  .inbox-row .inbox-tagpicker {
+    flex: 1 1 70%;
+    order: 11;
+    padding-left: 26px;
+  }
+
+  .inbox-row .row-save {
+    order: 12;
+  }
+
+  .thumb-row {
+    flex-wrap: wrap;
+  }
+
+  .thumb-row .thumb-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+}

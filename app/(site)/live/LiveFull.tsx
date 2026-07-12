@@ -55,11 +55,14 @@ export default function LiveFull({ relay, today, initialHtml }: Props) {
     if (initialHtml) {
       apply(initialHtml, false)
       contentApplied = true
-      // 初回はゲストを「いま書かれている場所」に着地させる。画像の遅延読み込みで
-      // 高さが後から伸びても執筆点に留まるよう、少し遅れてもう一度合わせる
-      scrollToLatest()
-      setTimeout(() => followingRef.current && scrollToLatest(), 300)
-      setTimeout(() => followingRef.current && scrollToLatest(), 1200)
+      // 着地は文頭(2026-07-11 Andy指定)。最下部に飛ばすと空白に着地して
+      // 何のページか分からないため、まず頭から読める状態にする。
+      // 本文が画面より長い場合は追従をオフにし、チップで執筆点への導線を出す
+      // (setStateはeffect本体で同期的に呼ばずタスクに逃がす)
+      if (!isNearBottom()) followingRef.current = false
+      setTimeout(() => {
+        if (!followingRef.current) setChipVisible(true)
+      }, 0)
     }
 
     let dispose = () => {}
