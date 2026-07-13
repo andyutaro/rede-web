@@ -12,7 +12,8 @@ import { useEffect, useRef, useState } from 'react'
 // 波形は合成(README推奨・堅牢)。実音とは独立に流し、playingで振幅/速度だけ上げる。
 // 再生開始は必ずクリックハンドラ内(自動再生ポリシー)。
 
-type Episode = { audioUrl: string; showName: string; title: string; href: string }
+// dateは表示用に整形済みのリリース日(2026.07.08形式、layoutで生成)
+type Episode = { audioUrl: string; showName: string; title: string; date: string; href: string }
 
 const START_AT = 600 // 10:00から再生(尺が足りなければ25%地点にフォールバック)
 
@@ -220,7 +221,8 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
             NOW PLAYING
           </div>
           <Link href={episode.href} className="sound-ep">
-            <span className="show">{episode.showName}</span>
+            {/* リリース日は番組名と同じ行(エピソードページのヘッド「番組名 — 日付」と同じ語彙) */}
+            <span className="show">{episode.showName} — {episode.date}</span>
             <span className="ttl">{episode.title}</span>
             <span className="go">エピソードを開く →</span>
           </Link>

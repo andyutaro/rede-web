@@ -10,6 +10,7 @@ import WaveformHero from './WaveformHero'
 import ImageLightbox from './ImageLightbox'
 import { showBySlug, type Show } from '@/lib/site/shows'
 import { fetchShowFeed, randomAudioEpisodeByShow } from '@/lib/site/podcastFeed'
+import { dateDots } from '@/lib/site/text'
 import './site.css'
 
 // 細字タイポ(200/300)が杉本肌の核。400以上は使わない
@@ -53,6 +54,8 @@ async function HeroEpisode() {
           audioUrl: pick.episode.audioUrl,
           showName: heroShow.display ?? heroShow.name,
           title: pick.episode.title,
+          // リリース日(年月日、2026-07-14 Andy指定)。表記はエピソードページと同じドット式
+          date: dateDots(pick.episode.date),
           href: `/podcast/${heroShow.slug}/${pick.episode.id}`,
         }
       : null
