@@ -7,8 +7,9 @@ export const revalidate = 1800
 export const metadata: Metadata = { title: 'Membership' }
 
 // メンバーシップ(2026-07-13、旧andyutaro.com/membershipから移植。文言はsite_content駆動=studioで編集可)。
-// rooomの参加URLが分かり次第ROOOM_URLに入れる(未設定なら導線はテキストのみ)。
-const ROOOM_URL = ''
+// rooomの参加ページ(2026-07-14 Andy提供)。本文は「rooomで運営」と書きながら
+// 行き先が無い状態だったため、特典直後と読了地点(THE REASON末尾)の2箇所に導線を置く
+const ROOOM_URL = 'https://rooom.listen.style/p/atandy'
 
 export default async function MembershipPage() {
   const m = await getMembershipContent()
@@ -63,6 +64,12 @@ export default async function MembershipPage() {
             ))}
             <p className="membership-note">{m.note}</p>
           </div>
+          {/* 読了地点の扉: 長文(THE REASON)を読み終えた人が冒頭へ戻らず参加できる */}
+          {ROOOM_URL && (
+            <a className="membership-cta" href={ROOOM_URL} target="_blank" rel="noopener noreferrer">
+              rooomでメンバーシップ @andy に参加する →
+            </a>
+          )}
         </div>
       </section>
     </div>
