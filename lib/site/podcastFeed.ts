@@ -65,17 +65,21 @@ export function randomAudioEpisode(feed: ShowFeed | null): Episode | null {
   return eps.length ? eps[Math.floor(Math.random() * eps.length)] : null
 }
 
-// 複数番組のenclosure付きエピソードを1つのプールにまとめ、その中からランダム1本。
-// どのフィード由来かを呼び出し側が辿れるようfeedIndexを返す(番組名・リンク解決用)。
-// 背景波形の音源を複数番組へ広げるため(2026-07-14)。Math.randomはここに閉じる。
-export function randomAudioEpisodeAcross(
+// 複数番組から背景波形の音源をランダム1本選ぶ。まず「番組」を等確率で選び、
+// 次にその番組内でエピソードをランダムに選ぶ(2026-07-14 Andy指定。話数の多い
+// 番組が当たりやすくなる合算プール方式からの踏み替え)。enclosureを持つ番組のみ対象。
+// feedIndexを返して呼び出し側が番組名・リンクを解決できるようにする。Math.randomはここに閉じる。
+export function randomAudioEpisodeByShow(
   feeds: (ShowFeed | null)[]
 ): { feedIndex: number; episode: Episode } | null {
-  const pool: { feedIndex: number; episode: Episode }[] = []
-  feeds.forEach((feed, feedIndex) => {
-    for (const e of feed?.episodes ?? []) if (e.audioUrl) pool.push({ feedIndex, episode: e })
-  })
-  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null
+  // enclosure付きエピソードを1本以上持つ番組だけを候補にする
+  const candidates = feeds
+    .map((feed, feedIndex) => ({ feedIndex, eps: (feed?.episodes ?? []).filter((e) => e.audioUrl) }))
+    .filter((c) => c.eps.length > 0)
+  if (!candidates.length) return null
+  const show = candidates[Math.floor(Math.random() * candidates.length)]
+  const episode = show.eps[Math.floor(Math.random() * show.eps.length)]
+  return { feedIndex: show.feedIndex, episode }
 }
 
 // Homeのカバー+最新日付用の薄いラッパー

@@ -8,7 +8,7 @@ import Wordmark from './Wordmark'
 import WaveformHero from './WaveformHero'
 import ImageLightbox from './ImageLightbox'
 import { showBySlug, type Show } from '@/lib/site/shows'
-import { fetchShowFeed, randomAudioEpisodeAcross } from '@/lib/site/podcastFeed'
+import { fetchShowFeed, randomAudioEpisodeByShow } from '@/lib/site/podcastFeed'
 import './site.css'
 
 // 細字タイポ(200/300)が杉本肌の核。400以上は使わない
@@ -32,13 +32,14 @@ const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   // 背景波形+ランダム再生は全ページ共通(2026-07-13、旧: Homeのみ)。
-  // 音源はON-AIRDO・ミモリラジオ・サカナカイギの3番組の全話プールからランダム1本
-  // (2026-07-14 Andy指定、旧: サカナカイギのみ)。フィードは各30分キャッシュ。
+  // 音源はON-AIRDO・ミモリラジオ・サカナカイギの3番組から(2026-07-14 Andy指定)。
+  // まず番組を等確率で選び、次にその番組内でランダム1本(番組選択は均等)。
+  // フィードは各30分キャッシュ。
   const heroShows = ['onairdo', 'mimoriradio', 'sakanakaigi']
     .map(showBySlug)
     .filter((s): s is Show => !!s?.feed)
   const feeds = await Promise.all(heroShows.map((s) => fetchShowFeed(s.feed!, s.since)))
-  const pick = randomAudioEpisodeAcross(feeds)
+  const pick = randomAudioEpisodeByShow(feeds)
   const heroShow = pick ? heroShows[pick.feedIndex] : null
   const heroEpisode =
     pick && heroShow && pick.episode.audioUrl
