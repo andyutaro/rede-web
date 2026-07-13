@@ -1686,29 +1686,31 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   margin-top: 110px;
   border-top: 1px solid var(--dot);
   display: flex;
-  justify-content: space-between;
   gap: 24px;
   padding-top: 26px;
 }
 
+/* 3セルを等幅(各1/3)にして中央セルを常に画面中央へ固定する。
+   space-between+autoマージン方式だと左右セルの幅差で中央がズレるため(2026-07-14 Andy指摘) */
 .pager-cell {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  max-width: 32%;
+}
+
+.pager-older {
+  text-align: left;
 }
 
 .pager-newer {
   text-align: right;
-  margin-left: auto;
 }
 
 /* 中央の「一覧に戻る」 */
 .pager-back {
   text-align: center;
-  margin: 0 auto;
-  flex: none;
 }
 
 .pager-dir {
@@ -2304,10 +2306,6 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   .pager {
     margin-top: 80px;
     gap: 14px;
-  }
-
-  .pager-cell {
-    max-width: 31%;
   }
 
   .pager-title {
