@@ -4,14 +4,15 @@
 // Podcast / Tags / About はページ実装時にここへ追加する。
 export const NAV = [
   { label: 'Home', href: '/' },
+  // AboutはHomeの次(2026-07-13 Andy指定)
+  { label: 'About', href: '/about' },
   { label: 'Updates', href: '/updates' },
   { label: 'Podcast', href: '/podcast' },
   { label: 'Notes', href: '/notes' },
   // Photographyは独立棚(2026-07-10格上げ: Podcast/Notesと並ぶ存在に)
   { label: 'Photography', href: '/photography' },
-  // Physical=物理的な作品のアーカイブ棚(2026-07-12、位置はPhotographyの右・Aboutの左)
+  // Physical=物理的な作品のアーカイブ棚(2026-07-12)
   { label: 'Physical', href: '/physical' },
-  { label: 'About', href: '/about' },
   // Membership=rooomの援護導線(2026-07-13、旧andyutaro.comから移植)
   { label: 'Membership', href: '/membership' },
   // Contact=旧andyutaro.comの受注装置を移植(2026-07-12)

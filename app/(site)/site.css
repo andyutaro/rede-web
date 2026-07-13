@@ -5,7 +5,8 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  /* 地はhtmlが持つ。ここは透明にして固定波形(z:-1)を本文背後に見せる */
+  background: transparent;
   color: var(--body);
   font-family: var(--font-noto), -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
   font-weight: 300;
@@ -398,9 +399,10 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 
 /* ---- トップページ背景波形 + サウンドオン(2026-07-13、ハンドオフ実装) ---- */
 /* 波形: viewport縦中央に固定の背景レイヤー。コンテンツの背後・クリック透過 */
-/* 波形は.siteの不透明地(--bg)の上・本文の背後に入れる。z-index:-1だと
-   bodyや.siteの不透明背景の裏に回って見えなくなるため、z:0にして
-   本文側(.home-content/ヘッダー/フッター)をz:1で前面に上げる(重なり順で解決) */
+/* 波形は固定・全画面。html(不透明)/body・.site(透明)の構成なので、
+   z:-1で本文(通常フロー)の背後・htmlの地の前に入る。mainにz-indexを
+   与えない=スタッキングコンテキストを作らないので、loading(fixed z:50)が
+   フッターごと全画面を覆える(2026-07-13、旧z:0+main z:1方式の踏み替え) */
 .wave-bg {
   position: fixed;
   top: 0;
@@ -409,19 +411,13 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
 }
 
 /* 再生中は背景ぼかし(z:24)の上へ。波形が見える。タイトル(z:26)はさらに前面 */
 .wave-bg.playing {
   z-index: 25;
-}
-
-/* 全ページの本文(main)を波形(z:0)の前面へ。波形はlayout直下=mainの兄弟に置く */
-.site-main {
-  position: relative;
-  z-index: 1;
 }
 
 /* サウンドボタン: 右レール(テーマ/Contact/MENU)と同幅のピル。X=レール、Y=画面中央固定 */
