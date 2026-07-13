@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 // ワードマーク「Andy 〔 … 〕」。Andyの活動はPodcasterだけではないので、
 // 肩書きを時間ごとに切り替える(2026-07-13)。切替はフェード(サイトの静けさに準拠)。
 // 全ラベルをグリッドの同セルに重ねて置く=幅は最長ラベルに固定 → 〔 〕の幅は切替と無関係に不動。
-const ROLES = ['Podcaster', 'Photographer', 'Multi Director', 'Author', 'a human'] as const
+const ROLES = ['Podcaster', 'Director', 'Photographer'] as const
 
 export default function Wordmark() {
   const [i, setI] = useState(0)
