@@ -2269,10 +2269,14 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     padding: 40px 0 52px;
   }
 
-  /* 4列→2列(セルが大きくなり、タイトルも読める) */
+  /* 4列→2列。ただし全幅ストレッチだとセルがデスクトップ(約139px)より
+     大きくなり、ボールドなカバーが重く見えてミニマルさが失われる(2026-07-14 Andy指摘)。
+     セル幅を上限で抑えてグリッドを中央寄せし、左右に余白を残す=繊細な索引に戻す。
+     狭い端末(320px)ではminmaxの下限0で自然に縮む。 */
   .grid4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 40px 18px;
+    grid-template-columns: repeat(2, minmax(0, 138px));
+    justify-content: center;
+    gap: 34px 24px;
   }
 
   .ep-cell-label {
