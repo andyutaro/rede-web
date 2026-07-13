@@ -882,6 +882,18 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   word-break: break-all;
 }
 
+/* CMS駆動プローズ(membership等)内の自動リンク(Linkified)。scribe本文と同じ扱い */
+.site a.prose-link {
+  color: var(--body);
+  text-decoration: underline;
+  word-break: break-all;
+  transition: color 0.2s;
+}
+
+.site a.prose-link:hover {
+  color: var(--ink);
+}
+
 /* ---- 当日ライブ全文ページ(/watch後継) ---- */
 .live-full-body {
   min-height: 40vh;

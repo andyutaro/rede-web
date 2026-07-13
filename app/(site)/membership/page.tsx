@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getMembershipContent } from '@/lib/site/pages'
+import Linkified from '../Linkified'
 
 // ISR: 文言は/api/pages/saveのrevalidatePathで即時反映されるので毎リクエスト読まない
 export const revalidate = 1800
@@ -22,7 +23,7 @@ export default async function MembershipPage() {
         </div>
         <div className="section-body membership">
           <div className="about-prose about-prose-tight">
-            <p>{m.intro}</p>
+            <p><Linkified text={m.intro} /></p>
           </div>
 
           <ul className="membership-benefits">
@@ -41,7 +42,7 @@ export default async function MembershipPage() {
           </ul>
 
           <div className="about-prose about-prose-tight">
-            <p>{m.closing}</p>
+            <p><Linkified text={m.closing} /></p>
           </div>
 
           {ROOOM_URL && (
@@ -60,9 +61,9 @@ export default async function MembershipPage() {
           <p className="about-lead">{m.reasonLead}</p>
           <div className="about-prose">
             {m.reason.map((p, i) => (
-              <p key={i}>{p}</p>
+              <p key={i}><Linkified text={p} /></p>
             ))}
-            <p className="membership-note">{m.note}</p>
+            <p className="membership-note"><Linkified text={m.note} /></p>
           </div>
           {/* 読了地点の扉: 長文(THE REASON)を読み終えた人が冒頭へ戻らず参加できる */}
           {ROOOM_URL && (
