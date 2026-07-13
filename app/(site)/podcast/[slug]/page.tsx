@@ -40,6 +40,11 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
   return (
     <div className="measure">
       <section className="section show-header">
+        {/* 初見者が「本人の番組か制作参加か」を判別できる棚見出し(2026-07-14 Andy指摘)。
+            語彙はHomeの棚(PODCAST — ORIGINAL/WORKS)と同一=サイト内で意味が通る */}
+        <div className="section-head show-shelf-head">
+          <span>PODCAST — {show.group === 'original' ? 'ORIGINAL' : 'WORKS'}</span>
+        </div>
         {feed?.image && (
           <div className="sq cover-frame show-cover">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -47,6 +52,10 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
           </div>
         )}
         <h1 className="show-title">{feed?.title || show.name}</h1>
+        {/* 所属の一行(初見への直接回答)。詳細な担当領域はROLE欄 */}
+        <p className="show-affiliation">
+          {show.group === 'original' ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
+        </p>
         {/* 配信先(番組単位)。設定された分だけ */}
         <PlatformLinks platforms={show.platforms} />
         {/* ショーノート(channel説明)は長いのでアコーディオン格納(2026-07-10、デフォルト閉)。

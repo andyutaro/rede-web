@@ -1126,6 +1126,13 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   text-align: center;
 }
 
+/* 番組ページ最上部の棚見出し(PODCAST — ORIGINAL/WORKS)。中央のヘッダー構成の中で
+   Homeの棚と同じ左寄せ・同じ組みにする(語彙と見た目の一貫) */
+.show-shelf-head {
+  text-align: left;
+  margin-bottom: 70px;
+}
+
 .show-cover {
   width: 220px;
   margin: 0 auto;
@@ -1137,6 +1144,23 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   font-weight: 300;
   letter-spacing: 0.12em;
   color: var(--ink);
+}
+
+/* 所属の一行(オリジナル番組/制作参加)。タイトルの直下に控えめに */
+.show-affiliation {
+  margin-top: 14px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--faint);
+}
+
+/* エピソードヘッド右側の所属バッジ(ORIGINAL / WORKS — 制作参加) */
+.head-affiliation {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--faint);
+  white-space: nowrap;
+  margin-left: 16px;
 }
 
 .show-description {
