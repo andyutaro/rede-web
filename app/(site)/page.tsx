@@ -60,9 +60,12 @@ export default async function Home() {
   const works = withArt.filter((s) => s.group === 'works')
 
   return (
-    <div className="measure">
-      {/* トップページ背景波形 + サウンドオン(2026-07-13)。波形は固定背景・音は既定ミュート */}
+    <>
+      {/* トップページ背景波形 + サウンドオン(2026-07-13)。波形は固定背景(z:0)・音は既定ミュート。
+          canvasはz-index付きの本文ラッパー(.home-content, z:1)の外(兄弟)に置く=波形が本文の背後に入る */}
       <WaveformHero episode={heroEpisode} />
+
+      <div className="measure home-content">
 
       {originals.length > 0 && <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} />}
       {works.length > 0 && <CoverGrid heading="PODCAST — WORKS" shows={works} />}
@@ -107,6 +110,7 @@ export default async function Home() {
       )}
 
       {/* Tags(§7)は手動タグ付け開始まで非表示(ダミー不可)。タグ実装時にここへ */}
-    </div>
+      </div>
+    </>
   )
 }
