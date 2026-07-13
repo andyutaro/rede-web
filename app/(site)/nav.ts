@@ -12,6 +12,8 @@ export const NAV = [
   // Physical=物理的な作品のアーカイブ棚(2026-07-12、位置はPhotographyの右・Aboutの左)
   { label: 'Physical', href: '/physical' },
   { label: 'About', href: '/about' },
+  // Membership=rooomの援護導線(2026-07-13、旧andyutaro.comから移植)
+  { label: 'Membership', href: '/membership' },
   // Contact=旧andyutaro.comの受注装置を移植(2026-07-12)
   { label: 'Contact', href: '/contact' },
 ] as const

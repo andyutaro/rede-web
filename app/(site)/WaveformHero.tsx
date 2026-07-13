@@ -222,6 +222,7 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
           <Link href={episode.href} className="sound-ep">
             <span className="show">{episode.showName}</span>
             <span className="ttl">{episode.title}</span>
+            <span className="go">エピソードを開く →</span>
           </Link>
         </div>
       )}

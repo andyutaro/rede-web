@@ -130,6 +130,25 @@
   margin-left: 0.4em;
 }
 
+/* 肩書きローテーション(2026-07-13): 全ラベルを同じグリッドセルに重ねる=幅は最長に固定。
+   〔 〕の位置は切替と無関係に不動。切替はフェードのみ(静けさに準拠)。 */
+.wm-rotator {
+  display: inline-grid;
+  vertical-align: baseline;
+}
+
+.wm-rotator .wm-role-item {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.wm-rotator .wm-role-item.on {
+  opacity: 1;
+}
+
 .site-nav {
   margin-top: 44px;
   display: flex;
@@ -520,16 +539,118 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 }
 
 .sound-ep .ttl {
-  display: block;
+  display: inline;
   font-size: 22px;
   font-weight: 300;
   line-height: 1.9;
   letter-spacing: 0.04em;
   color: var(--ink);
-  transition: color 0.2s;
+  /* リンクだと分かるよう控えめな下線(細字の地に馴染む) */
+  border-bottom: 1px solid var(--faint);
+  padding-bottom: 3px;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .sound-ep:hover .ttl {
+  color: var(--mut);
+  border-color: var(--mut);
+}
+
+/* 「エピソードを開く →」の明示的な導線 */
+.sound-ep .go {
+  display: block;
+  margin-top: 26px;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--live);
+  transition: opacity 0.2s;
+}
+
+.sound-ep:hover .go {
+  opacity: 0.6;
+}
+
+/* ---- ローディング(2026-07-13): 波形モチーフのイコライザ ---- */
+.site-loading {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-wave {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+}
+
+.loading-wave span {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--wave);
+  transform: scaleY(0.28);
+  animation: loading-bar 1.1s ease-in-out infinite;
+}
+
+@keyframes loading-bar {
+  0%,
+  100% {
+    transform: scaleY(0.28);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ---- メンバーシップ(2026-07-13) ---- */
+.membership-benefits {
+  list-style: none;
+  margin-top: 40px;
+  font-size: 14px;
+  line-height: 2.4;
+  color: var(--body);
+}
+
+.membership-benefits > li {
+  padding: 4px 0;
+}
+
+.membership-sub {
+  list-style: none;
+  margin: 4px 0 8px 1.6em;
+  font-size: 13px;
+  color: var(--mut);
+}
+
+.membership-cta {
+  display: inline-block;
+  margin-top: 36px;
+  border: 1px solid var(--dot);
+  padding: 12px 26px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--body);
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.membership-cta:hover {
+  border-color: var(--mut);
+  color: var(--ink);
+}
+
+.membership-note {
+  margin-top: 2em;
+  font-size: 12px;
   color: var(--mut);
 }
 

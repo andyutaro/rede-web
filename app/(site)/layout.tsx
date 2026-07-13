@@ -4,6 +4,7 @@ import { Noto_Sans_JP } from 'next/font/google'
 import NavLinks from './NavLinks'
 import ThemeToggle from './ThemeToggle'
 import SiteMenu from './SiteMenu'
+import Wordmark from './Wordmark'
 import ImageLightbox from './ImageLightbox'
 import './site.css'
 
@@ -40,11 +41,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       {/* ナビはMENUに格納(2026-07-12)。押すとオーバーレイで縦一列に展開 */}
       <SiteMenu />
       <header className="site-header measure">
-        <div className="wordmark">
-          <Link href="/">
-            Andy<span className="wm-role">〔 Podcaster 〕</span>
-          </Link>
-        </div>
+        <Wordmark />
       </header>
       <ImageLightbox>
         <main>{children}</main>
