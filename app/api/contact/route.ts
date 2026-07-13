@@ -5,8 +5,38 @@ import { TOPICS } from '@/app/(site)/contact/content'
 // 問い合わせの受付(公開エンドポイント)。
 // - 保存はservice role(anonの書き込みポリシーは作らない=直POSTでの荒らし面を狭める)
 // - honeypot(website欄)が埋まっていたら黙って成功を返す(botに学習させない)
+// - IP毎の簡易レート制限で連続スパムの敷居を上げる
 // - 保存が成功したらResendでメール通知(失敗しても保存は生きているので握りつぶす)
+
+// 簡易レート制限(IP毎, 直近60秒で5件まで)。サーバーレスはインスタンス毎メモリのため
+// 完全ではない(恒久対策はVercel Firewall/Upstash等)が、単一インスタンスへの
+// 連続POSTの敷居を上げてDB肥大・メール枠枯渇を抑える。
+const RL_WINDOW_MS = 60_000
+const RL_MAX = 5
+const rlHits = new Map<string, number[]>()
+function rateLimited(ip: string): boolean {
+  const now = Date.now()
+  const recent = (rlHits.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS)
+  recent.push(now)
+  rlHits.set(ip, recent)
+  // メモリ肥大防止: 溜まったら期限切れキーを掃除する
+  if (rlHits.size > 5000) {
+    for (const [k, v] of rlHits) {
+      if (v.every((t) => now - t >= RL_WINDOW_MS)) rlHits.delete(k)
+    }
+  }
+  return recent.length > RL_MAX
+}
+
 export async function POST(request: Request) {
+  const ip = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown'
+  if (rateLimited(ip)) {
+    return NextResponse.json(
+      { error: '短時間に送信が集中しています。しばらく待ってからもう一度お試しください。' },
+      { status: 429 }
+    )
+  }
+
   let body: { name?: string; email?: string; topics?: string[]; message?: string; website?: string }
   try {
     body = JSON.parse(await request.text())
