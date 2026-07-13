@@ -58,6 +58,13 @@ export async function fetchShowFeed(feedUrl: string, since?: string): Promise<Sh
   return feed
 }
 
+// enclosure(MP3)を持つエピソードからランダムに1本(Homeの背景波形の音源)。
+// Math.randomはコンポーネント本体でなくここに閉じる(render純粋性)
+export function randomAudioEpisode(feed: ShowFeed | null): Episode | null {
+  const eps = (feed?.episodes ?? []).filter((e) => e.audioUrl)
+  return eps.length ? eps[Math.floor(Math.random() * eps.length)] : null
+}
+
 // Homeのカバー+最新日付用の薄いラッパー
 export async function channelInfo(
   feedUrl: string,

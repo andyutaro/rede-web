@@ -372,6 +372,115 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   color: var(--ink);
 }
 
+/* ---- トップページ背景波形 + サウンドオン(2026-07-13、ハンドオフ実装) ---- */
+/* 波形: viewport縦中央に固定の背景レイヤー。コンテンツの背後・クリック透過 */
+.wave-bg {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* 地の上・本文の背後 */
+  pointer-events: none;
+}
+
+/* サウンド一式(ボタン・LIVE・now playing)。右空白の中央に固定 */
+.sound-btn {
+  position: fixed;
+  left: 84%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6; /* 本文の上・MENUオーバーレイ(30)の下 */
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 1px solid var(--dot);
+  background: var(--sel);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.sound-btn:hover {
+  background: var(--ghost);
+  border-color: var(--mut);
+}
+
+.sound-cluster.is-playing .sound-btn {
+  border-color: var(--mut);
+}
+
+.sound-live {
+  position: fixed;
+  left: 84%;
+  top: calc(50% - 82px);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: none;
+  align-items: center;
+  gap: 7px;
+}
+
+.sound-cluster.is-playing .sound-live {
+  display: flex;
+}
+
+.sound-live .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--live);
+  animation: sound-live-pulse 1.4s ease-in-out infinite;
+}
+
+.sound-live .label {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--live);
+}
+
+@keyframes sound-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.sound-nowplaying {
+  position: fixed;
+  left: 84%;
+  top: calc(50% + 70px);
+  transform: translateX(-50%);
+  z-index: 6;
+  text-align: center;
+  width: 260px;
+}
+
+.sound-nowplaying .status {
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  color: var(--faint);
+}
+
+.sound-cluster.is-playing .sound-nowplaying .status {
+  color: var(--mut);
+}
+
+.sound-nowplaying .ep {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--body);
+}
+
 /* ---- 更新リスト(§4): 日付+種別ラベル+(scribeのみ)冒頭抜粋を1行ellipsis ---- */
 .update-row {
   display: flex;
@@ -1940,6 +2049,28 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 
   .site-menu-link {
     font-size: 14px;
+  }
+
+  /* サウンドボタンは下部中央へ退避(右空白が無いため)。波形は自動で全幅描画に切替 */
+  .sound-btn {
+    left: 50%;
+    top: auto;
+    bottom: 78px;
+    transform: translateX(-50%);
+    width: 72px;
+    height: 72px;
+  }
+
+  .sound-live {
+    left: 50%;
+    top: auto;
+    bottom: 158px;
+  }
+
+  .sound-nowplaying {
+    left: 50%;
+    top: auto;
+    bottom: 20px;
   }
 
   .section {

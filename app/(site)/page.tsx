@@ -3,11 +3,12 @@ import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { recentUpdates } from '@/lib/site/updates'
 import { randomPhotoWithHref } from '@/lib/site/photos'
-import { SHOWS } from '@/lib/site/shows'
-import { channelInfo } from '@/lib/site/podcastFeed'
+import { SHOWS, showBySlug } from '@/lib/site/shows'
+import { channelInfo, fetchShowFeed, randomAudioEpisode } from '@/lib/site/podcastFeed'
 import CoverGrid from './CoverGrid'
 import LiveWindow from './LiveWindow'
 import UpdateList from './UpdateList'
+import WaveformHero from './WaveformHero'
 
 // ライブ・ランダム写真・当日行はリクエストごとに変わるので静的化しない
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,11 @@ export default async function Home() {
   const today = todayInTokyo()
   const service = createService()
 
-  const [todayRes, updates, photo, covers] = await Promise.all([
+  // トップの背景波形に載せる音源: サカナカイギからランダムに1本(READMEの選定方針)
+  const saka = showBySlug('sakanakaigi')
+  const sakaFeed = saka?.feed ? fetchShowFeed(saka.feed, saka.since) : Promise.resolve(null)
+
+  const [todayRes, updates, photo, covers, feed] = await Promise.all([
     service.from('scribe_days').select('html').eq('date', today).maybeSingle(),
     recentUpdates(10, true), // HomeのLAST 10 DAYSはミニマル表記
     // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
@@ -31,9 +36,17 @@ export default async function Home() {
         s.feed ? channelInfo(s.feed, s.since) : Promise.resolve({ image: null, latest: null })
       )
     ),
+    sakaFeed,
   ])
 
   const initialHtml = todayRes.data?.html || null
+
+  // enclosure(MP3)を持つエピソードから1本ランダムに。取れなければ波形のみ表示
+  const pick = randomAudioEpisode(feed)
+  const heroEpisode =
+    pick && pick.audioUrl
+      ? { audioUrl: pick.audioUrl, showName: saka?.name ?? 'サカナカイギ', title: pick.title }
+      : null
   // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
   // 並びは各群とも最新エピソードが新しい順(左が最新)
   const withArt = SHOWS.map((s, i) => ({
@@ -48,6 +61,9 @@ export default async function Home() {
 
   return (
     <div className="measure">
+      {/* トップページ背景波形 + サウンドオン(2026-07-13)。波形は固定背景・音は既定ミュート */}
+      <WaveformHero episode={heroEpisode} />
+
       {originals.length > 0 && <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} />}
       {works.length > 0 && <CoverGrid heading="PODCAST — WORKS" shows={works} />}
 
