@@ -23,10 +23,10 @@ export async function searchScribe(query: string): Promise<SearchHit[]> {
   const escaped = q.replace(/[\\%_]/g, '\\$&')
 
   const service = createService()
-  // '*': deleted_at列がマイグレーション未実行でも壊れない読み方
+  // 抜粋生成に使う列だけ読む(deleted_at列はstudioのゴミ箱実装で存在確認済み)
   const { data, error } = await service
     .from('scribe_days')
-    .select('*')
+    .select('date, html, deleted_at')
     .not('finalized_at', 'is', null)
     .ilike('html', `%${escaped}%`)
     .order('date', { ascending: false })

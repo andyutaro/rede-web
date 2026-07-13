@@ -14,14 +14,17 @@ export function htmlToPlainText(html: string): string {
     .trim()
 }
 
-export function excerpt(html: string, length = 80): string {
-  return htmlToPlainText(html).slice(0, length)
-}
-
 // 本文の最初の<img>のsrc(サムネイル決定ロジック①、handoff-notes §11)
 export function firstImageSrc(html: string): string | null {
   const m = html.match(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i)
   return m ? m[1] : null
+}
+
+// 東京タイムゾーンのYYYY-MM-DD導出(en-CA=ISO形式)。フォーマッタ生成は高コストなので
+// モジュールで1回だけ作り、一覧系(1行毎に日付導出)から共有する
+const TOKYO_YMD = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' })
+export function tokyoYmd(date: string | Date): string {
+  return TOKYO_YMD.format(typeof date === 'string' ? new Date(date) : date)
 }
 
 // 「2026-07-03」→「2026.07.03」(リスト用) / 「07.03」(タイル用)(§10)
@@ -38,9 +41,7 @@ export function scribeTitle(isoDate: string): string {
 // 一覧の日付表記規則(2026-07-10): 今年のものは「07.09」、
 // 今年より前のものは年入り「2025.07.09」(Article/scribe/Podcast共通)
 export function dateShort(isoDate: string): string {
-  const currentYear = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' })
-    .format(new Date())
-    .slice(0, 4)
+  const currentYear = tokyoYmd(new Date()).slice(0, 4)
   return isoDate.startsWith(currentYear)
     ? isoDate.slice(5).replace('-', '.')
     : isoDate.replaceAll('-', '.')

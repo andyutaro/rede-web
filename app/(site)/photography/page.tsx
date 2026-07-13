@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { createService } from '@/lib/supabase/service'
-import { firstImageSrc } from '@/lib/site/text'
+import { firstImageSrc, tokyoYmd } from '@/lib/site/text'
 import { assignedOf, listAllImages } from '@/lib/site/photos'
 import PhotoGrid, { type PhotoItem } from './PhotoGrid'
 
@@ -32,9 +32,7 @@ export default async function PhotographyPage() {
         id: a.id as string,
         kind: (a.photo_kind as 'artwork' | 'photolog' | null) ?? 'photolog',
         title: ((a.title as string) || '').trim() || '(無題)',
-        date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
-          new Date(a.published_at as string)
-        ),
+        date: tokyoYmd(a.published_at as string),
         thumb,
         assigned: !a.thumbnail_url && !first && Boolean(thumb),
       }

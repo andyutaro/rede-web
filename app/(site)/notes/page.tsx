@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
-import { firstImageSrc } from '@/lib/site/text'
+import { firstImageSrc, tokyoYmd } from '@/lib/site/text'
 import { assignedOf, listAllImages } from '@/lib/site/photos'
 import ArticleGrid, { type GridItem } from './ArticleGrid'
 
@@ -29,6 +29,9 @@ export default async function ArticlePage() {
   ])
 
   const items: GridItem[] = []
+  // 焼き込み(サムネイルの昇格・充当固定)はレンダーをブロックしない:
+  // ループ内で直列awaitせず集めて最後に並列実行(書き込みは差分がある日だけ=稀)
+  const burnIns: PromiseLike<unknown>[] = []
 
   for (const row of days ?? []) {
     if (row.deleted_at) continue // ゴミ箱(studio)入りの日は公開一覧から消す
@@ -55,10 +58,12 @@ export default async function ArticlePage() {
     } else if (first) {
       thumb = first
       if (row.thumbnail_url !== first && 'thumbnail_url' in row) {
-        await service
-          .from('scribe_days')
-          .update({ thumbnail_url: first, thumbnail_source: 'first_image' })
-          .eq('date', date)
+        burnIns.push(
+          service
+            .from('scribe_days')
+            .update({ thumbnail_url: first, thumbnail_source: 'first_image' })
+            .eq('date', date)
+        )
       }
     } else if (row.thumbnail_url) {
       thumb = row.thumbnail_url as string
@@ -68,25 +73,24 @@ export default async function ArticlePage() {
       thumb = assignedOf(pool, date)
       assigned = thumb !== null
       if (thumb && 'thumbnail_url' in row) {
-        await service
-          .from('scribe_days')
-          .update({ thumbnail_url: thumb, thumbnail_source: 'assigned' })
-          .eq('date', date)
+        burnIns.push(
+          service
+            .from('scribe_days')
+            .update({ thumbnail_url: thumb, thumbnail_source: 'assigned' })
+            .eq('date', date)
+        )
       }
     }
     items.push({ key: `scribe-${date}`, kind: 'scribe', date, href: `/scribe/${date}`, thumb, assigned })
   }
+  if (burnIns.length > 0) await Promise.all(burnIns)
 
   if (!artRes.error) {
     for (const a of artRes.data ?? []) {
       if (!a.published_at) continue
-      const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
-        new Date(a.published_at as string)
-      )
-      const thumb =
-        (a.thumbnail_url as string | null) ??
-        firstImageSrc((a.html as string) ?? '') ??
-        assignedOf(pool, a.id as string)
+      const date = tokyoYmd(a.published_at as string)
+      const first = firstImageSrc((a.html as string) ?? '')
+      const thumb = (a.thumbnail_url as string | null) ?? first ?? assignedOf(pool, a.id as string)
       items.push({
         key: `article-${a.id}`,
         kind: a.type === 'photography' ? 'photography' : 'article',
@@ -94,7 +98,7 @@ export default async function ArticlePage() {
         href: `/notes/${a.id}`,
         title: (a.title as string) || '(無題)',
         thumb,
-        assigned: !a.thumbnail_url && !firstImageSrc((a.html as string) ?? '') && Boolean(thumb),
+        assigned: !a.thumbnail_url && !first && Boolean(thumb),
       })
     }
   }

@@ -4,7 +4,8 @@ import { getContactContent } from '@/lib/site/pages'
 import Accordion from '../about/Accordion'
 import ContactForm from './ContactForm'
 
-export const dynamic = 'force-dynamic'
+// ISR: 文言は/api/pages/saveのrevalidatePathで即時反映されるので毎リクエスト読まない
+export const revalidate = 1800
 
 export const metadata: Metadata = { title: 'Contact' }
 

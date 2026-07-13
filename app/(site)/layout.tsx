@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { Noto_Sans_JP } from 'next/font/google'
 import NavLinks from './NavLinks'
@@ -30,11 +31,16 @@ export const metadata: Metadata = {
 // キーはandy-theme("dark"/"light")、既定はライト。
 const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}`
 
-export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  // 背景波形+ランダム再生は全ページ共通(2026-07-13、旧: Homeのみ)。
-  // 音源はON-AIRDO・ミモリラジオ・サカナカイギの3番組から(2026-07-14 Andy指定)。
-  // まず番組を等確率で選び、次にその番組内でランダム1本(番組選択は均等)。
-  // フィードは各30分キャッシュ。
+// 背景波形+ランダム再生は全ページ共通(2026-07-13、旧: Homeのみ)。
+// 音源はON-AIRDO・ミモリラジオ・サカナカイギの3番組から(2026-07-14 Andy指定)。
+// まず番組を等確率で選び、次にその番組内でランダム1本(番組選択は均等)。
+// フィードは各30分キャッシュ。
+//
+// layout本体でawaitせずSuspenseでストリーミングする(2026-07-14): キャッシュが
+// 冷えている時にRSS取得が全ページのシェル描画(ヘッダー/本文/フッター)を
+// ブロックしないため。fallbackは同じ波形(episode=null)なので差し替えは無縫
+// (波形はグローバルなrAF時刻から決定的に描かれる)。
+async function HeroEpisode() {
   const heroShows = ['onairdo', 'mimoriradio', 'sakanakaigi']
     .map(showBySlug)
     .filter((s): s is Show => !!s?.feed)
@@ -50,12 +56,17 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           href: `/podcast/${heroShow.slug}/${pick.episode.id}`,
         }
       : null
+  return <WaveformHero episode={heroEpisode} />
+}
 
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`site ${noto.variable}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
-      {/* 背景波形(固定・z:0)+サウンドオン。全ページ共通 */}
-      <WaveformHero episode={heroEpisode} />
+      {/* 背景波形(固定・z:-1)+サウンドオン。全ページ共通。エピソード解決を待たず波形を出す */}
+      <Suspense fallback={<WaveformHero episode={null} />}>
+        <HeroEpisode />
+      </Suspense>
       {/* 右上の縦積みUI(上から): テーマスイッチ → Contactピル → MENU */}
       <ThemeToggle />
       {/* Contactはナビから外し、テーマトグルの下に固定ピルとして置く(2026-07-12)。

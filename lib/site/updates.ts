@@ -1,5 +1,5 @@
 import { createService } from '@/lib/supabase/service'
-import { scribeTitle, htmlToPlainText } from './text'
+import { scribeTitle, htmlToPlainText, tokyoYmd } from './text'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { SHOWS } from './shows'
 import { fetchShowFeed } from './podcastFeed'
@@ -29,15 +29,38 @@ function clip(s: string, n: number): string {
 // compact: HomeのLAST 10 DAYS用。Podcastのエピソードタイトルを厳しめに切って「…」で省略する。
 export async function recentUpdates(limit = 10, compact = false): Promise<UpdateRow[]> {
   const service = createService()
+  const today = todayInTokyo()
 
-  // '*': deleted_at列がマイグレーション未実行でも壊れない読み方。
-  // ゴミ箱(studio)入りの日はUpdatesにも出さない
-  const { data: days } = await service
-    .from('scribe_days')
-    .select('*')
-    .not('finalized_at', 'is', null)
-    .order('date', { ascending: false })
-    .limit(limit + 10) // ゴミ箱分を除いてもlimit件を保てるよう余分に取る
+  // 5系統(確定scribe/当日scribe/記事/手動投稿/RSS)は互いに独立なので並列で読む
+  // (直列だと往復レイテンシが積み上がる)。列は表示に使う分だけ(htmlは当日行のみ)。
+  const [{ data: days }, { data: todayRow }, articlesRes, manualRes, feeds] = await Promise.all([
+    // ゴミ箱(studio)入りの日はUpdatesにも出さない
+    service
+      .from('scribe_days')
+      .select('date, finalized_at, deleted_at')
+      .not('finalized_at', 'is', null)
+      .order('date', { ascending: false })
+      .limit(limit + 10), // ゴミ箱分を除いてもlimit件を保てるよう余分に取る
+    service.from('scribe_days').select('html, finalized_at').eq('date', today).maybeSingle(),
+    // articlesテーブルはマイグレーション後に有効になる(未作成ならerrorで空のまま)
+    service
+      .from('articles')
+      .select('id, title, type, published_at')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(limit),
+    // 手動投稿(studioのUPDATES室)。テーブル未作成ならerrorで空のまま
+    service
+      .from('manual_updates')
+      .select('date, label, body, href, deleted_at')
+      .order('date', { ascending: false })
+      .limit(limit + 10),
+    // 各番組の直近エピソード(RSS)。フィードは番組ページ等と共有キャッシュ
+    Promise.all(
+      SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))
+    ),
+  ])
+
   const liveDays = (days ?? []).filter((d) => !d.deleted_at).slice(0, limit)
 
   const rows: UpdateRow[] = liveDays.map((d) => ({
@@ -51,12 +74,6 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
 
   // 当日分(未確定=上のクエリに含まれない)を、確定行と同じ形式で先頭に載せる。
   // 何か書かれている日だけ(空の日は載せない)。liveフラグでドットを付ける。href=当日ライブ全文。
-  const today = todayInTokyo()
-  const { data: todayRow } = await service
-    .from('scribe_days')
-    .select('html, finalized_at')
-    .eq('date', today)
-    .maybeSingle()
   if (todayRow && !todayRow.finalized_at && htmlToPlainText(todayRow.html as string).length > 0) {
     rows.push({
       date: today,
@@ -68,13 +85,7 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
     })
   }
 
-  // articlesテーブルはマイグレーション後に有効になる(未作成ならerrorで空のまま)
-  const { data: articles, error } = await service
-    .from('articles')
-    .select('id, title, type, published_at')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(limit)
+  const { data: articles, error } = articlesRes
 
   if (!error) {
     for (const a of articles ?? []) {
@@ -93,21 +104,14 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
             ? { kind: 'Physical' as const, label: 'PHYSICAL', excerpt: `『${clipped}』`, href: `/physical/${a.id}` }
             : { kind: 'Article' as const, label: 'NOTES', excerpt: `ARTICLE『${clipped}』`, href: `/notes/${a.id}` }
       rows.push({
-        date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
-          new Date(a.published_at as string)
-        ),
+        date: tokyoYmd(a.published_at as string),
         ...row,
       })
     }
   }
 
-  // 手動投稿(studioのUPDATES室)。テーブル未作成ならerrorで空のまま。
-  // ゴミ箱入りは出さない。リンク先が無い行はhref=''(表示側で非リンク)
-  const { data: manual, error: manualErr } = await service
-    .from('manual_updates')
-    .select('*')
-    .order('date', { ascending: false })
-    .limit(limit + 10)
+  // 手動投稿: ゴミ箱入りは出さない。リンク先が無い行はhref=''(表示側で非リンク)
+  const { data: manual, error: manualErr } = manualRes
   if (!manualErr) {
     for (const m of manual ?? []) {
       if (m.deleted_at) continue
@@ -122,11 +126,8 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
     }
   }
 
-  // 各番組の直近エピソード(RSS)。フィードは番組ページ等と共有キャッシュ。
-  // sinceで旧番組の混入を除去(BrandShift)。マージ後にlimitで切るので各番組はlimit件で十分。
-  const feeds = await Promise.all(
-    SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))
-  )
+  // 各番組の直近エピソード。sinceで旧番組の混入を除去(BrandShift)。
+  // マージ後にlimitで切るので各番組はlimit件で十分。
   SHOWS.forEach((s, i) => {
     const feed = feeds[i]
     if (!feed) return

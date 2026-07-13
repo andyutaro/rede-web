@@ -30,17 +30,23 @@ const TTL_MS = 30 * 60 * 1000 // 新エピソードが30分以内にサイトへ
 
 // サーバーインスタンス内キャッシュ(Nextのデータキャッシュ併用)。
 // フィードは全話分で数百KB〜になるため、リクエストごとの再取得・再パースを避ける。
-// sinceはキャッシュキーに含める(番組ごとに絞り込み境界が違うため)
-const cache = new Map<string, { feed: ShowFeed | null; ts: number }>()
+// Promiseを入れる=同時リクエスト(layoutのヒーロー+ページ本体等)が同じフィードを
+// 重複fetch+重複パースしない(in-flight共有)。sinceはキャッシュキーに含める。
+const cache = new Map<string, { promise: Promise<ShowFeed | null>; ts: number }>()
 
 // since: この日付(東京, YYYY-MM-DD)より前のエピソードを捨てる。
 // 同じAnchor枠で旧番組が配信されていた場合の混入除去(例: BrandShiftは新シリーズ
 // #001=2026-03-10以降のみ。それ以前は別番組がこの枠を使っていた)。
-export async function fetchShowFeed(feedUrl: string, since?: string): Promise<ShowFeed | null> {
+export function fetchShowFeed(feedUrl: string, since?: string): Promise<ShowFeed | null> {
   const key = since ? `${feedUrl}#${since}` : feedUrl
   const hit = cache.get(key)
-  if (hit && Date.now() - hit.ts < TTL_MS) return hit.feed
+  if (hit && Date.now() - hit.ts < TTL_MS) return hit.promise
+  const promise = loadFeed(feedUrl, since)
+  cache.set(key, { promise, ts: Date.now() })
+  return promise
+}
 
+async function loadFeed(feedUrl: string, since?: string): Promise<ShowFeed | null> {
   let feed: ShowFeed | null = null
   try {
     const res = await fetch(feedUrl, { next: { revalidate: 1800 } })
@@ -54,15 +60,7 @@ export async function fetchShowFeed(feedUrl: string, since?: string): Promise<Sh
   } catch {
     // フィード到達不可: null(表示側はその番組を出さない/エピソードなし扱い)
   }
-  cache.set(key, { feed, ts: Date.now() })
   return feed
-}
-
-// enclosure(MP3)を持つエピソードからランダムに1本(Homeの背景波形の音源)。
-// Math.randomはコンポーネント本体でなくここに閉じる(render純粋性)
-export function randomAudioEpisode(feed: ShowFeed | null): Episode | null {
-  const eps = (feed?.episodes ?? []).filter((e) => e.audioUrl)
-  return eps.length ? eps[Math.floor(Math.random() * eps.length)] : null
 }
 
 // 複数番組から背景波形の音源をランダム1本選ぶ。まず「番組」を等確率で選び、
@@ -118,11 +116,14 @@ function httpsUrl(url: string | null): string | null {
   return url && /^https:\/\//i.test(url) ? url : null
 }
 
+// フォーマッタ生成は高コストなのでモジュールで1回だけ(パースはエピソード数ぶん呼ぶ)
+const TOKYO_YMD = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' })
+
 function toTokyoDate(pubDate: string | null): string | null {
   if (!pubDate) return null
   const d = new Date(pubDate)
   if (Number.isNaN(d.getTime())) return null
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(d)
+  return TOKYO_YMD.format(d)
 }
 
 function parseFeed(xml: string): ShowFeed {

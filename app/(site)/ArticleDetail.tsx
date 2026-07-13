@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
-import { dateDots } from '@/lib/site/text'
+import { dateDots, tokyoYmd } from '@/lib/site/text'
 import Pager from './Pager'
 import ScribeArchive from './scribe/ScribeArchive'
 
@@ -48,11 +48,7 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
   const home = shelfOf(a.type as string)
   if (home !== shelf) redirect(`/${home}/${id}`)
 
-  const date = a.published_at
-    ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
-        new Date(a.published_at as string)
-      )
-    : null
+  const date = a.published_at ? tokyoYmd(a.published_at as string) : null
 
   // 戻る・進む: published_at順、同じ棚の中だけ
   const service = createService()

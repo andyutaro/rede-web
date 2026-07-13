@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createService } from '@/lib/supabase/service'
-import { firstImageSrc, dateShort } from '@/lib/site/text'
+import { firstImageSrc, dateShort, tokyoYmd } from '@/lib/site/text'
 import { assignedOf, listAllImages } from '@/lib/site/photos'
 
 export const dynamic = 'force-dynamic'
@@ -31,9 +31,7 @@ export default async function PhysicalPage() {
       return {
         id: a.id as string,
         title: ((a.title as string) || '').trim() || '(無題)',
-        date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(
-          new Date(a.published_at as string)
-        ),
+        date: tokyoYmd(a.published_at as string),
         thumb,
         assigned: !a.thumbnail_url && !first && Boolean(thumb),
       }
