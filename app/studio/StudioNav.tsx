@@ -12,6 +12,7 @@ const ROOMS = [
   { href: '/studio/updates', label: 'UPDATES' },
   { href: '/studio/thumbnails', label: 'THUMBNAILS' },
   { href: '/studio/tags', label: 'TAGS' },
+  { href: '/studio/pages', label: 'PAGES' },
   { href: '/studio/contact', label: 'CONTACT' },
   { href: '/studio/usage', label: 'USAGE' },
 ] as const

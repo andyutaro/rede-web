@@ -1020,3 +1020,59 @@
     gap: 4px 14px;
   }
 }
+
+/* ---- PAGES室: 固定ページの文章編集(2026-07-13) ---- */
+.page-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  max-width: 680px;
+}
+
+.page-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-field-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #a8a49c;
+}
+
+.page-field-hint {
+  font-size: 10px;
+  color: #6b6b6b;
+  line-height: 1.6;
+}
+
+.page-editor input,
+.page-editor textarea {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #e8e6e0;
+  font: inherit;
+  font-size: 13px;
+  line-height: 2;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.page-editor input:focus,
+.page-editor textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.page-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-editor-msg {
+  font-size: 11px;
+  color: #6b6b6b;
+}

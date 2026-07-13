@@ -5,7 +5,10 @@ import NavLinks from './NavLinks'
 import ThemeToggle from './ThemeToggle'
 import SiteMenu from './SiteMenu'
 import Wordmark from './Wordmark'
+import WaveformHero from './WaveformHero'
 import ImageLightbox from './ImageLightbox'
+import { showBySlug } from '@/lib/site/shows'
+import { fetchShowFeed, randomAudioEpisode } from '@/lib/site/podcastFeed'
 import './site.css'
 
 // 細字タイポ(200/300)が杉本肌の核。400以上は使わない
@@ -27,10 +30,27 @@ export const metadata: Metadata = {
 // キーはandy-theme("dark"/"light")、既定はライト。
 const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}`
 
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  // 背景波形+ランダム再生は全ページ共通(2026-07-13、旧: Homeのみ)。
+  // サカナカイギからランダム1本(フィードは30分キャッシュ)
+  const saka = showBySlug('sakanakaigi')
+  const feed = saka?.feed ? await fetchShowFeed(saka.feed, saka.since) : null
+  const pick = randomAudioEpisode(feed)
+  const heroEpisode =
+    pick && pick.audioUrl && saka
+      ? {
+          audioUrl: pick.audioUrl,
+          showName: saka.display ?? saka.name,
+          title: pick.title,
+          href: `/podcast/${saka.slug}/${pick.id}`,
+        }
+      : null
+
   return (
     <div className={`site ${noto.variable}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      {/* 背景波形(固定・z:0)+サウンドオン。全ページ共通 */}
+      <WaveformHero episode={heroEpisode} />
       {/* 右上の縦積みUI(上から): テーマスイッチ → Contactピル → MENU */}
       <ThemeToggle />
       {/* Contactはナビから外し、テーマトグルの下に固定ピルとして置く(2026-07-12)。
@@ -44,13 +64,13 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         <Wordmark />
       </header>
       <ImageLightbox>
-        <main>{children}</main>
+        <main className="site-main">{children}</main>
       </ImageLightbox>
       <footer className="site-footer">
         <div className="measure">
           <NavLinks />
           <div className="copyright">
-            © 2026 YUTARO YASUDA
+            © 2026 ANDY YUTARO YASUDA
             <Link href="/privacy" className="footer-privacy">
               PRIVACY POLICY
             </Link>

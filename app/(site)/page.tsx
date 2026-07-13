@@ -3,12 +3,11 @@ import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { recentUpdates } from '@/lib/site/updates'
 import { randomPhotoWithHref } from '@/lib/site/photos'
-import { SHOWS, showBySlug } from '@/lib/site/shows'
-import { channelInfo, fetchShowFeed, randomAudioEpisode } from '@/lib/site/podcastFeed'
+import { SHOWS } from '@/lib/site/shows'
+import { channelInfo } from '@/lib/site/podcastFeed'
 import CoverGrid from './CoverGrid'
 import LiveWindow from './LiveWindow'
 import UpdateList from './UpdateList'
-import WaveformHero from './WaveformHero'
 
 // ライブ・ランダム写真・当日行はリクエストごとに変わるので静的化しない
 export const dynamic = 'force-dynamic'
@@ -20,11 +19,7 @@ export default async function Home() {
   const today = todayInTokyo()
   const service = createService()
 
-  // トップの背景波形に載せる音源: サカナカイギからランダムに1本(READMEの選定方針)
-  const saka = showBySlug('sakanakaigi')
-  const sakaFeed = saka?.feed ? fetchShowFeed(saka.feed, saka.since) : Promise.resolve(null)
-
-  const [todayRes, updates, photo, covers, feed] = await Promise.all([
+  const [todayRes, updates, photo, covers] = await Promise.all([
     service.from('scribe_days').select('html').eq('date', today).maybeSingle(),
     recentUpdates(10, true), // HomeのLAST 10 DAYSはミニマル表記
     // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
@@ -36,23 +31,11 @@ export default async function Home() {
         s.feed ? channelInfo(s.feed, s.since) : Promise.resolve({ image: null, latest: null })
       )
     ),
-    sakaFeed,
   ])
 
   const initialHtml = todayRes.data?.html || null
 
-  // enclosure(MP3)を持つエピソードから1本ランダムに。取れなければ波形のみ表示
-  const pick = randomAudioEpisode(feed)
-  const heroEpisode =
-    pick && pick.audioUrl && saka
-      ? {
-          audioUrl: pick.audioUrl,
-          showName: saka.display ?? saka.name,
-          title: pick.title,
-          // 再生中タイトルのタップ先(サイト上の当該エピソードページ)
-          href: `/podcast/${saka.slug}/${pick.id}`,
-        }
-      : null
+  // 背景波形+ランダム再生はlayoutへ移設(全ページ共通、2026-07-13)。Homeは通常のmeasure構成に戻す
   // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
   // 並びは各群とも最新エピソードが新しい順(左が最新)
   const withArt = SHOWS.map((s, i) => ({
@@ -66,13 +49,7 @@ export default async function Home() {
   const works = withArt.filter((s) => s.group === 'works')
 
   return (
-    <>
-      {/* トップページ背景波形 + サウンドオン(2026-07-13)。波形は固定背景(z:0)・音は既定ミュート。
-          canvasはz-index付きの本文ラッパー(.home-content, z:1)の外(兄弟)に置く=波形が本文の背後に入る */}
-      <WaveformHero episode={heroEpisode} />
-
-      <div className="measure home-content">
-
+    <div className="measure">
       {originals.length > 0 && <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} />}
       {works.length > 0 && <CoverGrid heading="PODCAST — WORKS" shows={works} />}
 
@@ -116,7 +93,6 @@ export default async function Home() {
       )}
 
       {/* Tags(§7)は手動タグ付け開始まで非表示(ダミー不可)。タグ実装時にここへ */}
-      </div>
-    </>
+    </div>
   )
 }
