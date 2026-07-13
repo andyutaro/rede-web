@@ -200,25 +200,29 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
 
   return (
     <>
-      <canvas ref={canvasRef} className="wave-bg" aria-hidden="true" />
+      {/* 再生中はオーバーレイ(z:24)の上へ持ち上げて波形を見せる */}
+      <canvas ref={canvasRef} className={`wave-bg${playing ? ' playing' : ''}`} aria-hidden="true" />
 
-      {/* 再生中の背景ぼかし + エピソードタイトル(タップで当該エピソードへ) */}
+      {/* 再生中の背景ぼかし(クリックで停止)。タイトル/波形はこの上に出す */}
       {episode && (
         <div
           className={`sound-overlay${playing ? ' on' : ''}`}
           aria-hidden={!playing}
           onClick={() => audioRef.current?.pause()}
-        >
-          <div className="sound-title" onClick={(e) => e.stopPropagation()}>
-            <div className="sound-nowlabel">
-              <span className="dot" />
-              NOW PLAYING
-            </div>
-            <Link href={episode.href} className="sound-ep">
-              <span className="show">{episode.showName}</span>
-              <span className="ttl">{episode.title}</span>
-            </Link>
+        />
+      )}
+
+      {/* エピソードタイトル(z:26 = 波形より前で読める。タップで当該エピソードへ) */}
+      {episode && (
+        <div className={`sound-title${playing ? ' on' : ''}`} aria-hidden={!playing}>
+          <div className="sound-nowlabel">
+            <span className="dot" />
+            NOW PLAYING
           </div>
+          <Link href={episode.href} className="sound-ep">
+            <span className="show">{episode.showName}</span>
+            <span className="ttl">{episode.title}</span>
+          </Link>
         </div>
       )}
 
