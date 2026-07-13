@@ -44,8 +44,14 @@ export default async function Home() {
   // enclosure(MP3)を持つエピソードから1本ランダムに。取れなければ波形のみ表示
   const pick = randomAudioEpisode(feed)
   const heroEpisode =
-    pick && pick.audioUrl
-      ? { audioUrl: pick.audioUrl, showName: saka?.name ?? 'サカナカイギ', title: pick.title }
+    pick && pick.audioUrl && saka
+      ? {
+          audioUrl: pick.audioUrl,
+          showName: saka.display ?? saka.name,
+          title: pick.title,
+          // 再生中タイトルのタップ先(サイト上の当該エピソードページ)
+          href: `/podcast/${saka.slug}/${pick.id}`,
+        }
       : null
   // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
   // 並びは各群とも最新エピソードが新しい順(左が最新)

@@ -400,24 +400,24 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   z-index: 1;
 }
 
-/* サウンド一式(ボタン・LIVE・now playing)。右空白の中央に固定 */
+/* サウンドボタン: 右レール(テーマ/Contact/MENU)と同幅のピル。X=レール、Y=画面中央固定 */
 .sound-btn {
   position: fixed;
-  left: 84%;
+  right: 22px;
   top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 6; /* 本文の上・MENUオーバーレイ(30)の下 */
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  border: 1px solid var(--dot);
+  transform: translateY(-50%);
+  z-index: 26; /* 再生時のぼかしオーバーレイ(24)より前=常に押せる。MENU(30)の下 */
+  width: 72px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--mut);
   background: var(--sel);
   color: var(--ink);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.3s ease, border-color 0.3s ease;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
 .sound-btn:hover {
@@ -425,37 +425,61 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   border-color: var(--mut);
 }
 
-.sound-cluster.is-playing .sound-btn {
-  border-color: var(--mut);
+/* 再生中は反転(=アクティブ) */
+.sound-btn.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
 }
 
-.sound-live {
+/* 再生中の背景ぼかし(メニュー展開と同じ文法)。タイトルはこの上に立つ */
+.sound-overlay {
   position: fixed;
-  left: 84%;
-  top: calc(50% - 82px);
-  transform: translateX(-50%);
-  z-index: 6;
-  display: none;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 24;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.sound-overlay.on {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 再生中のエピソードタイトル。画面中央に静かに立つ */
+.sound-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  max-width: min(560px, 82vw);
+  padding: 0 24px;
+}
+
+.sound-nowlabel {
+  display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--live);
+  margin-bottom: 24px;
 }
 
-.sound-cluster.is-playing .sound-live {
-  display: flex;
-}
-
-.sound-live .dot {
+.sound-nowlabel .dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--live);
   animation: sound-live-pulse 1.4s ease-in-out infinite;
-}
-
-.sound-live .label {
-  font-size: 10px;
-  letter-spacing: 0.28em;
-  color: var(--live);
 }
 
 @keyframes sound-live-pulse {
@@ -468,31 +492,30 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   }
 }
 
-.sound-nowplaying {
-  position: fixed;
-  left: 84%;
-  top: calc(50% + 70px);
-  transform: translateX(-50%);
-  z-index: 6;
-  text-align: center;
-  width: 260px;
+.sound-ep {
+  display: block;
 }
 
-.sound-nowplaying .status {
-  font-size: 10px;
-  letter-spacing: 0.26em;
-  color: var(--faint);
-}
-
-.sound-cluster.is-playing .sound-nowplaying .status {
+.sound-ep .show {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.24em;
   color: var(--mut);
+  margin-bottom: 16px;
 }
 
-.sound-nowplaying .ep {
-  margin-top: 10px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--body);
+.sound-ep .ttl {
+  display: block;
+  font-size: 22px;
+  font-weight: 200;
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  transition: color 0.2s;
+}
+
+.sound-ep:hover .ttl {
+  color: var(--mut);
 }
 
 /* ---- 更新リスト(§4): 日付+種別ラベル+(scribeのみ)冒頭抜粋を1行ellipsis ---- */
@@ -2065,26 +2088,15 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     font-size: 14px;
   }
 
-  /* サウンドボタンは下部中央へ退避(右空白が無いため)。波形は自動で全幅描画に切替 */
+  /* サウンドボタンは右レール(他ピルと同幅)のままY中央。波形はその左エッジへ接続 */
   .sound-btn {
-    left: 50%;
-    top: auto;
-    bottom: 78px;
-    transform: translateX(-50%);
-    width: 72px;
-    height: 72px;
+    right: 12px;
+    width: 62px;
+    height: 27px;
   }
 
-  .sound-live {
-    left: 50%;
-    top: auto;
-    bottom: 158px;
-  }
-
-  .sound-nowplaying {
-    left: 50%;
-    top: auto;
-    bottom: 20px;
+  .sound-ep .ttl {
+    font-size: 19px;
   }
 
   .section {
