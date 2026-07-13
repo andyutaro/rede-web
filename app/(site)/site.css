@@ -2076,6 +2076,12 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     left: calc(100% - 24px);
   }
 
+  /* スマホは右空白が無く、ピルがコンテンツに重なる。透けて混ざらないよう
+     地を不透明(--bg)にしてクリーンなチップとして立たせる(2026-07-13) */
+  .theme-toggle .tt-track {
+    background: var(--bg);
+  }
+
   /* Contactピルはスイッチ(top12+高さ27)の下に8px空ける */
   .contact-pill {
     top: 47px;
@@ -2083,6 +2089,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     width: 62px;
     height: 27px;
     font-size: 9px;
+    background: var(--bg);
   }
 
   .menu-toggle {
@@ -2108,10 +2115,27 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     right: 12px;
     width: 62px;
     height: 27px;
+    background: var(--bg);
+  }
+
+  /* 再生タイトル: 小画面で6行に折れ+ボタンと重なって窮屈だったため、
+     字を詰め・幅をレール手前まで絞り・行間を締めて整える(2026-07-13) */
+  .sound-title {
+    max-width: 74vw;
+    left: 46%; /* 右レールのボタンを避けて少し左へ寄せる */
+  }
+
+  .sound-nowlabel {
+    margin-bottom: 18px;
+  }
+
+  .sound-ep .show {
+    margin-bottom: 12px;
   }
 
   .sound-ep .ttl {
-    font-size: 19px;
+    font-size: 16px;
+    line-height: 1.75;
   }
 
   .section {
