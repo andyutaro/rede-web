@@ -65,6 +65,19 @@ export function randomAudioEpisode(feed: ShowFeed | null): Episode | null {
   return eps.length ? eps[Math.floor(Math.random() * eps.length)] : null
 }
 
+// 複数番組のenclosure付きエピソードを1つのプールにまとめ、その中からランダム1本。
+// どのフィード由来かを呼び出し側が辿れるようfeedIndexを返す(番組名・リンク解決用)。
+// 背景波形の音源を複数番組へ広げるため(2026-07-14)。Math.randomはここに閉じる。
+export function randomAudioEpisodeAcross(
+  feeds: (ShowFeed | null)[]
+): { feedIndex: number; episode: Episode } | null {
+  const pool: { feedIndex: number; episode: Episode }[] = []
+  feeds.forEach((feed, feedIndex) => {
+    for (const e of feed?.episodes ?? []) if (e.audioUrl) pool.push({ feedIndex, episode: e })
+  })
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null
+}
+
 // Homeのカバー+最新日付用の薄いラッパー
 export async function channelInfo(
   feedUrl: string,
