@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { todayInTokyo } from '@/lib/scribe/date'
 import DeskEditor from './DeskEditor'
+import SessionKeepAlive from '../studio/SessionKeepAlive'
 
 export default async function DeskPage() {
   const supabase = await createClient()
@@ -9,7 +10,7 @@ export default async function DeskPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // middlewareでも守っているが、直接のServer Component到達に対する二重の保険
+  // このServer Componentガードが唯一の門(旧proxy.tsはCloudflare移行で廃止、2026-07-14)
   if (!user) {
     redirect('/login')
   }
@@ -22,10 +23,13 @@ export default async function DeskPage() {
     .maybeSingle()
 
   return (
-    <DeskEditor
-      initialDate={date}
-      initialHtml={row?.html ?? ''}
-      initialUpdatedAt={row?.updated_at ?? null}
-    />
+    <>
+      <SessionKeepAlive />
+      <DeskEditor
+        initialDate={date}
+        initialHtml={row?.html ?? ''}
+        initialUpdatedAt={row?.updated_at ?? null}
+      />
+    </>
   )
 }

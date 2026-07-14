@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import StudioNav from './StudioNav'
+import SessionKeepAlive from './SessionKeepAlive'
 import './studio.css'
 
 export const metadata: Metadata = {
@@ -11,7 +12,8 @@ export const metadata: Metadata = {
 }
 
 // 編集室 /studio: 放送卓(/desk)と対になる管理画面。認証は同じSupabaseセッション。
-// proxyでも守っているが、Server Component直接到達への二重の保険(deskと同方式)。
+// このServer Componentガードが唯一の門(旧proxy.tsはCloudflare移行で廃止、2026-07-14)。
+// セッションの生存維持はSessionKeepAlive(/api/auth/refreshへの定期ping)が担う。
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const {
@@ -21,6 +23,7 @@ export default async function StudioLayout({ children }: { children: React.React
 
   return (
     <div className="studio">
+      <SessionKeepAlive />
       <header className="studio-bar">
         <span className="studio-mark">REDE STUDIO</span>
         <StudioNav />
