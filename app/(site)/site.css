@@ -2226,6 +2226,17 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     margin-top: 32px;
   }
 
+  /* フッターは成り行き折返しだと5/3/1の不揃いになりごちゃつく(2026-07-14 Andy指摘)。
+     9項目=3×3の格子に確定させる(列幅は各列の最長項目、セル内中央) */
+  .site-footer .site-nav {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-items: center;
+    justify-content: center;
+    gap: 18px 26px;
+    max-width: none;
+  }
+
   .theme-toggle {
     top: 12px;
     right: 12px;
