@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 // トップページの背景波形 + サウンドオン(2026-07-13。2026-07-13後半に整列/簡素化)。
@@ -164,6 +165,21 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
       audioRef.current?.pause()
       audioRef.current = null
     }
+  }, [])
+
+  // ページ遷移で再生と表示を止める(2026-07-14 Andy指摘)。layout常駐のため
+  // 遷移してもアンマウントされず、表示が開いたままだと「遷移したかどうか
+  // 極めて気付けない」。pause→'pause'イベント→setPlaying(false)で表示も閉じる
+  const pathname = usePathname()
+  useEffect(() => {
+    audioRef.current?.pause()
+  }, [pathname])
+
+  // メニューを開いたときも再生と表示を止める(SiteMenuが発するイベントを受ける)
+  useEffect(() => {
+    const onMenuOpen = () => audioRef.current?.pause()
+    window.addEventListener('andy:menu-open', onMenuOpen)
+    return () => window.removeEventListener('andy:menu-open', onMenuOpen)
   }, [])
 
   // 再生中は背面スクロールを止める(メニュー展開時と同じ挙動)

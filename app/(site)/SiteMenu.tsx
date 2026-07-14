@@ -42,7 +42,11 @@ export default function SiteMenu() {
       <button
         type="button"
         className={`menu-toggle${open ? ' open' : ''}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          // 開くとき、背景のランダム再生を止める(WaveformHeroが受けて表示ごと閉じる)
+          if (!open) window.dispatchEvent(new CustomEvent('andy:menu-open'))
+          setOpen(!open)
+        }}
         aria-expanded={open}
         aria-label="メニュー"
       >

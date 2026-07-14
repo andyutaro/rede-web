@@ -150,11 +150,15 @@
   opacity: 1;
 }
 
+/* ナビ項目が9つに増え、折返し無しだとmeasure(640px)から左右にはみ出して
+   約1000pxに広がっていた(2026-07-14 Andy指摘)。measureの中で静かに折り返す
+   (中央640pxの柱にすべてが収まる、という本サイトの原則に揃える) */
 .site-nav {
   margin-top: 44px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 32px;
+  gap: 16px 28px;
   font-size: 10px;
   letter-spacing: 0.28em;
 }
@@ -184,6 +188,12 @@
 
 .site-footer .site-nav {
   margin-top: 0;
+  /* 9項目を成り行きで折り返すと7+2の不揃いになる。400px上限で
+     5+4(345px/371px)のほぼ均等な2行に固定する(項目を変えたら要再調整)。
+     モバイルでは容器自体が400px未満なので実質無効=自然折返しのまま */
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .site-footer .copyright {
