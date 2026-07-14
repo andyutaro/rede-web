@@ -21,6 +21,8 @@ const noto = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = {
+  // OGP等のURLを本番ドメイン基準の絶対URLにする(2026-07-14、andyutaro.com紐付け)
+  metadataBase: new URL('https://andyutaro.com'),
   title: {
     default: 'Andy 〔 Podcaster 〕',
     template: '%s — Andy',

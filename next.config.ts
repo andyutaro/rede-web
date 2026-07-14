@@ -81,8 +81,15 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   async redirects() {
-    // Article棚はNotesへ改名(2026-07-10)。旧URLを永続リダイレクトで受ける
     return [
+      // wwwは正規のapexへ(2026-07-14、andyutaro.com紐付け)
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.andyutaro.com" }],
+        destination: "https://andyutaro.com/:path*",
+        permanent: true,
+      },
+      // Article棚はNotesへ改名(2026-07-10)。旧URLを永続リダイレクトで受ける
       { source: "/article", destination: "/notes", permanent: true },
       { source: "/article/:id", destination: "/notes/:id", permanent: true },
     ];

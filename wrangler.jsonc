@@ -1,5 +1,6 @@
-// Cloudflare Workers移行スパイク用(2026-07-14)。Vercel運用には影響しない。
-// 本採用時: routesにandyutaro.comを設定し、R2バケット(ISRキャッシュ)を足す。
+// Cloudflare Workers本番設定(2026-07-14スパイク→同日本採用)。
+// andyutaro.com/wwwはCustom Domains(DNS・証明書は自動管理)。
+// 残TODO: R2 incremental cache(ISR永続化。現状ISRページは毎回再生成=動作は正しい)。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "rede-web",
@@ -9,5 +10,9 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  "routes": [
+    { "pattern": "andyutaro.com", "custom_domain": true },
+    { "pattern": "www.andyutaro.com", "custom_domain": true }
+  ]
 }

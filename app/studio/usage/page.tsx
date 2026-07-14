@@ -13,14 +13,14 @@ const BUCKET = 'scribe-media'
 
 // Cloudflare Workers無料枠(2026-07-14): リクエスト10万/日(UTC 0時リセット)。
 // 超過すると当日は新規リクエストがエラーになる(勝手に課金はされない)。
-// 取得にはCF_API_TOKEN(Account Analytics:Read)とCF_ACCOUNT_IDが必要。
+// 取得にはCF_USAGE_TOKEN(Account Analytics:Read)とCF_USAGE_ACCOUNT_IDが必要。
 const CF_DAILY_LIMIT = 100_000
 
 type CfDay = { date: string; requests: number; errors: number }
 
 async function cloudflareStats(): Promise<{ days: CfDay[] } | { setup: true } | { error: string }> {
-  const token = process.env.CF_API_TOKEN
-  const account = process.env.CF_ACCOUNT_ID
+  const token = process.env.CF_USAGE_TOKEN
+  const account = process.env.CF_USAGE_ACCOUNT_ID
   if (!token || !account) return { setup: true }
 
   const end = new Date()
@@ -134,8 +134,8 @@ export default async function StudioUsage() {
         {'setup' in cf ? (
           <p className="studio-empty">
             未接続。Cloudflareダッシュボード → プロファイル → API Tokens で
-            「Account Analytics:Read」権限のトークンを作成し、CF_API_TOKEN と
-            CF_ACCOUNT_ID を環境変数(wrangler secret / Vercel)に設定してください
+            「Account Analytics:Read」権限のトークンを作成し、CF_USAGE_TOKEN と
+            CF_USAGE_ACCOUNT_ID を環境変数(wrangler secret / Vercel)に設定してください
           </p>
         ) : 'error' in cf ? (
           <p className="studio-empty">取得できません({cf.error})</p>
