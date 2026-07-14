@@ -21,16 +21,14 @@ const noto = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = {
-  // OGP等のURLを本番ドメイン基準の絶対URLにする(2026-07-14、andyutaro.com紐付け)
-  metadataBase: new URL('https://andyutaro.com'),
+  // metadataBaseはルートレイアウト(app/layout.tsx)で全ルートに設定済み
   title: {
     default: 'Andy 〔 Podcaster 〕',
     template: '%s — Andy',
   },
   description: 'Andy — Podcaster',
-  // 画像はapp/直下のopengraph-image.jpg / twitter-image.jpg(ファイル規約)が自動配線。
-  // Xで大判カードにするにはcard種別の明示が必要(2026-07-14)
-  twitter: { card: 'summary_large_image' },
+  // OGP/Twitter画像とカード種別はルートレイアウトで宣言済み(ここでtwitterを
+  // 再定義するとルートのtwitter設定ごと上書きされるため定義しない)
 }
 
 // テーマの初期適用はペイント前にインラインスクリプトで行う(FOUC防止)。
