@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     template: '%s — Andy',
   },
   description: 'Andy — Podcaster',
+  // 画像はapp/直下のopengraph-image.jpg / twitter-image.jpg(ファイル規約)が自動配線。
+  // Xで大判カードにするにはcard種別の明示が必要(2026-07-14)
+  twitter: { card: 'summary_large_image' },
 }
 
 // テーマの初期適用はペイント前にインラインスクリプトで行う(FOUC防止)。
