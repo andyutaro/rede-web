@@ -355,6 +355,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Cloudflare日次リクエストのミニバー(7日推移。行内で日毎の相対量を見せる) */
+.usage-mini-bar {
+  display: inline-block;
+  height: 8px;
+  margin-right: 8px;
+  background: #7fb08a;
+  border-radius: 2px;
+  vertical-align: baseline;
+}
+
+.usage-section .usage-table-bytes {
+  width: auto;
+  min-width: 90px;
+}
+
 /* ---- TagPicker: 既存タグのサジェスト(タイポ・記憶違い防止) ---- */
 .tag-picker {
   flex: 1;
