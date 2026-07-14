@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Claude Codeローカル設定(devサーバ起動定義)
 .claude/
+.open-next
+.dev.vars
+.wrangler

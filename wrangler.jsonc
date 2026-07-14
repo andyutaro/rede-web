@@ -1,0 +1,13 @@
+// Cloudflare Workers移行スパイク用(2026-07-14)。Vercel運用には影響しない。
+// 本採用時: routesにandyutaro.comを設定し、R2バケット(ISRキャッシュ)を足す。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rede-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  }
+}
