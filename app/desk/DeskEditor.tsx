@@ -100,7 +100,7 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
             return
           }
           // 放置タブの衝突: このタブの内容は古い土台の上にあるので、上書きせず最新を取り込む
-          applyRemote(latest, '他の端末の更新を読み込みました')
+          applyRemote(latest, '他の端末の更新を読み込みました(保存競合)')
           return
         }
         if (res.ok) {
@@ -139,7 +139,7 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
         // テキストがサーバー内容で消える事故が起きていた(2026-07-14修正)
         if (saveTimer || dirty || lastInputAt >= startedAt) return
         if (latest.updatedAt && latest.updatedAt !== baseUpdatedAt) {
-          applyRemote({ html: latest.html, updated_at: latest.updatedAt }, '他の端末の更新を読み込みました')
+          applyRemote({ html: latest.html, updated_at: latest.updatedAt }, '他の端末の更新を読み込みました(復帰同期)')
         }
       } catch {
         // オフライン等は無視(次の保存時に楽観ロックが守る)
@@ -201,10 +201,16 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       })
     }
 
-    // 日付をまたいだら、直前の内容は「古い日」のものとして明示的にその日付で保存してからリロードする
+    // 日付をまたいだら、直前の内容は「古い日」のものとして明示的にその日付で保存してからリロードする。
+    // ただし執筆の真っ最中(2分以内に打鍵)はリロードを保留する(書いている画面が
+    // 突然空になるのは消失事故と区別がつかない)。手が止まった次のチェックで実行
     function checkDateChange() {
       const current = todayInTokyo()
       if (current === openedDate) return
+      if (Date.now() - lastInputAt < ACTIVE_TYPING_MS) {
+        setStatus('日付が変わりました(手が止まったら翌日分に切り替えます)')
+        return
+      }
       const previousDate = openedDate
       if (saveTimer) clearTimeout(saveTimer)
       doSave(previousDate, true).finally(() => location.reload())
