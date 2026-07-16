@@ -38,7 +38,12 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     // 書くので、圏外でもタブ破棄でも失われない。
     let dirty = false
     let offlinePending = false
+    // 最終打鍵時刻。「執筆中の端末のテキストを他端末の内容で消さない」ための基準
+    // (2026-07-14消失バグ修正)。この時間内の端末は衝突時も自分を正とする
+    let lastInputAt = 0
+    const ACTIVE_TYPING_MS = 2 * 60 * 1000
     const DRAFT_KEY = `scribe-draft-${openedDate}`
+    const RESCUE_KEY = `scribe-rescue-${openedDate}`
 
     function writeDraft() {
       try {
@@ -56,11 +61,20 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     let liveSeq = 0
     const sessionId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
 
-    // 他端末の内容でエディタを置き換える。置き換え直前の未保存キーストロークは
-    // 失われるが、「文書全体を古い内容で上書きする」事故に比べれば損失は最小。
+    // 他端末の内容でエディタを置き換える。呼び出し側が「この端末は執筆中でない」
+    // ことを保証する(執筆中の置換はテキスト消失になる。2026-07-14修正)。
+    // 万一に備え、置換前の内容が消える場合はRESCUE_KEYへ退避しておく(手動復旧用)。
     function applyRemote(latest: { html: string; updated_at: string | null } | null, message: string) {
-      baseUpdatedAt = latest?.updated_at ?? null
       const html = latest?.html ?? ''
+      const current = controllerRef.current?.getSaveableHtml() ?? saveableHtmlRef.current
+      if (current && current !== html) {
+        try {
+          localStorage.setItem(RESCUE_KEY, JSON.stringify({ html: current, ts: Date.now() }))
+        } catch {
+          // localStorage不可なら退避なしで進む
+        }
+      }
+      baseUpdatedAt = latest?.updated_at ?? null
       controllerRef.current?.setHtml(html)
       saveableHtmlRef.current = controllerRef.current?.getSaveableHtml() ?? html
       dirty = false
@@ -75,15 +89,17 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
         const res = await fetch('/api/scribe/save', { method: 'POST', body })
         if (res.status === 409) {
           const { latest } = await res.json()
-          if (offlinePending) {
-            // オフライン中の執筆と他端末の保存が衝突した場合は、直近に身体が
-            // 書いた方(この端末)を正とし、新しいbaseで自分の内容を書き込み直す
+          if (offlinePending || Date.now() - lastInputAt < ACTIVE_TYPING_MS) {
+            // オフライン執筆との衝突、またはこの端末でいま執筆中の衝突は、
+            // 直近に身体が書いた方(この端末)を正とし、新しいbaseで書き込み直す。
+            // 単独著者システムでは「執筆中の端末」が常に最新の意図(2026-07-14修正:
+            // 従来は執筆中でもサーバー側で置換され、直前の入力が消えていた)
             baseUpdatedAt = latest?.updated_at ?? null
             offlinePending = false
             await doSave(dateOverride, finalize)
             return
           }
-          // 通常の衝突: このタブの内容は古い土台の上にあるので、上書きせず最新を取り込む
+          // 放置タブの衝突: このタブの内容は古い土台の上にあるので、上書きせず最新を取り込む
           applyRemote(latest, '他の端末の更新を読み込みました')
           return
         }
@@ -113,10 +129,15 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     // これで「別端末で書いたあと古いタブに戻る」ケースの衝突をそもそも起きにくくする。
     async function refreshIfIdle() {
       if (saveTimer || dirty) return // クラウド未反映の編集があるうちは触らない(オフライン執筆の保護)
+      const startedAt = Date.now()
       try {
         const res = await fetch(`/api/scribe/load?date=${openedDate}`, { cache: 'no-store' })
         if (!res.ok) return
         const latest = await res.json()
+        // fetch中(モバイルでは数秒かかる)に打鍵が始まっていたら適用しない。
+        // ガードをfetch前にしか見ていなかったため、タブ復帰直後に書き始めた
+        // テキストがサーバー内容で消える事故が起きていた(2026-07-14修正)
+        if (saveTimer || dirty || lastInputAt >= startedAt) return
         if (latest.updatedAt && latest.updatedAt !== baseUpdatedAt) {
           applyRemote({ html: latest.html, updated_at: latest.updatedAt }, '他の端末の更新を読み込みました')
         }
@@ -191,6 +212,7 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
 
     // HtmlEditorからの編集通知(onChangeで保存用HTMLを受け取った後に呼ばれる)
     onEditRef.current = () => {
+      lastInputAt = Date.now()
       dirty = true
       writeDraft() // 打鍵ごとに端末へ下書き保存(圏外・タブ破棄への保険)
       scheduleSave()
@@ -205,7 +227,18 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     try {
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i)
-        if (!k || !k.startsWith('scribe-draft-') || k === DRAFT_KEY) continue
+        if (!k) continue
+        // 置換退避(rescue)は7日で掃除(手動復旧の猶予を残しつつ無限に溜めない)
+        if (k.startsWith('scribe-rescue-') && k !== RESCUE_KEY) {
+          try {
+            const r = JSON.parse(localStorage.getItem(k) ?? '{}')
+            if (!r.ts || Date.now() - r.ts > 7 * 24 * 60 * 60 * 1000) localStorage.removeItem(k)
+          } catch {
+            localStorage.removeItem(k)
+          }
+          continue
+        }
+        if (!k.startsWith('scribe-draft-') || k === DRAFT_KEY) continue
         // 過去日の下書きは、同期済みのものだけ掃除する(未同期は救出用に残す)
         try {
           const old = JSON.parse(localStorage.getItem(k) ?? '{}')
