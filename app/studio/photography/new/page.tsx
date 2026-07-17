@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getTagVocabulary } from '@/lib/studio/tagVocabulary'
-import ArticleForm from '../../articles/ArticleForm'
+import ArticleForm from '../../notes/ArticleForm'
 
 export const dynamic = 'force-dynamic'
 

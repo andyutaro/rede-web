@@ -167,6 +167,48 @@
   color: #7fb08a;
 }
 
+/* サムネイル列(2026-07-17): 実物プレビュー+出所バッジ。
+   専用=緑(自前) / 本文=グレー(本文由来) / 充当=黄(借り物) / なし=赤(要対応) */
+.studio-row .row-thumb {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-row .row-thumb img,
+.studio-row .row-thumb-empty {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 3px;
+  display: block;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.studio-row .row-thumb-badge {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  width: 34px;
+  text-align: center;
+}
+
+.row-thumb-badge.thumb-manual {
+  color: #7fb08a;
+}
+
+.row-thumb-badge.thumb-first {
+  color: #8b8b8b;
+}
+
+.row-thumb-badge.thumb-assigned {
+  color: #d9b44a;
+}
+
+.row-thumb-badge.thumb-none {
+  color: #d96b6b;
+}
+
 .studio-row .row-title {
   min-width: 0;
   white-space: nowrap;

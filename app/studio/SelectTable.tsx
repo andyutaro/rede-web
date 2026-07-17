@@ -17,6 +17,18 @@ export type SelectRow = {
   title: string
   href?: string // activeで編集リンク(ゴミ箱内はリンクなし=戻してから編集)
   tags?: string[]
+  // サムネイル列(2026-07-17): 実物プレビュー+出所バッジ。
+  // manual=専用 / first_image=本文 / assigned=充当(借り物) / none=なし
+  thumb?: string | null
+  thumbSource?: 'manual' | 'first_image' | 'assigned' | 'none'
+}
+
+// 出所バッジの表示(短い日本語+色分け。noneは要対応として赤系)
+const THUMB_BADGE: Record<string, { label: string; cls: string }> = {
+  manual: { label: '専用', cls: 'thumb-manual' },
+  first_image: { label: '本文', cls: 'thumb-first' },
+  assigned: { label: '充当', cls: 'thumb-assigned' },
+  none: { label: 'なし', cls: 'thumb-none' },
 }
 
 export default function SelectTable({
@@ -132,6 +144,19 @@ export default function SelectTable({
             />
             <span className="row-date">{dateDots(r.date)}</span>
             <span className={`row-status ${r.published ? 'published' : ''}`}>{r.label}</span>
+            {r.thumbSource && (
+              <span className="row-thumb">
+                {r.thumb ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={r.thumb} alt="" loading="lazy" />
+                ) : (
+                  <span className="row-thumb-empty" aria-hidden="true" />
+                )}
+                <span className={`row-thumb-badge ${THUMB_BADGE[r.thumbSource].cls}`}>
+                  {THUMB_BADGE[r.thumbSource].label}
+                </span>
+              </span>
+            )}
             {r.href ? (
               <Link className="row-title" href={r.href}>
                 {r.title}

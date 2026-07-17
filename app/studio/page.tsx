@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function StudioIndex() {
-  redirect('/studio/articles')
+  redirect('/studio/notes')
 }

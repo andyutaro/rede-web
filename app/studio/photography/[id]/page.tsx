@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import ArticleForm from '../../articles/ArticleForm'
+import ArticleForm from '../../notes/ArticleForm'
 import { getTagVocabulary } from '@/lib/studio/tagVocabulary'
 import { studioShelfPath } from '../../articleRows'
 
