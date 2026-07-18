@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { dateDots } from '@/lib/site/text'
 
-// studio共通の選択テーブル(Articles/Photography/scribeで共用)。
-// チェックボックス選択+一括操作。mode=active: 選択をゴミ箱へ /
-// mode=trash: 元に戻す・完全に消去(confirm付き)。
-// endpointは/api/article/delete または /api/scribe/delete(idsの中身がuuid/dateの違いだけ)
+// studio共通の選択テーブル(NOTES/Photography/Updates/各TRASHで共用)。
+// v2(2026-07-17): ヘッダー行・検索・状態/サムネ出所フィルタ・日付ソート・
+// 行単位クイック操作(選択不要のゴミ箱へ/戻す)を追加。
+// チェックボックス選択+一括操作は従来通り。
+// endpointは/api/article/delete等(idsの中身がuuid/dateの違いだけ)
 export type SelectRow = {
   id: string // APIに渡すids値(articles=uuid, scribe=date)
   date: string // YYYY-MM-DD
@@ -46,6 +47,30 @@ export default function SelectTable({
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  // フィルタ・検索・ソート(すべてクライアント側=行は読み込み済み)
+  const [q, setQ] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [thumbFilter, setThumbFilter] = useState('all')
+  const [dateAsc, setDateAsc] = useState(false)
+
+  const hasThumbs = rows.some((r) => r.thumbSource)
+  const statusOptions = useMemo(() => [...new Set(rows.map((r) => r.label))].sort(), [rows])
+
+  const shown = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    const filtered = rows.filter((r) => {
+      if (statusFilter !== 'all' && r.label !== statusFilter) return false
+      if (thumbFilter !== 'all' && (r.thumbSource ?? 'none') !== thumbFilter) return false
+      if (
+        needle &&
+        !r.title.toLowerCase().includes(needle) &&
+        !(r.tags ?? []).some((t) => t.toLowerCase().includes(needle))
+      )
+        return false
+      return true
+    })
+    return [...filtered].sort((a, b) => (dateAsc ? (a.date < b.date ? -1 : 1) : a.date > b.date ? -1 : 1))
+  }, [rows, q, statusFilter, thumbFilter, dateAsc])
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -56,15 +81,18 @@ export default function SelectTable({
     })
   }
 
+  // 全選択は「いま表示されている行」に対して効く(フィルタと組み合わせた一括操作)
   function toggleAll() {
-    setSelected((prev) => (prev.size === rows.length ? new Set() : new Set(rows.map((r) => r.id))))
+    setSelected((prev) =>
+      prev.size === shown.length && shown.length > 0 ? new Set() : new Set(shown.map((r) => r.id))
+    )
   }
 
-  async function act(action: 'trash' | 'restore' | 'purge') {
-    if (selected.size === 0 || busy) return
+  async function act(action: 'trash' | 'restore' | 'purge', ids: string[]) {
+    if (ids.length === 0 || busy) return
     if (action === 'purge') {
       const ok = window.confirm(
-        `選択した${selected.size}件を完全に消去します。この操作は取り消せません。よろしいですか？`
+        `選択した${ids.length}件を完全に消去します。この操作は取り消せません。よろしいですか？`
       )
       if (!ok) return
     }
@@ -73,7 +101,7 @@ export default function SelectTable({
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ ids: [...selected], action }),
+        body: JSON.stringify({ ids, action }),
       })
       if (!res.ok) throw new Error()
       setSelected(new Set())
@@ -91,13 +119,57 @@ export default function SelectTable({
 
   return (
     <>
+      {/* 検索+フィルタ(該当機能があるテーブルにだけ出す) */}
+      <div className="studio-toolbar">
+        <input
+          type="search"
+          className="toolbar-search"
+          placeholder="タイトル・タグを検索"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="タイトル・タグを検索"
+        />
+        {statusOptions.length > 1 && (
+          <select
+            className="toolbar-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="状態で絞り込み"
+          >
+            <option value="all">状態: すべて</option>
+            {statusOptions.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
+        {hasThumbs && (
+          <select
+            className="toolbar-select"
+            value={thumbFilter}
+            onChange={(e) => setThumbFilter(e.target.value)}
+            aria-label="サムネイル出所で絞り込み"
+          >
+            <option value="all">サムネ: すべて</option>
+            <option value="manual">専用のみ</option>
+            <option value="first_image">本文のみ</option>
+            <option value="assigned">充当のみ(借り物)</option>
+            <option value="none">なしのみ</option>
+          </select>
+        )}
+        <span className="toolbar-count">
+          {shown.length === rows.length ? `${rows.length}件` : `${rows.length}件中${shown.length}件`}
+        </span>
+      </div>
+
       <div className="studio-bulkbar">
         <label className="bulk-all">
           <input
             type="checkbox"
-            checked={selected.size === rows.length && rows.length > 0}
+            checked={selected.size === shown.length && shown.length > 0}
             onChange={toggleAll}
-            aria-label="全選択"
+            aria-label="表示中を全選択"
           />
           <span>{selected.size > 0 ? `${selected.size}件選択中` : '全選択'}</span>
         </label>
@@ -106,7 +178,7 @@ export default function SelectTable({
             type="button"
             className="bulk-btn"
             disabled={selected.size === 0 || busy}
-            onClick={() => act('trash')}
+            onClick={() => act('trash', [...selected])}
           >
             選択をゴミ箱へ
           </button>
@@ -116,7 +188,7 @@ export default function SelectTable({
               type="button"
               className="bulk-btn"
               disabled={selected.size === 0 || busy}
-              onClick={() => act('restore')}
+              onClick={() => act('restore', [...selected])}
             >
               選択を元に戻す
             </button>
@@ -124,7 +196,7 @@ export default function SelectTable({
               type="button"
               className="bulk-btn bulk-danger"
               disabled={selected.size === 0 || busy}
-              onClick={() => act('purge')}
+              onClick={() => act('purge', [...selected])}
             >
               選択を完全に消去
             </button>
@@ -132,8 +204,20 @@ export default function SelectTable({
         )}
         <span className="bulk-message">{message}</span>
       </div>
+
+      {/* ヘッダー行(表としての整理)。日付クリックで昇順/降順 */}
+      <div className="studio-row studio-row-head" aria-hidden="true">
+        <span className="row-check" />
+        <button type="button" className="row-date head-sort" onClick={() => setDateAsc((v) => !v)}>
+          日付 {dateAsc ? '↑' : '↓'}
+        </button>
+        <span className="row-status">状態</span>
+        {hasThumbs && <span className="row-thumb head-label">サムネ</span>}
+        <span className="row-title head-label">タイトル</span>
+      </div>
+
       <div>
-        {rows.map((r) => (
+        {shown.map((r) => (
           <div className="studio-row" key={r.id}>
             <input
               type="checkbox"
@@ -165,8 +249,21 @@ export default function SelectTable({
               <span className="row-title row-title-trash">{r.title}</span>
             )}
             {r.tags && r.tags.length > 0 && <span className="row-tags">{r.tags.join(' / ')}</span>}
+            {/* 行単位クイック操作(選択不要)。誤操作の質が違うpurgeは一括バーのみ */}
+            <span className="row-actions">
+              {mode === 'active' ? (
+                <button type="button" className="row-act" disabled={busy} onClick={() => act('trash', [r.id])}>
+                  ゴミ箱へ
+                </button>
+              ) : (
+                <button type="button" className="row-act" disabled={busy} onClick={() => act('restore', [r.id])}>
+                  戻す
+                </button>
+              )}
+            </span>
           </div>
         ))}
+        {shown.length === 0 && <p className="studio-empty">条件に合う行がありません</p>}
       </div>
     </>
   )

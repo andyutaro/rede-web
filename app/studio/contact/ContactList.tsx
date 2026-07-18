@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { dateDots } from '@/lib/site/text'
 
@@ -17,22 +17,37 @@ export type ContactRow = {
 
 type Filter = 'unread' | 'all' | 'trash'
 
-// 問い合わせ受信箱: 行クリックで本文展開(展開と同時に既読)。
-// チェックボックス一括操作(既読/未読/ゴミ箱/復元/完全消去)。
+// 問い合わせ受信箱v2(2026-07-17): 列を整列した表形式(日付/状態/名前/メール/用件/本文冒頭)。
+// 行クリックで本文展開(展開と同時に既読)。検索+行単位クイック操作(既読⇄未読/ゴミ箱)
+// +チェックボックス一括操作(既読/未読/ゴミ箱/復元/完全消去)。
 export default function ContactList({ rows }: { rows: ContactRow[] }) {
   const router = useRouter()
   const [filter, setFilter] = useState<Filter>('unread')
+  const [q, setQ] = useState('')
   const [open, setOpen] = useState<Set<string>>(() => new Set())
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
 
-  const shown = rows.filter((r) => {
-    if (filter === 'trash') return r.deleted
-    if (r.deleted) return false
-    if (filter === 'unread') return !r.read
-    return true
-  })
+  const shown = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    return rows.filter((r) => {
+      if (filter === 'trash') {
+        if (!r.deleted) return false
+      } else {
+        if (r.deleted) return false
+        if (filter === 'unread' && r.read) return false
+      }
+      if (!needle) return true
+      return (
+        r.name.toLowerCase().includes(needle) ||
+        r.email.toLowerCase().includes(needle) ||
+        r.message.toLowerCase().includes(needle) ||
+        r.topics.some((t) => t.toLowerCase().includes(needle))
+      )
+    })
+  }, [rows, filter, q])
+
   const unreadCount = rows.filter((r) => !r.deleted && !r.read).length
   const allCount = rows.filter((r) => !r.deleted).length
   const trashCount = rows.filter((r) => r.deleted).length
@@ -100,6 +115,14 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
             {label}
           </button>
         ))}
+        <input
+          type="search"
+          className="toolbar-search"
+          placeholder="名前・メール・本文を検索"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="問い合わせを検索"
+        />
       </div>
 
       {shown.length > 0 && (
@@ -140,6 +163,19 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
         </div>
       )}
 
+      {/* ヘッダー行(列の意味を固定幅で示す。contact-row-headの列幅と揃える) */}
+      {shown.length > 0 && (
+        <div className="contact-row contact-head-row" aria-hidden="true">
+          <span className="row-check" />
+          <span className="row-date">日付</span>
+          <span className="contact-state">状態</span>
+          <span className="contact-name">名前</span>
+          <span className="contact-email">メール</span>
+          <span className="contact-excerpt">用件 / 本文</span>
+          <span className="contact-actions" />
+        </div>
+      )}
+
       <div>
         {shown.map((r) => (
           <div className={`contact-row${r.read ? '' : ' unread'}`} key={r.id}>
@@ -152,11 +188,38 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
                 aria-label={`${r.name} を選択`}
               />
               <span className="row-date">{dateDots(r.createdAt.slice(0, 10))}</span>
+              <span className="contact-state">
+                {r.deleted ? 'ゴミ箱' : r.read ? '既読' : <span className="contact-unread-dot">未読</span>}
+              </span>
               <button type="button" className="contact-row-title" onClick={() => toggleOpen(r)}>
                 <span className="contact-name">{r.name}</span>
                 <span className="contact-email">{r.email}</span>
-                {r.topics.length > 0 && <span className="contact-topics">{r.topics.join(' / ')}</span>}
+                <span className="contact-excerpt">
+                  {r.topics.length > 0 && <span className="contact-topics">{r.topics.join(' / ')}</span>}
+                  <span className="contact-preview">{r.message}</span>
+                </span>
               </button>
+              <span className="contact-actions">
+                {r.deleted ? (
+                  <button type="button" className="row-act" disabled={busy} onClick={() => act('restore', [r.id])}>
+                    戻す
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="row-act"
+                      disabled={busy}
+                      onClick={() => act(r.read ? 'unread' : 'read', [r.id])}
+                    >
+                      {r.read ? '未読に' : '既読に'}
+                    </button>
+                    <button type="button" className="row-act" disabled={busy} onClick={() => act('trash', [r.id])}>
+                      ゴミ箱へ
+                    </button>
+                  </>
+                )}
+              </span>
             </div>
             {open.has(r.id) && (
               <div className="contact-body">
@@ -170,7 +233,13 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
         ))}
         {shown.length === 0 && (
           <p className="studio-empty">
-            {filter === 'trash' ? 'ゴミ箱は空です' : filter === 'unread' ? '未読はありません' : '問い合わせはまだありません'}
+            {q
+              ? '条件に合う問い合わせがありません'
+              : filter === 'trash'
+                ? 'ゴミ箱は空です'
+                : filter === 'unread'
+                  ? '未読はありません'
+                  : '問い合わせはまだありません'}
           </p>
         )}
       </div>

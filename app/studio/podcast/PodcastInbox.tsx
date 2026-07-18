@@ -35,6 +35,7 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [q, setQ] = useState('') // タイトル・番組名・タグの検索(2026-07-17)
 
   function key(r: InboxRow) {
     return `${r.showSlug}/${r.episodeId}`
@@ -92,11 +93,20 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
     return hiddenMap.get(key(r)) ?? false
   }
 
+  const needle = q.trim().toLowerCase()
   const shown = rows.filter((r) => {
-    if (filter === 'trash') return isHidden(r)
-    if (isHidden(r)) return false
-    if (filter === 'untagged') return (saved.get(key(r)) ?? []).length === 0
-    return true
+    if (filter === 'trash') {
+      if (!isHidden(r)) return false
+    } else {
+      if (isHidden(r)) return false
+      if (filter === 'untagged' && (saved.get(key(r)) ?? []).length > 0) return false
+    }
+    if (!needle) return true
+    return (
+      r.title.toLowerCase().includes(needle) ||
+      r.showLabel.toLowerCase().includes(needle) ||
+      (saved.get(key(r)) ?? []).some((t) => t.toLowerCase().includes(needle))
+    )
   })
   const untaggedCount = rows.filter((r) => !isHidden(r) && (saved.get(key(r)) ?? []).length === 0).length
   const activeCount = rows.filter((r) => !isHidden(r)).length
@@ -138,6 +148,14 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
             {label}
           </button>
         ))}
+        <input
+          type="search"
+          className="toolbar-search"
+          placeholder="タイトル・番組・タグを検索"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="エピソードを検索"
+        />
       </div>
 
       {shown.length > 0 && (

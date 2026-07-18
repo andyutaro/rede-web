@@ -209,6 +209,116 @@
   color: #d96b6b;
 }
 
+/* ---- 一覧共通の道具(2026-07-17): 検索・フィルタ・ヘッダー行・行単位操作 ---- */
+.studio-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 6px;
+  flex-wrap: wrap;
+}
+
+.toolbar-search {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: #e8e6e0;
+  font-size: 12px;
+  width: 220px;
+  outline: none;
+}
+
+.toolbar-search:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.toolbar-select {
+  background: #222;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #a8a49c;
+  font-size: 11px;
+}
+
+.toolbar-count {
+  font-size: 11px;
+  color: #6b6b6b;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ヘッダー行: データ行と同じ列構成で薄く。日付はソートトグル */
+.studio-row-head {
+  border-bottom: none !important;
+  padding-bottom: 0;
+}
+
+.studio-row-head .row-check {
+  width: 15px;
+  flex: none;
+}
+
+.studio-row-head span,
+.studio-row-head .head-sort {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: #55524c;
+}
+
+.head-sort {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.head-sort:hover {
+  color: #a8a49c;
+}
+
+.studio-row-head .row-thumb.head-label {
+  width: 74px; /* 画像34px+バッジ34px+gap6px相当の位置合わせ */
+  display: inline-block;
+}
+
+/* 行単位クイック操作: 常時は薄く、ホバーで浮かぶ(行の情報密度を保つ) */
+.row-actions {
+  flex: none;
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+.row-act {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #55524c;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.studio-row:hover .row-act,
+.contact-row:hover .row-act {
+  color: #a8a49c;
+}
+
+.row-act:hover {
+  color: #e8e6e0;
+}
+
+.row-act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .studio-row .row-title {
   min-width: 0;
   white-space: nowrap;
@@ -836,10 +946,17 @@
 /* ---- Podcast Inbox ---- */
 .inbox-filter {
   display: flex;
+  align-items: center;
   gap: 18px;
   font-size: 11px;
   letter-spacing: 0.14em;
   margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+/* フィルタ行の右端に検索(CONTACT/PODCAST INBOX、2026-07-17) */
+.inbox-filter .toolbar-search {
+  margin-left: auto;
 }
 
 .inbox-filter button {
@@ -993,7 +1110,7 @@
   }
 }
 
-/* ---- CONTACT室: 問い合わせ受信箱(2026-07-12) ---- */
+/* ---- CONTACT室: 問い合わせ受信箱(2026-07-12、2026-07-17に列を固定幅で整列) ---- */
 .contact-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
@@ -1020,10 +1137,26 @@
   cursor: pointer;
 }
 
+/* 状態列(未読/既読/ゴミ箱)。未読はLIVE系の赤ドットで目立たせる */
+.contact-state {
+  flex: none;
+  width: 44px;
+  font-size: 10px;
+  color: #6b6b6b;
+}
+
+.contact-unread-dot {
+  color: #d96b6b;
+}
+
 .contact-name {
   flex: none;
+  width: 110px;
   font-size: 13px;
   color: #a8a49c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .contact-row.unread .contact-name {
@@ -1033,17 +1166,77 @@
 
 .contact-email {
   flex: none;
+  width: 190px;
   font-size: 11px;
   color: #6b6b6b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 用件+本文冒頭を1行に(クリックで全文展開) */
+.contact-excerpt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .contact-topics {
-  min-width: 0;
+  flex: none;
+  max-width: 40%;
   font-size: 10px;
   color: #6b6b6b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.contact-preview {
+  min-width: 0;
+  font-size: 11px;
+  color: #8b8b8b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 行単位クイック操作(既読⇄未読/ゴミ箱へ/戻す) */
+.contact-actions {
+  flex: none;
+  display: flex;
+  gap: 10px;
+}
+
+/* ヘッダー行はデータ行と同じ列幅で薄く */
+.contact-head-row {
+  border-bottom: none;
+}
+
+.contact-head-row .row-check {
+  width: 15px;
+  flex: none;
+}
+
+.contact-head-row span {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: #55524c;
+}
+
+.contact-head-row .contact-name,
+.contact-head-row .contact-email {
+  font-size: 9px;
+}
+
+.contact-head-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 2px 2px;
 }
 
 .contact-body {
