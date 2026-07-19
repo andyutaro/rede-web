@@ -1132,11 +1132,18 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 }
 
 /* ---- scribe個別(確定アーカイブ) ---- */
+/* scribe冒頭の位置づけ文: 全幅散文でなく行を設計した銘文(2026-07-19)。
+   1行=1span(display:block)。長い行も狭い画面では自然に折り返す */
 .scribe-preamble {
   margin-top: 70px;
   font-size: 11px;
-  line-height: 2.2;
+  line-height: 2.4;
+  letter-spacing: 0.06em;
   color: var(--mut);
+}
+
+.scribe-preamble span {
+  display: block;
 }
 
 .scribe-archive-body {

@@ -11,8 +11,13 @@ export const dynamic = 'force-dynamic'
 // scribeをArticle配下に格納する設計意図の担保(handoff-notes §11):
 // 各アーカイブ冒頭に「scribeとは何か」の位置づけ文をテンプレート焼き込みで置く。
 // 文言はAndyの承認待ち(仮置き)。
-const PREAMBLE =
-  'scribe — 読むポッドキャスト。日々の考え事やつぶやきを生放送で書き、一日が終わると確定テキストになります。これはそのアーカイブ。'
+// 全幅に流すと「横にだらっと広がる」ため、行を設計して短い銘文として組む
+// (2026-07-19 Andy指摘)。改行は意味の切れ目で固定
+const PREAMBLE_LINES = [
+  'scribe — 読むポッドキャスト。',
+  '日々の考え事やつぶやきを生放送で書き、一日が終わると確定テキストになります。',
+  'これはそのアーカイブ。',
+]
 
 type Params = { date: string }
 
@@ -73,7 +78,11 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         <div className="section-head">
           <span>SCRIBE ARCHIVE — {scribeTitle(date)}</span>
         </div>
-        <p className="scribe-preamble">{PREAMBLE}</p>
+        <p className="scribe-preamble">
+          {PREAMBLE_LINES.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </p>
         <ScribeArchive html={data.html as string} />
         <Pager
           older={pagerLink(prevRes.data?.date as string)}
