@@ -451,13 +451,37 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
-/* RADIO/ON AIRラベル(2026-07-19): 初見に「連続再生のラジオ」と伝えるための言葉。
+/* PODCAST/ON AIRラベル(2026-07-19): 初見に「連続再生される」と伝えるための言葉。
    組みはMENUピルと同じ語法(小さく・字間広く) */
 .sound-btn .sound-btn-label {
   font-size: 8px;
   letter-spacing: 0.18em;
   font-weight: 300;
   white-space: nowrap;
+}
+
+/* 再生中の前の回/次の回(キュー内移動)。タイトル下に静かに置く */
+.sound-skips {
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+  margin-top: 28px;
+}
+
+.sound-skips button {
+  background: none;
+  border: none;
+  padding: 4px 2px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--mut);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.sound-skips button:hover {
+  color: var(--ink);
 }
 
 .sound-btn:hover {

@@ -63,7 +63,7 @@ async function loadFeed(feedUrl: string, since?: string): Promise<ShowFeed | nul
   return feed
 }
 
-// 背景ラジオの再生キューを作る(2026-07-19、単発ランダム→連続再生化)。
+// 背景PODCAST連続再生のキューを作る(2026-07-19)。
 // 番組の当たりやすさを話数に依存させないため、シャッフルした番組順の
 // ラウンドロビンで各番組からランダムに未使用の1本ずつ取る(番組選択は均等)。
 // enclosureを持つエピソードのみ。Math.randomはここに閉じる(render純粋性)。

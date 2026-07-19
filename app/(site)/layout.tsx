@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 // キーはandy-theme("dark"/"light")、既定はライト。
 const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}`
 
-// 背景波形+ラジオ(連続再生)は全ページ共通(2026-07-19、単発ランダム→ラジオ化)。
+// 背景波形+PODCAST連続再生は全ページ共通(2026-07-19)。
 // 音源はON-AIRDO・ミモリラジオ・サカナカイギの3番組から番組均等のラウンドロビンで
 // 10本のキューを組む(約5〜8時間分=実質無限)。フィードは各30分キャッシュ。
 // 1本目は10:00地点から=「放送中の局に途中から合流する」、2本目以降は頭から

@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
-// 背景波形 + ラジオ(2026-07-19、単発ランダム→連続再生化)。
-// - 波形は固定背景、コンテンツの背後。RADIOピルを押すと局に「合流」する:
+// 背景波形 + PODCAST連続再生(2026-07-19。※「ラジオ」という語はAndyが忌避、表記禁止)。
+// - 波形は固定背景、コンテンツの背後。PODCASTピルを押すと放送に「合流」する:
 //   1本目は10:00地点から(放送中の局に途中から入る体験。READMEの選定方針)、
 //   終わると次のエピソードが頭から始まり、キューを順に流し続ける(番組編成)。
 //   「途中から再生」は初回のチューンインの演出であり、以降は通常の放送が続く。
@@ -89,6 +89,8 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
   // 再生キューの現在位置。表示(タイトル等)はidx、音源制御はidxRef(リスナー内から参照)
   const [idx, setIdx] = useState(0)
   const idxRef = useRef(0)
+  // 前の回/次の回ボタンから曲間遷移を呼ぶ(実体は音源エフェクト内のskip)
+  const skipRef = useRef<((delta: number) => void) | null>(null)
   const episode = episodes?.[idx % episodes.length] ?? null
   const playingRef = useRef(false)
   useEffect(() => {
@@ -211,28 +213,40 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     )
 
     let errorStreak = 0
-    const advance = () => {
-      idxRef.current += 1
+    // 曲間遷移中フラグ: src差し替えは仕様上pausedを経由するため、その瞬間の
+    // pauseイベントでオーバーレイを閉じないためのガード
+    let chaining = false
+    const skip = (delta: number) => {
+      chaining = true
+      const len = episodes.length
+      idxRef.current = (((idxRef.current + delta) % len) + len) % len
       setIdx(idxRef.current)
-      const next = episodes[idxRef.current % episodes.length]
-      a.src = next.audioUrl // 2本目以降は頭から(次の番組が始まる)
+      a.src = episodes[idxRef.current].audioUrl // 2本目以降は頭から(次の番組が始まる)
       fadeInAudio(a, fadeRafBox)
-      a.play().catch(() => setPlaying(false))
+      a.play()
+        .then(() => {
+          chaining = false
+        })
+        .catch(() => {
+          chaining = false
+          setPlaying(false)
+        })
     }
+    skipRef.current = skip
 
     a.addEventListener('ended', () => {
-      if (errorStreak < episodes.length) advance()
+      if (errorStreak < episodes.length) skip(1)
     })
     a.addEventListener('error', () => {
       // 再生中の失効等のみ自動スキップ(未再生時のプリロード失敗では鳴らさない)
       if (!playingRef.current) return
       errorStreak += 1
-      if (errorStreak < episodes.length) advance()
+      if (errorStreak < episodes.length) skip(1)
       else setPlaying(false)
     })
     a.addEventListener('pause', () => {
-      // 自然な終端(ended)ではオーバーレイを維持し、次の曲へ継ぎ目なく渡す
-      if (!a.ended) setPlaying(false)
+      // 自然な終端(ended)・曲間遷移中はオーバーレイを維持し、次の曲へ継ぎ目なく渡す
+      if (!a.ended && !chaining) setPlaying(false)
     })
     a.addEventListener('play', () => {
       errorStreak = 0
@@ -242,6 +256,7 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     return () => {
       a.pause()
       audioRef.current = null
+      skipRef.current = null
     }
   }, [episodes])
 
@@ -307,10 +322,19 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
             <span className="ttl">{episode.title}</span>
             <span className="go">エピソードを開く →</span>
           </Link>
+          {/* キュー内の前後移動(2026-07-19 Andy要望)。どちらも頭から再生 */}
+          <div className="sound-skips">
+            <button type="button" onClick={() => skipRef.current?.(-1)}>
+              ← 前の回
+            </button>
+            <button type="button" onClick={() => skipRef.current?.(1)}>
+              次の回 →
+            </button>
+          </div>
         </div>
       )}
 
-      {/* RADIOボタン: 右レール同幅ピル・Y中央固定。初見に「これはラジオ(連続再生)」と
+      {/* PODCASTボタン: 右レール同幅ピル・Y中央固定。初見に「連続再生される」と
           伝わるようラベル付き(再生中はON AIR)(2026-07-19 Andy要望) */}
       {episode && (
         <button
@@ -318,9 +342,9 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
           type="button"
           className={`sound-btn${playing ? ' on' : ''}`}
           onClick={toggle}
-          aria-label={playing ? 'ラジオを止める' : 'ラジオを流す(エピソードを連続再生)'}
+          aria-label={playing ? '再生を止める' : 'ポッドキャストを流す(エピソードを連続再生)'}
         >
-          <span className="sound-btn-label">{playing ? 'ON AIR' : 'RADIO'}</span>
+          <span className="sound-btn-label">{playing ? 'ON AIR' : 'PODCAST'}</span>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M3 9 H7 L12 4 V20 L7 15 H3 Z" fill="currentColor" />
             {playing && (
