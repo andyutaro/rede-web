@@ -159,13 +159,34 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
     }
   }, [])
 
-  // ページ離脱で音を止める
+  // 音源はマウント時に仕込む(2026-07-19)。旧実装は初回クリック時に生成+
+  // preload='none'だったため、メタデータ取得→10:00シークの間が「0.5秒の無音」に
+  // なっていた(Andy指摘。2回目以降が速いのはバッファ済みのため)。
+  // preload='metadata'でシークまで先に済ませ、初回の無音自体を短縮する。
+  // play()はクリックハンドラ内のまま(自動再生ポリシー)
   useEffect(() => {
+    if (!episode?.audioUrl) return
+    const a = new Audio()
+    a.preload = 'metadata'
+    a.src = episode.audioUrl
+    a.addEventListener(
+      'loadedmetadata',
+      () => {
+        // 10:00へシーク(尺が足りなければ25%地点)
+        const d = a.duration
+        a.currentTime = d && d > START_AT + 40 ? START_AT : d ? d * 0.25 : 0
+      },
+      { once: true }
+    )
+    a.addEventListener('ended', () => setPlaying(false))
+    a.addEventListener('pause', () => setPlaying(false))
+    a.addEventListener('play', () => setPlaying(true))
+    audioRef.current = a
     return () => {
-      audioRef.current?.pause()
+      a.pause()
       audioRef.current = null
     }
-  }, [])
+  }, [episode?.audioUrl])
 
   // ページ遷移で再生と表示を止める(2026-07-14 Andy指摘)。layout常駐のため
   // 遷移してもアンマウントされず、表示が開いたままだと「遷移したかどうか
@@ -190,29 +211,42 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
     }
   }, [playing])
 
-  const toggle = () => {
-    if (!episode) return
-    // 自動再生ポリシー: このクリック内で再生を始める
-    if (!audioRef.current) {
-      const a = new Audio(episode.audioUrl)
-      a.preload = 'none'
-      // メタデータが来たら10:00へシーク(尺が足りなければ25%地点)
-      a.addEventListener(
-        'loadedmetadata',
-        () => {
-          const d = a.duration
-          a.currentTime = d && d > START_AT + 40 ? START_AT : d ? d * 0.25 : 0
-        },
-        { once: true }
-      )
-      a.addEventListener('ended', () => setPlaying(false))
-      a.addEventListener('pause', () => setPlaying(false))
-      a.addEventListener('play', () => setPlaying(true))
-      audioRef.current = a
+  // 再生開始のフェードイン(2026-07-19 Andy要望): 無音からFADE_MSかけて音量を
+  // 上げる。カーブは2乗(音量=振幅は対数知覚なので、直線より立ち上がりが自然)。
+  // 注: iOS Safariはメディア音量がOS管理(volume書き込み無視)のためフェードは
+  // 効かず即時full音量になる(実害なし・従来挙動)
+  const FADE_MS = 1200
+  const fadeRef = useRef(0)
+
+  const fadeIn = (a: HTMLAudioElement) => {
+    cancelAnimationFrame(fadeRef.current)
+    const t0 = performance.now()
+    a.volume = 0
+    const apply = () => {
+      const p = Math.min(1, (performance.now() - t0) / FADE_MS)
+      a.volume = a.paused ? 1 : p * p
+      if (p >= 1 || a.paused) a.removeEventListener('timeupdate', apply)
+      return p
     }
+    // rAF主導+timeupdateフォールバック(タブが裏に回るとrAFが止まり
+    // 小音量のまま流れ続けるため。timeupdateは再生中なら裏でも発火する)
+    a.addEventListener('timeupdate', apply)
+    const step = () => {
+      if (apply() < 1 && !a.paused) fadeRef.current = requestAnimationFrame(step)
+    }
+    fadeRef.current = requestAnimationFrame(step)
+  }
+
+  const toggle = () => {
     const a = audioRef.current
-    if (playing) a.pause()
-    else a.play().catch(() => setPlaying(false))
+    if (!a) return
+    if (playing) {
+      a.pause()
+      return
+    }
+    // 自動再生ポリシー: play()はこのクリック内で呼ぶ
+    fadeIn(a)
+    a.play().catch(() => setPlaying(false))
   }
 
   return (
