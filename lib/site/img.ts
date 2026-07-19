@@ -16,27 +16,12 @@ export const IMG_W = {
   pick: 240, // studioのプール選択グリッド
 } as const
 
-// ポッドキャスト系CDN(Anchor等)はCloudflareの直接フェッチを403で拒むため、
-// 自ドメインのプロキシ(/api/img/…)を変換元に挟む(2026-07-19)。
-// Supabase等は直接変換が通ることを確認済み
-const PROXY_HOST = /(\.cloudfront\.net|\.anchor\.fm|\.spotifycdn\.com|\.megaphone\.fm)$/i
-
 export function imgThumb(url: string | null | undefined, width: number): string {
   if (!url) return ''
   // 既に変換済み/データURL/相対パスはそのまま(変換は絶対URLの元画像に対して行う)
   if (url.startsWith('data:') || url.includes('/cdn-cgi/image/')) return url
   if (!/^https?:\/\//i.test(url)) return url
-  let source = url
-  try {
-    if (PROXY_HOST.test(new URL(url).hostname)) {
-      // プロキシはVercel配備側を使う(2026-07-19)。AnchorのCDNはCloudflare経路の
-      // フェッチ(worker含む)を403で拒むが、Vercel(AWS egress)からは通る。
-      // 変換結果はCloudflareエッジにキャッシュされるため、Vercelへの往復は
-      // ユニーク画像の初回のみ
-      source = `https://rede-web-chi.vercel.app/api/img/${encodeURIComponent(url)}`
-    }
-  } catch {
-    return url
-  }
-  return `${CDN_BASE}/width=${width},quality=78,fit=scale-down,format=auto/${source}`
+  // AnchorのカバーURLはローテーションで失効することがある(旧URLは全経路403)。
+  // その間は変換も404/502になるが、フィードキャッシュ(30分)の更新で自己回復する
+  return `${CDN_BASE}/width=${width},quality=78,fit=scale-down,format=auto/${url}`
 }
