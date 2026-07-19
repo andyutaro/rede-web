@@ -32,7 +32,8 @@ export default function CoverGrid({
           <div key={show.slug}>
             <Link href={`/podcast/${show.slug}`} className="sq cover-frame">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imgThumb(show.cover, IMG_W.tile)} alt={show.name} loading="lazy" decoding="async" />
+              {/* カバーはファーストビュー相当なのでeager(lazyだとLCPが遅れる)。1枚10-60KBに変換済み */}
+              <img src={imgThumb(show.cover, IMG_W.tile)} alt={show.name} decoding="async" />
             </Link>
             {show.latest && (
               <div className="cover-label">
