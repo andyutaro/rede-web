@@ -210,7 +210,7 @@
   position: fixed;
   top: 20px;
   right: 22px;
-  width: 72px;
+  width: 88px;
   height: 30px;
   border: none;
   background: none;
@@ -290,7 +290,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   position: fixed;
   top: 60px; /* テーマスイッチ(top20+高さ30)の下に10px空ける */
   right: 22px;
-  width: 72px;
+  width: 88px;
   height: 30px;
   /* 存在感を上げる(2026-07-12): 塗り+濃いめの枠+ink文字。初見でも押せると分かる */
   border: 1px solid var(--mut);
@@ -335,7 +335,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   position: fixed;
   top: 100px; /* テーマ(20)→Contact(60)→MENU(100) の縦積み */
   right: 22px;
-  width: 72px;
+  width: 88px;
   height: 30px;
   border: 1px solid var(--mut);
   border-radius: 999px;
@@ -437,7 +437,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   top: 50%;
   transform: translateY(-50%);
   z-index: 27; /* 再生時のオーバーレイ(24)・波形(25)・タイトル(26)より前。MENU(30)の下 */
-  width: 72px;
+  width: 88px;
   height: 30px;
   border-radius: 999px;
   border: 1px solid var(--mut);
@@ -454,34 +454,54 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 /* PODCAST/ON AIRラベル(2026-07-19): 初見に「連続再生される」と伝えるための言葉。
    組みはMENUピルと同じ語法(小さく・字間広く) */
 .sound-btn .sound-btn-label {
-  font-size: 8px;
-  letter-spacing: 0.18em;
+  font-size: 9px;
+  letter-spacing: 0.2em;
   font-weight: 300;
   white-space: nowrap;
 }
 
-/* 再生中の前の回/次の回(キュー内移動)。タイトル下に静かに置く */
-.sound-skips {
+/* 再生中のキュー操作(2026-07-19再設計): 説明語を排し「← 点列 →」だけで
+   "続きがあり、いまここ"を伝える。現在位置の点はON AIRと同じ赤 */
+.sound-queue {
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 36px;
-  margin-top: 28px;
+  gap: 22px;
+  margin-top: 34px;
 }
 
-.sound-skips button {
+.sound-queue .q-arrow {
   background: none;
   border: none;
-  padding: 4px 2px;
+  padding: 4px 8px;
   font: inherit;
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 15px;
+  font-weight: 200;
   color: var(--mut);
   cursor: pointer;
   transition: color 0.2s;
 }
 
-.sound-skips button:hover {
+.sound-queue .q-arrow:hover {
   color: var(--ink);
+}
+
+.sound-queue .q-dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sound-queue .q-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ghost);
+  transition: background 0.3s ease;
+}
+
+.sound-queue .q-dot.on {
+  background: var(--live);
 }
 
 .sound-btn:hover {
@@ -2281,7 +2301,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   .theme-toggle {
     top: 12px;
     right: 12px;
-    width: 62px;
+    width: 74px;
     height: 27px;
   }
 
@@ -2304,7 +2324,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   .contact-pill {
     top: 47px;
     right: 12px;
-    width: 62px;
+    width: 74px;
     height: 27px;
     font-size: 9px;
     background: var(--bg);
@@ -2313,7 +2333,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   .menu-toggle {
     top: 82px; /* Contact(47+27)の下に8px */
     right: 12px;
-    width: 62px;
+    width: 74px;
     height: 27px;
     font-size: 9px;
   }
@@ -2331,7 +2351,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   /* サウンドボタンは右レール(他ピルと同幅)のままY中央。波形はその左エッジへ接続 */
   .sound-btn {
     right: 12px;
-    width: 62px;
+    width: 74px;
     height: 27px;
     background: var(--bg);
   }

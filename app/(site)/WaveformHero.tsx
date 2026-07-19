@@ -314,21 +314,27 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
         <div className={`sound-title${playing ? ' on' : ''}`} aria-hidden={!playing}>
           <div className="sound-nowlabel">
             <span className="dot" />
-            ON AIR — 連続再生
+            ON AIR
           </div>
           <Link href={episode.href} className="sound-ep">
-            {/* リリース日は番組名と同じ行(エピソードページのヘッド「番組名 — 日付」と同じ語彙) */}
+            {/* リリース日は番組名と同じ行(エピソードページのヘッド「番組名 — 日付」と同じ語彙)。
+                タイトル自体がリンク(下線)なので「エピソードを開く」の説明行は置かない */}
             <span className="show">{episode.showName} — {episode.date}</span>
             <span className="ttl">{episode.title}</span>
-            <span className="go">エピソードを開く →</span>
           </Link>
-          {/* キュー内の前後移動(2026-07-19 Andy要望)。どちらも頭から再生 */}
-          <div className="sound-skips">
-            <button type="button" onClick={() => skipRef.current?.(-1)}>
-              ← 前の回
+          {/* キュー操作(2026-07-19再設計): ←|点列|→ だけで「続きがあり、いまここ」を
+              無言で伝える(説明語ゼロ)。現在位置の点はON AIRと同じ赤。矢印は頭から再生 */}
+          <div className="sound-queue">
+            <button type="button" className="q-arrow" aria-label="前の回へ" onClick={() => skipRef.current?.(-1)}>
+              ←
             </button>
-            <button type="button" onClick={() => skipRef.current?.(1)}>
-              次の回 →
+            <span className="q-dots" aria-hidden="true">
+              {episodes!.map((e, i) => (
+                <span key={e.href} className={`q-dot${i === idx % episodes!.length ? ' on' : ''}`} />
+              ))}
+            </span>
+            <button type="button" className="q-arrow" aria-label="次の回へ" onClick={() => skipRef.current?.(1)}>
+              →
             </button>
           </div>
         </div>
