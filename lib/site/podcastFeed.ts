@@ -63,21 +63,46 @@ async function loadFeed(feedUrl: string, since?: string): Promise<ShowFeed | nul
   return feed
 }
 
-// 複数番組から背景波形の音源をランダム1本選ぶ。まず「番組」を等確率で選び、
-// 次にその番組内でエピソードをランダムに選ぶ(2026-07-14 Andy指定。話数の多い
-// 番組が当たりやすくなる合算プール方式からの踏み替え)。enclosureを持つ番組のみ対象。
-// feedIndexを返して呼び出し側が番組名・リンクを解決できるようにする。Math.randomはここに閉じる。
-export function randomAudioEpisodeByShow(
-  feeds: (ShowFeed | null)[]
-): { feedIndex: number; episode: Episode } | null {
-  // enclosure付きエピソードを1本以上持つ番組だけを候補にする
-  const candidates = feeds
-    .map((feed, feedIndex) => ({ feedIndex, eps: (feed?.episodes ?? []).filter((e) => e.audioUrl) }))
+// 背景ラジオの再生キューを作る(2026-07-19、単発ランダム→連続再生化)。
+// 番組の当たりやすさを話数に依存させないため、シャッフルした番組順の
+// ラウンドロビンで各番組からランダムに未使用の1本ずつ取る(番組選択は均等)。
+// enclosureを持つエピソードのみ。Math.randomはここに閉じる(render純粋性)。
+export function randomEpisodeQueue(
+  feeds: (ShowFeed | null)[],
+  n = 10
+): { feedIndex: number; episode: Episode }[] {
+  const pools = feeds
+    .map((feed, feedIndex) => ({
+      feedIndex,
+      eps: (feed?.episodes ?? []).filter((e) => e.audioUrl),
+    }))
     .filter((c) => c.eps.length > 0)
-  if (!candidates.length) return null
-  const show = candidates[Math.floor(Math.random() * candidates.length)]
-  const episode = show.eps[Math.floor(Math.random() * show.eps.length)]
-  return { feedIndex: show.feedIndex, episode }
+  if (!pools.length) return []
+
+  // 番組順をシャッフル(Fisher–Yates)
+  for (let i = pools.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[pools[i], pools[j]] = [pools[j], pools[i]]
+  }
+
+  const queue: { feedIndex: number; episode: Episode }[] = []
+  const used = pools.map(() => new Set<number>())
+  while (queue.length < n) {
+    let picked = false
+    for (let p = 0; p < pools.length && queue.length < n; p++) {
+      const pool = pools[p]
+      if (used[p].size >= pool.eps.length) continue
+      let k
+      do {
+        k = Math.floor(Math.random() * pool.eps.length)
+      } while (used[p].has(k))
+      used[p].add(k)
+      queue.push({ feedIndex: pool.feedIndex, episode: pool.eps[k] })
+      picked = true
+    }
+    if (!picked) break // 全番組の在庫切れ
+  }
+  return queue
 }
 
 // Homeのカバー+最新日付用の薄いラッパー

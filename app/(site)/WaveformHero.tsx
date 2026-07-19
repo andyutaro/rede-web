@@ -4,16 +4,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
-// トップページの背景波形 + サウンドオン(2026-07-13。2026-07-13後半に整列/簡素化)。
-// - 波形は固定背景(z:0)、コンテンツの背後。音は既定ミュート、常時ゆっくり流れる。
-// - サウンドボタンは右レール(テーマ/Contact/MENU)と同幅のピル。X=レール、Y=画面中央固定。
-// - 音を出すとメニュー同様に背景をぼかし、そこで初めてエピソードタイトルを表示。
-//   タイトルのタップで当該エピソードページへ遷移(遷移=アンマウントで再生停止)。
-// - 再生は途中(10:00)から(READMEの選定方針: シークバー無しで途中から)。
+// 背景波形 + ラジオ(2026-07-19、単発ランダム→連続再生化)。
+// - 波形は固定背景、コンテンツの背後。RADIOピルを押すと局に「合流」する:
+//   1本目は10:00地点から(放送中の局に途中から入る体験。READMEの選定方針)、
+//   終わると次のエピソードが頭から始まり、キューを順に流し続ける(番組編成)。
+//   「途中から再生」は初回のチューンインの演出であり、以降は通常の放送が続く。
+// - 曲間はフェードインで繋ぐ。タイトル表示は再生中のみ(タップで当該エピソードへ)。
 // 波形は合成(README推奨・堅牢)。実音とは独立に流し、playingで振幅/速度だけ上げる。
-// 再生開始は必ずクリックハンドラ内(自動再生ポリシー)。
+// 再生開始は必ずクリックハンドラ内(自動再生ポリシー。ended→次はブラウザが許容)。
 
-// dateは表示用に整形済みのリリース日(2026.07.08形式、layoutで生成)
+// dateは表示用に整形済みのリリース日(2026.07.08形式)。episodesはlayoutが組んだ
+// 再生キュー(番組均等ラウンドロビン10本、ページロード毎に変わる)
 type Episode = { audioUrl: string; showName: string; title: string; date: string; href: string }
 
 const START_AT = 600 // 10:00から再生(尺が足りなければ25%地点にフォールバック)
@@ -54,11 +55,41 @@ function makePeaks(n: number, seed: number): number[] {
   return arr.map((x) => 0.5 + 0.5 * (x / (max || 1)))
 }
 
-export default function WaveformHero({ episode }: { episode: Episode | null }) {
+// 再生開始のフェードイン(2026-07-19 Andy要望): 無音からFADE_MSかけて音量を上げる。
+// カーブは2乗(音量=振幅は対数知覚なので、直線より立ち上がりが自然)。
+// rAF主導+timeupdateフォールバック(タブが裏に回るとrAFが止まり小音量のまま
+// 流れ続けるため。timeupdateは再生中なら裏でも発火する)。
+// 注: iOS Safariはメディア音量がOS管理(volume書き込み無視)のためフェードは
+// 効かず即時full音量になる(実害なし・従来挙動)
+const FADE_MS = 1200
+const fadeRafBox = { current: 0 } // 波形ヒーローは1ページ1個なのでモジュール共有でよい
+
+function fadeInAudio(a: HTMLAudioElement, rafBox: { current: number }) {
+  cancelAnimationFrame(rafBox.current)
+  const t0 = performance.now()
+  a.volume = 0
+  const apply = () => {
+    const p = Math.min(1, (performance.now() - t0) / FADE_MS)
+    a.volume = a.paused ? 1 : p * p
+    if (p >= 1 || a.paused) a.removeEventListener('timeupdate', apply)
+    return p
+  }
+  a.addEventListener('timeupdate', apply)
+  const step = () => {
+    if (apply() < 1 && !a.paused) rafBox.current = requestAnimationFrame(step)
+  }
+  rafBox.current = requestAnimationFrame(step)
+}
+
+export default function WaveformHero({ episodes }: { episodes: Episode[] | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
+  // 再生キューの現在位置。表示(タイトル等)はidx、音源制御はidxRef(リスナー内から参照)
+  const [idx, setIdx] = useState(0)
+  const idxRef = useRef(0)
+  const episode = episodes?.[idx % episodes.length] ?? null
   const playingRef = useRef(false)
   useEffect(() => {
     playingRef.current = playing
@@ -159,34 +190,60 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
     }
   }, [])
 
-  // 音源はマウント時に仕込む(2026-07-19)。旧実装は初回クリック時に生成+
-  // preload='none'だったため、メタデータ取得→10:00シークの間が「0.5秒の無音」に
-  // なっていた(Andy指摘。2回目以降が速いのはバッファ済みのため)。
-  // preload='metadata'でシークまで先に済ませ、初回の無音自体を短縮する。
-  // play()はクリックハンドラ内のまま(自動再生ポリシー)
+  // 音源はマウント時に仕込む。preload='metadata'で1本目の10:00シークまで先に
+  // 済ませ、初回クリック時の無音を短縮する(2026-07-19)。play()はクリック内(ポリシー)。
+  // 連続再生: 'ended'でキューの次へ(頭から)。src差し替えは同一Audio要素で行う
+  // (ユーザー操作起点の連続再生としてブラウザが許容する)。読めない音源(URL失効等)は
+  // 1本飛ばす(全滅したら停止)
   useEffect(() => {
-    if (!episode?.audioUrl) return
+    if (!episodes || episodes.length === 0) return
     const a = new Audio()
     a.preload = 'metadata'
-    a.src = episode.audioUrl
+    a.src = episodes[0].audioUrl
     a.addEventListener(
       'loadedmetadata',
       () => {
-        // 10:00へシーク(尺が足りなければ25%地点)
+        // 1本目だけ10:00へシーク=放送への「途中から合流」(尺が足りなければ25%地点)
         const d = a.duration
         a.currentTime = d && d > START_AT + 40 ? START_AT : d ? d * 0.25 : 0
       },
       { once: true }
     )
-    a.addEventListener('ended', () => setPlaying(false))
-    a.addEventListener('pause', () => setPlaying(false))
-    a.addEventListener('play', () => setPlaying(true))
+
+    let errorStreak = 0
+    const advance = () => {
+      idxRef.current += 1
+      setIdx(idxRef.current)
+      const next = episodes[idxRef.current % episodes.length]
+      a.src = next.audioUrl // 2本目以降は頭から(次の番組が始まる)
+      fadeInAudio(a, fadeRafBox)
+      a.play().catch(() => setPlaying(false))
+    }
+
+    a.addEventListener('ended', () => {
+      if (errorStreak < episodes.length) advance()
+    })
+    a.addEventListener('error', () => {
+      // 再生中の失効等のみ自動スキップ(未再生時のプリロード失敗では鳴らさない)
+      if (!playingRef.current) return
+      errorStreak += 1
+      if (errorStreak < episodes.length) advance()
+      else setPlaying(false)
+    })
+    a.addEventListener('pause', () => {
+      // 自然な終端(ended)ではオーバーレイを維持し、次の曲へ継ぎ目なく渡す
+      if (!a.ended) setPlaying(false)
+    })
+    a.addEventListener('play', () => {
+      errorStreak = 0
+      setPlaying(true)
+    })
     audioRef.current = a
     return () => {
       a.pause()
       audioRef.current = null
     }
-  }, [episode?.audioUrl])
+  }, [episodes])
 
   // ページ遷移で再生と表示を止める(2026-07-14 Andy指摘)。layout常駐のため
   // 遷移してもアンマウントされず、表示が開いたままだと「遷移したかどうか
@@ -211,32 +268,6 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
     }
   }, [playing])
 
-  // 再生開始のフェードイン(2026-07-19 Andy要望): 無音からFADE_MSかけて音量を
-  // 上げる。カーブは2乗(音量=振幅は対数知覚なので、直線より立ち上がりが自然)。
-  // 注: iOS Safariはメディア音量がOS管理(volume書き込み無視)のためフェードは
-  // 効かず即時full音量になる(実害なし・従来挙動)
-  const FADE_MS = 1200
-  const fadeRef = useRef(0)
-
-  const fadeIn = (a: HTMLAudioElement) => {
-    cancelAnimationFrame(fadeRef.current)
-    const t0 = performance.now()
-    a.volume = 0
-    const apply = () => {
-      const p = Math.min(1, (performance.now() - t0) / FADE_MS)
-      a.volume = a.paused ? 1 : p * p
-      if (p >= 1 || a.paused) a.removeEventListener('timeupdate', apply)
-      return p
-    }
-    // rAF主導+timeupdateフォールバック(タブが裏に回るとrAFが止まり
-    // 小音量のまま流れ続けるため。timeupdateは再生中なら裏でも発火する)
-    a.addEventListener('timeupdate', apply)
-    const step = () => {
-      if (apply() < 1 && !a.paused) fadeRef.current = requestAnimationFrame(step)
-    }
-    fadeRef.current = requestAnimationFrame(step)
-  }
-
   const toggle = () => {
     const a = audioRef.current
     if (!a) return
@@ -245,7 +276,7 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
       return
     }
     // 自動再生ポリシー: play()はこのクリック内で呼ぶ
-    fadeIn(a)
+    fadeInAudio(a, fadeRafBox)
     a.play().catch(() => setPlaying(false))
   }
 
@@ -268,7 +299,7 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
         <div className={`sound-title${playing ? ' on' : ''}`} aria-hidden={!playing}>
           <div className="sound-nowlabel">
             <span className="dot" />
-            NOW PLAYING
+            ON AIR — 連続再生
           </div>
           <Link href={episode.href} className="sound-ep">
             {/* リリース日は番組名と同じ行(エピソードページのヘッド「番組名 — 日付」と同じ語彙) */}
@@ -279,16 +310,18 @@ export default function WaveformHero({ episode }: { episode: Episode | null }) {
         </div>
       )}
 
-      {/* サウンドボタン: 右レール同幅ピル・Y中央固定 */}
+      {/* RADIOボタン: 右レール同幅ピル・Y中央固定。初見に「これはラジオ(連続再生)」と
+          伝わるようラベル付き(再生中はON AIR)(2026-07-19 Andy要望) */}
       {episode && (
         <button
           ref={btnRef}
           type="button"
           className={`sound-btn${playing ? ' on' : ''}`}
           onClick={toggle}
-          aria-label={playing ? '音を止める' : '音を出す'}
+          aria-label={playing ? 'ラジオを止める' : 'ラジオを流す(エピソードを連続再生)'}
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <span className="sound-btn-label">{playing ? 'ON AIR' : 'RADIO'}</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M3 9 H7 L12 4 V20 L7 15 H3 Z" fill="currentColor" />
             {playing && (
               <>

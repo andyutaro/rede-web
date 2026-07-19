@@ -447,7 +447,17 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* RADIO/ON AIRラベル(2026-07-19): 初見に「連続再生のラジオ」と伝えるための言葉。
+   組みはMENUピルと同じ語法(小さく・字間広く) */
+.sound-btn .sound-btn-label {
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  font-weight: 300;
+  white-space: nowrap;
 }
 
 .sound-btn:hover {
