@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { dateShort } from '@/lib/site/text'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 export type CoverShow = {
   slug: string
@@ -31,7 +32,7 @@ export default function CoverGrid({
           <div key={show.slug}>
             <Link href={`/podcast/${show.slug}`} className="sq cover-frame">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={show.cover} alt={show.name} />
+              <img src={imgThumb(show.cover, IMG_W.tile)} alt={show.name} loading="lazy" decoding="async" />
             </Link>
             {show.latest && (
               <div className="cover-label">

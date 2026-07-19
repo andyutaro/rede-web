@@ -8,6 +8,7 @@ import Pager from '../../../Pager'
 import EpisodeNotes from '../../EpisodeNotes'
 import AudioPlayer from '../../AudioPlayer'
 import PlatformLinks from '../../PlatformLinks'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // ISR: 30分ごとに再検証。新エピソードのページは初回アクセス時に生成・キャッシュされる
 export const revalidate = 1800
@@ -64,7 +65,7 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
           {thumb && (
             <div className="sq cover-frame episode-thumb">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={thumb} alt="" />
+              <img src={imgThumb(thumb, IMG_W.tile)} alt="" decoding="async" />
             </div>
           )}
           <h1 className="episode-title">{ep.title}</h1>

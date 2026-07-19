@@ -6,6 +6,7 @@ import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { dateDots } from '@/lib/site/text'
 import Accordion from '../../about/Accordion'
 import PlatformLinks from '../PlatformLinks'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // ISR: 30分ごとに再検証し、新エピソードを自動で番組ページに反映する
 export const revalidate = 1800
@@ -48,7 +49,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         {feed?.image && (
           <div className="sq cover-frame show-cover">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={feed.image} alt={show.name} />
+            <img src={imgThumb(feed.image, IMG_W.tile)} alt={show.name} decoding="async" />
           </div>
         )}
         <h1 className="show-title">{feed?.title || show.name}</h1>

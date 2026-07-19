@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 export type ThumbItem = {
   target: 'scribe' | 'article'
@@ -57,7 +58,7 @@ export default function ThumbGrid({ items, pool }: { items: ThumbItem[]; pool: s
               <div className="thumb-row">
                 {item.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.thumb} alt="" loading="lazy" className="thumb-preview" />
+                  <img src={imgThumb(item.thumb, IMG_W.pick)} alt="" loading="lazy" decoding="async" className="thumb-preview" />
                 ) : (
                   <span className="thumb-preview thumb-none" />
                 )}
@@ -94,7 +95,7 @@ export default function ThumbGrid({ items, pool }: { items: ThumbItem[]; pool: s
                       aria-label="この画像にする"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="" loading="lazy" />
+                      <img src={imgThumb(url, IMG_W.pick)} alt="" loading="lazy" decoding="async" />
                     </button>
                   ))}
                   {pool.length === 0 && <p className="studio-empty">プールに画像がありません</p>}

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { dateShort } from '@/lib/site/text'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 export type GridItem = {
   key: string
@@ -75,7 +76,7 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
                 {item.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={item.thumb}
+                    src={imgThumb(item.thumb, IMG_W.tile)}
                     alt=""
                     loading="lazy"
                     className={item.assigned ? 'thumb-assigned' : undefined}

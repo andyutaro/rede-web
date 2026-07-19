@@ -9,6 +9,8 @@
 //   <video>やiframeがリセットされるため、変わっていないノードには一切触れない。
 // - connectLive: /ws/sub への接続・presence/スナップショットの振り分け・再接続。
 
+import { imgThumb, IMG_W } from '@/lib/site/img'
+
 export const ALLOWED_IFRAME_HOSTS = [
   'open.spotify.com',
   'embed.podcasts.apple.com',
@@ -78,7 +80,10 @@ function sanitizeChildren(node: Node, inLink = false): Node[] {
       const src = el.getAttribute('src') || ''
       if (/^(https?:\/\/|\/|images\/)/i.test(src)) {
         const img = document.createElement('img')
-        img.src = src
+        // 本文写真は原寸(数MB級)のまま流れてくるため表示幅へエッジ変換(2026-07-19)
+        img.src = imgThumb(src, IMG_W.photo)
+        img.loading = 'lazy'
+        img.decoding = 'async'
         img.className = 'embed-image'
         copyBlockId(el, img)
         out.push(img)

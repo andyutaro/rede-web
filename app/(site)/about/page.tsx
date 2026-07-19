@@ -4,6 +4,7 @@ import { showBySlug } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import { getAboutContent, type AboutContent, type AboutShow } from '@/lib/site/about'
 import Accordion from './Accordion'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // ISR: 番組カバーをRSSから引くため。文言編集は保存時にrevalidatePath('/about')で即反映
 export const revalidate = 1800
@@ -134,7 +135,7 @@ function ShowList({
               {covers[s.slug] && (
                 <div className="sq cover-frame">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={covers[s.slug]!} alt={s.name} />
+                  <img src={imgThumb(covers[s.slug]!, IMG_W.tile)} alt={s.name} loading="lazy" decoding="async" />
                 </div>
               )}
             </div>

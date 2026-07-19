@@ -8,6 +8,7 @@ import { channelInfo } from '@/lib/site/podcastFeed'
 import CoverGrid from './CoverGrid'
 import LiveWindow from './LiveWindow'
 import UpdateList from './UpdateList'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // ライブ・ランダム写真・当日行はリクエストごとに変わるので静的化しない
 export const dynamic = 'force-dynamic'
@@ -82,11 +83,11 @@ export default async function Home() {
             {photo.href ? (
               <Link href={photo.href}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.url} alt="" />
+                <img src={imgThumb(photo.url, IMG_W.photo)} alt="" loading="lazy" decoding="async" />
               </Link>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photo.url} alt="" />
+              <img src={imgThumb(photo.url, IMG_W.photo)} alt="" loading="lazy" decoding="async" />
             )}
           </div>
         </section>

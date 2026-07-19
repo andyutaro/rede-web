@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { dateDots } from '@/lib/site/text'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // studio共通の選択テーブル(NOTES/Photography/Updates/各TRASHで共用)。
 // v2(2026-07-17): ヘッダー行・検索・状態/サムネ出所フィルタ・日付ソート・
@@ -232,7 +233,7 @@ export default function SelectTable({
               <span className="row-thumb">
                 {r.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.thumb} alt="" loading="lazy" />
+                  <img src={imgThumb(r.thumb, IMG_W.studio)} alt="" loading="lazy" decoding="async" />
                 ) : (
                   <span className="row-thumb-empty" aria-hidden="true" />
                 )}

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { dateShort } from '@/lib/site/text'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 export type EpItem = {
   key: string
@@ -66,7 +67,7 @@ export default function PodcastEpisodeGrid({ episodes, total }: { episodes: EpIt
             <Link href={`/podcast/${ep.slug}/${ep.epId}`} className="sq">
               {ep.thumb ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={ep.thumb} alt="" loading="lazy" className="cover-frame" />
+                <img src={imgThumb(ep.thumb, IMG_W.ep)} alt="" loading="lazy" decoding="async" className="cover-frame" />
               ) : (
                 <span className="empty-cell" />
               )}

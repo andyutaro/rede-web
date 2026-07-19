@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createService } from '@/lib/supabase/service'
 import { firstImageSrc, dateShort, tokyoYmd } from '@/lib/site/text'
 import { assignedOf, listAllImages } from '@/lib/site/photos'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,7 +51,7 @@ export default async function PhysicalPage() {
                 {item.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={item.thumb}
+                    src={imgThumb(item.thumb, IMG_W.tile)}
                     alt=""
                     loading="lazy"
                     className={item.assigned ? 'thumb-assigned' : undefined}
