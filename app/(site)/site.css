@@ -2368,21 +2368,23 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     height: 11px;
   }
 
-  /* 再生中はスマホ専用レイアウト(2026-07-20 Andy指摘「中央からズレて気持ち悪い」):
-     旧処置(左46%に寄せてピルを避ける)をやめ、情報塊を真の中央へ。
-     衝突相手のピルは再生中だけ下部中央の停止コントロールに移す(下記)。
-     ぼかし幕の上なので画面を専有してよい */
+  /* 再生中のスマホレイアウト(2026-07-20改二): 情報塊は真の中央、ピルは右レール
+     中央のまま「形」を変えて衝突を解く(Andy指示)。文字を畳んで丸いアイコンだけの
+     最小形(36px円)になり、波形がアイコンへ接続する意匠も保たれる。
+     ON AIRであることはオーバーレイの赤ラベルが語る */
   .sound-title {
-    max-width: 84vw;
+    /* 円(右12+36px)ぶんを左右対称に空けて中央を維持 */
+    max-width: calc(100vw - 116px);
   }
 
-  /* 再生中のON AIRピル: 右レールから下部中央へ(プレイヤーの停止ボタンの位置)。
-     波形の接続判定はボタンが縦中央付近にある時だけ働くので、移動後は自然に外れる */
   .sound-btn.on {
-    top: auto;
-    bottom: 44px;
-    right: 50%;
-    transform: translateX(50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+
+  .sound-btn.on .sound-btn-label {
+    display: none;
   }
 
   .sound-nowlabel {
