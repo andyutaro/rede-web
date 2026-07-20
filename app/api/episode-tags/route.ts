@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { SHOWS } from '@/lib/site/shows'
 
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
       .update({ tags: [], updated_at: new Date().toISOString() })
       .eq('show_slug', showSlug)
       .eq('episode_id', episodeId)
+    revalidatePath(`/podcast/${showSlug}`) // 入門3選の即時反映(ISRを待たない)
     return NextResponse.json({ ok: true, tags: [] })
   }
 
@@ -91,5 +93,6 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath(`/podcast/${showSlug}`) // 入門3選の即時反映(ISRを待たない)
   return NextResponse.json({ ok: true, tags: clean })
 }

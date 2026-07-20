@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { SHOWS } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
+import { tokyoDaysAgo } from '@/lib/site/text'
 import CoverGrid from '../CoverGrid'
 import PodcastEpisodeGrid, { type EpItem } from './PodcastEpisodeGrid'
 
@@ -44,7 +45,11 @@ export default async function PodcastPage() {
     <div className="measure">
       <CoverGrid heading="ORIGINAL" shows={withArt.filter((s) => s.group === 'original')} />
       <CoverGrid heading="WORKS" shows={withArt.filter((s) => s.group === 'works')} />
-      <PodcastEpisodeGrid episodes={allEpisodes} total={allEpisodes.length} />
+      <PodcastEpisodeGrid
+        episodes={allEpisodes}
+        total={allEpisodes.length}
+        newSince={tokyoDaysAgo(7)}
+      />
     </div>
   )
 }

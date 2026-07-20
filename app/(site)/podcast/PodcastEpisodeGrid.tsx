@@ -19,7 +19,16 @@ export type EpItem = {
 const TABS = ['ALL', 'ORIGINAL', 'WORKS'] as const
 type Tab = (typeof TABS)[number]
 
-export default function PodcastEpisodeGrid({ episodes, total }: { episodes: EpItem[]; total: number }) {
+// newSince: この日付以降のエピソードに赤のNEWドット(7日以内の新着、2026-07-20)
+export default function PodcastEpisodeGrid({
+  episodes,
+  total,
+  newSince = '9999-12-31',
+}: {
+  episodes: EpItem[]
+  total: number
+  newSince?: string
+}) {
   const [tab, setTab] = useState<Tab>('ALL')
   const [query, setQuery] = useState('')
 
@@ -75,7 +84,10 @@ export default function PodcastEpisodeGrid({ episodes, total }: { episodes: EpIt
             <div className="ep-cell-label">
               <span className="ep-show">{ep.showLabel}</span>
               <span className="ep-title">{ep.title}</span>
-              <span className="ep-date">{dateShort(ep.date)}</span>
+              <span className="ep-date">
+                {dateShort(ep.date)}
+                {ep.date >= newSince && <span className="new-dot" aria-label="新着" />}
+              </span>
             </div>
           </div>
         ))}

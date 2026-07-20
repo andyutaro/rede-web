@@ -86,12 +86,17 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
   const btnRef = useRef<HTMLButtonElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
+  // 再生キュー: 初期値はlayoutの全番組キュー。番組ページの「この番組を連続再生」が
+  // andy:play-showイベントで差し替える(2026-07-20)。音源制御はref(リスナー内参照)、
+  // 表示はstate、の二重持ち
+  const [uiQueue, setUiQueue] = useState<Episode[] | null>(episodes)
+  const queueRef = useRef<Episode[] | null>(episodes)
   // 再生キューの現在位置。表示(タイトル等)はidx、音源制御はidxRef(リスナー内から参照)
   const [idx, setIdx] = useState(0)
   const idxRef = useRef(0)
   // 前の回/次の回ボタンから曲間遷移を呼ぶ(実体は音源エフェクト内のskip)
   const skipRef = useRef<((delta: number) => void) | null>(null)
-  const episode = episodes?.[idx % episodes.length] ?? null
+  const episode = uiQueue?.[idx % uiQueue.length] ?? null
   const playingRef = useRef(false)
   useEffect(() => {
     playingRef.current = playing
@@ -196,32 +201,31 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
   // 済ませ、初回クリック時の無音を短縮する(2026-07-19)。play()はクリック内(ポリシー)。
   // 連続再生: 'ended'でキューの次へ(頭から)。src差し替えは同一Audio要素で行う
   // (ユーザー操作起点の連続再生としてブラウザが許容する)。読めない音源(URL失効等)は
-  // 1本飛ばす(全滅したら停止)
+  // 1本飛ばす(全滅したら停止)。キューはqueueRef駆動(番組ページからの差し替えに対応)
   useEffect(() => {
-    if (!episodes || episodes.length === 0) return
     const a = new Audio()
     a.preload = 'metadata'
-    a.src = episodes[0].audioUrl
-    a.addEventListener(
-      'loadedmetadata',
-      () => {
-        // 1本目だけ10:00へシーク=放送への「途中から合流」(尺が足りなければ25%地点)
-        const d = a.duration
-        a.currentTime = d && d > START_AT + 40 ? START_AT : d ? d * 0.25 : 0
-      },
-      { once: true }
-    )
+    // 10:00合流シーク(チューンイン演出)。初回とキュー差し替え時の1本目に使う
+    const seekJoin = () => {
+      const d = a.duration
+      a.currentTime = d && d > START_AT + 40 ? START_AT : d ? d * 0.25 : 0
+    }
+    if (queueRef.current?.length) {
+      a.src = queueRef.current[0].audioUrl
+      a.addEventListener('loadedmetadata', seekJoin, { once: true })
+    }
 
     let errorStreak = 0
     // 曲間遷移中フラグ: src差し替えは仕様上pausedを経由するため、その瞬間の
     // pauseイベントでオーバーレイを閉じないためのガード
     let chaining = false
     const skip = (delta: number) => {
+      const q = queueRef.current
+      if (!q || q.length === 0) return
       chaining = true
-      const len = episodes.length
-      idxRef.current = (((idxRef.current + delta) % len) + len) % len
+      idxRef.current = (((idxRef.current + delta) % q.length) + q.length) % q.length
       setIdx(idxRef.current)
-      a.src = episodes[idxRef.current].audioUrl // 2本目以降は頭から(次の番組が始まる)
+      a.src = q[idxRef.current].audioUrl // 2本目以降は頭から(次の番組が始まる)
       fadeInAudio(a, fadeRafBox)
       a.play()
         .then(() => {
@@ -234,14 +238,38 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     }
     skipRef.current = skip
 
+    // 番組ページの「この番組を連続再生」からのキュー差し替え。クリックハンドラ内から
+    // 同期的に届く=このplay()はユーザー操作起点として許容される
+    const onPlayShow = (e: Event) => {
+      const eps = (e as CustomEvent<{ episodes?: Episode[] }>).detail?.episodes
+      if (!eps || eps.length === 0) return
+      queueRef.current = eps
+      idxRef.current = 0
+      setUiQueue(eps)
+      setIdx(0)
+      chaining = true
+      a.src = eps[0].audioUrl
+      a.addEventListener('loadedmetadata', seekJoin, { once: true }) // 合流演出は差し替え時も
+      fadeInAudio(a, fadeRafBox)
+      a.play()
+        .then(() => {
+          chaining = false
+        })
+        .catch(() => {
+          chaining = false
+          setPlaying(false)
+        })
+    }
+    window.addEventListener('andy:play-show', onPlayShow)
+
     a.addEventListener('ended', () => {
-      if (errorStreak < episodes.length) skip(1)
+      if (errorStreak < (queueRef.current?.length ?? 0)) skip(1)
     })
     a.addEventListener('error', () => {
       // 再生中の失効等のみ自動スキップ(未再生時のプリロード失敗では鳴らさない)
       if (!playingRef.current) return
       errorStreak += 1
-      if (errorStreak < episodes.length) skip(1)
+      if (errorStreak < (queueRef.current?.length ?? 0)) skip(1)
       else setPlaying(false)
     })
     a.addEventListener('pause', () => {
@@ -254,11 +282,14 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     })
     audioRef.current = a
     return () => {
+      window.removeEventListener('andy:play-show', onPlayShow)
       a.pause()
       audioRef.current = null
       skipRef.current = null
     }
-  }, [episodes])
+    // queueRefはref(再購読不要)。マウント時に1度だけ配線する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ページ遷移で再生と表示を止める(2026-07-14 Andy指摘)。layout常駐のため
   // 遷移してもアンマウントされず、表示が開いたままだと「遷移したかどうか
@@ -329,8 +360,8 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
               ←
             </button>
             <span className="q-dots" aria-hidden="true">
-              {episodes!.map((e, i) => (
-                <span key={e.href} className={`q-dot${i === idx % episodes!.length ? ' on' : ''}`} />
+              {uiQueue!.map((e, i) => (
+                <span key={e.href} className={`q-dot${i === idx % uiQueue!.length ? ' on' : ''}`} />
               ))}
             </span>
             <button type="button" className="q-arrow" aria-label="次の回へ" onClick={() => skipRef.current?.(1)}>

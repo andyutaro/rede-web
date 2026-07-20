@@ -3,10 +3,13 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
-import { dateDots } from '@/lib/site/text'
+import { dateDots, dateShort, htmlToPlainText, tokyoDaysAgo } from '@/lib/site/text'
+import { createService } from '@/lib/supabase/service'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 import Accordion from '../../about/Accordion'
 import PlatformLinks from '../PlatformLinks'
-import { imgThumb, IMG_W } from '@/lib/site/img'
+import EpisodeIndex, { type IndexRow } from '../EpisodeIndex'
+import ShowPlayAll from '../ShowPlayAll'
 
 // ISR: 30分ごとに再検証し、新エピソードを自動で番組ページに反映する
 export const revalidate = 1800
@@ -29,14 +32,56 @@ export async function generateMetadata({
   return { title: show?.name ?? 'Podcast' }
 }
 
-// 番組ページ: カバー・番組名・RSSのchannel説明・ROLE(担当領域、旧サイト移植)・
-// エピソード索引(rebuild.fm参照: 逆時系列の行、タイトル+日付)。
+// 入門3選(2026-07-20): studioのPODCAST INBOXで「入門」タグを付けた回。
+// RSSには「推奨入口」という概念が無い=アプリに出来ない編集行為。ORIGINAL番組のみ
+const STARTER_TAG = '入門'
+
+async function starterIds(slug: string): Promise<Set<string>> {
+  const service = createService()
+  const { data } = await service
+    .from('episode_tags')
+    .select('episode_id, tags')
+    .eq('show_slug', slug)
+    .contains('tags', [STARTER_TAG])
+  return new Set((data ?? []).map((r) => r.episode_id as string))
+}
+
+// 番組ページ: カバー・番組名・配信先・(ORIGINALのみ)入門3選・連続再生・
+// SHOW NOTES・検索付きエピソード索引。
 export default async function ShowPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
   const show = showBySlug(slug)
   if (!show || !show.feed) notFound()
 
-  const feed = await fetchShowFeed(show.feed, show.since)
+  const isOriginal = show.group === 'original'
+  const [feed, starters] = await Promise.all([
+    fetchShowFeed(show.feed, show.since),
+    isOriginal ? starterIds(slug) : Promise.resolve(new Set<string>()),
+  ])
+
+  const episodes = feed?.episodes ?? []
+  const starterEps = episodes.filter((e) => starters.has(e.id)).slice(0, 3)
+
+  // 検索索引(タイトル+概要欄プレーンテキスト。転送量を抑えるため600字まで)
+  const indexRows: IndexRow[] = episodes.map((ep) => ({
+    id: ep.id,
+    title: ep.title,
+    date: ep.date,
+    href: `/podcast/${show.slug}/${ep.id}`,
+    searchText: htmlToPlainText(ep.description).slice(0, 600),
+  }))
+
+  // NEWドット境界(7日前)とWaveformHeroへ渡す連続再生キュー素材
+  const newSince = tokyoDaysAgo(7)
+  const playable = episodes
+    .filter((e) => e.audioUrl)
+    .map((e) => ({
+      audioUrl: e.audioUrl!,
+      showName: show.display ?? show.name,
+      title: e.title,
+      date: dateDots(e.date),
+      href: `/podcast/${show.slug}/${e.id}`,
+    }))
 
   return (
     <div className="measure">
@@ -44,7 +89,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         {/* 初見者が「本人の番組か制作参加か」を判別できる棚見出し(2026-07-14 Andy指摘)。
             語彙はHomeの棚(PODCAST — ORIGINAL/WORKS)と同一=サイト内で意味が通る */}
         <div className="section-head show-shelf-head">
-          <span>PODCAST — {show.group === 'original' ? 'ORIGINAL' : 'WORKS'}</span>
+          <span>PODCAST — {isOriginal ? 'ORIGINAL' : 'WORKS'}</span>
         </div>
         {feed?.image && (
           <div className="sq cover-frame show-cover">
@@ -55,10 +100,12 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         <h1 className="show-title">{feed?.title || show.name}</h1>
         {/* 所属の一行(初見への直接回答)。詳細な担当領域はROLE欄 */}
         <p className="show-affiliation">
-          {show.group === 'original' ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
+          {isOriginal ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
         </p>
         {/* 配信先(番組単位)。設定された分だけ */}
         <PlatformLinks platforms={show.platforms} />
+        {/* この番組だけの連続再生(全番組共通)。選ばずに聴き始められる入口 */}
+        <ShowPlayAll episodes={playable} />
         {/* ショーノート(channel説明)は長いのでアコーディオン格納(2026-07-10、デフォルト閉)。
             プレーンテキスト(改行保持)。外部由来なのでテキストとして描画 */}
         {feed?.description && (
@@ -70,6 +117,33 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         )}
       </section>
 
+      {/* 入門3選(ORIGINALのみ): 逆時系列は初見の入口として機能しないため、
+          Andyが選んだ「まずこの3本」を置く。studioで「入門」タグを付けると載る */}
+      {isOriginal && starterEps.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <span>STARTERS — まずこの3本</span>
+          </div>
+          <div className="section-body starter-list">
+            {starterEps.map((ep) => (
+              <Link key={ep.id} href={`/podcast/${show.slug}/${ep.id}`} className="starter-row">
+                {(ep.image ?? feed?.image) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={imgThumb(ep.image ?? feed!.image, IMG_W.ep)}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+                <span className="starter-title">{ep.title}</span>
+                <span className="starter-date">{dateShort(ep.date)}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ROLE: 番組カタログがポートフォリオを兼ねる(旧サイト移植)。文言未設定なら出さない */}
       {show.role && (
         <section className="section">
@@ -80,23 +154,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         </section>
       )}
 
-      {feed && feed.episodes.length > 0 && (
-        <section className="section">
-          <div className="section-head">
-            <span>EPISODES — {feed.episodes.length}</span>
-          </div>
-          <div className="section-body">
-            {feed.episodes.map((ep) => (
-              <div className="update-row" key={ep.id}>
-                <Link href={`/podcast/${show.slug}/${ep.id}`}>
-                  <span className="update-date">{dateDots(ep.date)}</span>
-                  <span className="update-excerpt">{ep.title}</span>
-                </Link>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {episodes.length > 0 && <EpisodeIndex rows={indexRows} newSince={newSince} />}
     </div>
   )
 }

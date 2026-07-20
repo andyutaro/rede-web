@@ -27,6 +27,12 @@ export function tokyoYmd(date: string | Date): string {
   return TOKYO_YMD.format(typeof date === 'string' ? new Date(date) : date)
 }
 
+// 東京基準で「n日前」のYYYY-MM-DD。NEWドット等の鮮度境界に使う。
+// Date.now()はコンポーネントrenderに直接書けない(react-hooks purity)ためここに閉じる
+export function tokyoDaysAgo(days: number): string {
+  return tokyoYmd(new Date(Date.now() - days * 24 * 60 * 60 * 1000))
+}
+
 // 「2026-07-03」→「2026.07.03」(リスト用) / 「07.03」(タイル用)(§10)
 export function dateDots(isoDate: string): string {
   return isoDate.replaceAll('-', '.')
