@@ -302,7 +302,9 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  letter-spacing: 0.16em;
+  /* タイポはMENUと同一(2026-07-20 Andy指定): 同じ字間で縦積みの秩序を揃える */
+  letter-spacing: 0.22em;
+  text-indent: 0.22em; /* letter-spacingの右アキ分を中央に寄せ戻す(MENUと同じ) */
   color: var(--bg);
   z-index: 20;
   animation: pill-breathe 3.4s ease-in-out infinite;
