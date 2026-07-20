@@ -26,7 +26,16 @@ export function sanitizeNodes(html: string): Node[] {
 // テキスト中の素のURLをリンク化する。deskのURLリンク化(2026-07-03)以前の
 // アーカイブはURLがプレーンテキストのまま保存されているため、表示側で補う
 // (確定アーカイブのデータ自体は書き換えない)。
-const URL_RE = /https?:\/\/[^\s<>"'、。」』）】]+/g
+// 不可視文字(word joiner・zero width space等)はURLに含めない: RSSの概要欄は
+// リンク文言の前後に不可視文字を詰める慣習があり、巻き込むと遷移先が404になる
+const URL_RE = /https?:\/\/[^\s<>"'、。」』）】\u2060\u200b-\u200d\ufeff]+/g
+
+// RSS由来のhrefには不可視文字(word joiner等)や前後の空白(全角スペース・nbsp含む)が
+// 混入していることがある。残すと「hrefがhttpで始まらない→リンクごと剥がれる」
+// 「%E3%80%80付きURLで404」の二重の壊れ方をする(2026-07-20 ショーノート調査)
+function cleanHref(raw: string): string {
+  return raw.replace(/[\u2060\u200b-\u200d\ufeff]/g, '').trim()
+}
 
 function linkifyText(text: string): Node[] {
   const out: Node[] = []
@@ -105,7 +114,7 @@ function sanitizeChildren(node: Node, inLink = false): Node[] {
       continue
     }
     if (tag === 'A') {
-      const href = el.getAttribute('href') || ''
+      const href = cleanHref(el.getAttribute('href') || '')
       if (/^(https?:|mailto:|\/|images\/)/i.test(href)) {
         const a = document.createElement('a')
         a.href = href

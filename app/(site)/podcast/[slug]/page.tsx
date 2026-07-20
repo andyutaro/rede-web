@@ -7,6 +7,7 @@ import { dateDots, dateShort, htmlToPlainText, tokyoDaysAgo } from '@/lib/site/t
 import { createService } from '@/lib/supabase/service'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 import Accordion from '../../about/Accordion'
+import Linkified from '../../Linkified'
 import PlatformLinks from '../PlatformLinks'
 import EpisodeIndex, { type IndexRow } from '../EpisodeIndex'
 import ShowPlayAll from '../ShowPlayAll'
@@ -107,11 +108,14 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         {/* この番組だけの連続再生(全番組共通)。選ばずに聴き始められる入口 */}
         <ShowPlayAll episodes={playable} />
         {/* ショーノート(channel説明)は長いのでアコーディオン格納(2026-07-10、デフォルト閉)。
-            プレーンテキスト(改行保持)。外部由来なのでテキストとして描画 */}
+            プレーンテキスト(改行保持)。外部由来なのでテキストとして描画し、
+            中のURL・ドメイン表記だけLinkifiedでリンク化(2026-07-20、素のままだと全リンクが死ぬ) */}
         {feed?.description && (
           <div className="podcast-fold">
             <Accordion label="SHOW NOTES">
-              <p className="show-description">{feed.description}</p>
+              <p className="show-description">
+                <Linkified text={feed.description} />
+              </p>
             </Accordion>
           </div>
         )}
