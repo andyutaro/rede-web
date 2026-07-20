@@ -316,6 +316,21 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   animation: none;
 }
 
+/* ダークでは--mutの塗りが白っぽく浮いて眩しい(2026-07-20 Andy)。
+   --dot(地の起伏)と--mut(中間灰)の間の沈んだ灰緑に落とし、文字は--inkで返す。
+   ホバーは一段明るく=ライトと同じ「応答して濃度が変わる」文法 */
+html[data-theme='dark'] .contact-pill {
+  background: #4b564f;
+  border-color: #4b564f;
+  color: var(--ink);
+}
+
+html[data-theme='dark'] .contact-pill:hover {
+  background: var(--mut);
+  border-color: var(--mut);
+  color: var(--bg);
+}
+
 .contact-pill[aria-current='page'] {
   animation: none;
 }
