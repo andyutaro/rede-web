@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react'
 
 // 番組へのおたよりフォーム(2026-07-20)。送信先は仕事の問い合わせと同じ
 // /api/contact(保存はcontact_messages、studioのCONTACT室で確認)。
-// 用件はtopics=[「おたより — 番組名」]で運ぶ=スキーマ変更なし。
-// おたよりはオリジナル番組のみ(Andy指定)。メールは任意(返信不要の便りが自然)。
+// 用件はtopics=[「おたより — 宛先」]で運ぶ=スキーマ変更なし。
+// おたよりは継続中のオリジナル番組のみ(Andy指定。終了番組は宛先に出さない)。
+// メールは任意(返信不要の便りが自然)。
 // エピソードページから来た場合(?show=/?ep=)は番組の事前選択+本文への宛先焼き込み。
-export type OtayoriShow = { slug: string; label: string }
+// 項目(topics)を持つ番組はoptgroupで「番組名 / 項目」から選ぶ(2026-07-20 Andy指定)
+export type OtayoriShow = { slug: string; label: string; topics?: string[] }
 
 export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
+  // 選択値は宛先ラベルそのもの(「サカナカイギ」「ロングポスト / 制作」等)
   const [show, setShow] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -22,8 +25,11 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
     const p = new URLSearchParams(window.location.search)
     const s = p.get('show')
     const ep = p.get('ep')
+    // 項目なし番組はラベルを直接選べる。項目持ち番組はどの項目宛かを
+    // 本人に選んでもらう(こちらで推測して誤配しない)ため事前選択しない
+    const target = shows.find((x) => x.slug === s && !x.topics?.length)
     // eslint-disable-next-line react-hooks/set-state-in-effect -- マウント時1回のURL→初期値反映(SiteMenuと同前例)
-    if (s && shows.some((x) => x.slug === s)) setShow(s)
+    if (target) setShow(target.label)
     if (ep) setMessage((prev) => (prev ? prev : `${ep}への便り：\n\n`))
     // showsはサーバー定数(オリジナル番組リスト)で不変
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -35,14 +41,13 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
     e.preventDefault()
     if (!valid || state === 'sending') return
     setState('sending')
-    const label = shows.find((x) => x.slug === show)?.label ?? show
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         body: JSON.stringify({
           name,
           email,
-          topics: [`おたより — ${label}`],
+          topics: [`おたより — ${show}`],
           message,
           website,
         }),
@@ -61,18 +66,28 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
   return (
     <form className="contact-form" onSubmit={submit}>
       <label className="cf-field">
-        <span className="cf-label">宛先の番組 *</span>
+        <span className="cf-label">宛先 *</span>
         <select value={show} onChange={(e) => setShow(e.target.value)} required>
-          <option value="">番組を選ぶ</option>
-          {shows.map((s) => (
-            <option key={s.slug} value={s.slug}>
-              {s.label}
-            </option>
-          ))}
+          <option value="">宛先を選ぶ</option>
+          {shows.map((s) =>
+            s.topics?.length ? (
+              <optgroup key={s.slug} label={`【 ${s.label} 】`}>
+                {s.topics.map((t) => (
+                  <option key={t} value={`${s.label} / ${t}`}>
+                    {t}
+                  </option>
+                ))}
+              </optgroup>
+            ) : (
+              <option key={s.slug} value={s.label}>
+                {s.label}
+              </option>
+            )
+          )}
         </select>
       </label>
       <label className="cf-field">
-        <span className="cf-label">おなまえ *（番組で読まれてもよい名前）</span>
+        <span className="cf-label">リスナーネーム *（番組で読まれてもよい名前）</span>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
       </label>
       <label className="cf-field">

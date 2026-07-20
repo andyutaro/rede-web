@@ -27,6 +27,10 @@ export type Show = {
   // 番組ページのROLE(担当領域の列挙、旧サイト移植)。文言はAndyから。未設定なら非表示
   role?: string
   platforms?: Platforms
+  // おたよりの宛先項目(2026-07-20 Andy指定)。設定された番組は宛先選択が
+  // 「番組名 / 項目」の複数択になる(参考: 複数番組ポッドキャストグループの宛先UI)。
+  // 未設定の番組は番組名そのものが1つの宛先
+  otayoriTopics?: string[]
 }
 
 export const SHOWS: Show[] = [
@@ -67,6 +71,8 @@ export const SHOWS: Show[] = [
     display: 'LONGPOST',
     group: 'original',
     feed: 'https://anchor.fm/s/f20aee28/podcast/rss',
+    // おたより項目(2026-07-20 Andy指定の3つ)
+    otayoriTopics: ['制作', '生活', 'ポッドキャストをやっててよかったこと'],
     platforms: {
       spotify: 'https://open.spotify.com/show/34phiuFlCBcfscYLP5iCyb',
       apple: 'https://podcasts.apple.com/jp/podcast/id1734760147',
@@ -110,4 +116,19 @@ export const SHOWS: Show[] = [
 
 export function showBySlug(slug: string): Show | undefined {
   return SHOWS.find((s) => s.slug === slug)
+}
+
+// おたよりを受け付ける番組(2026-07-20): オリジナルかつ配信中かつ継続中。
+// 終了番組(ミモリラジオ等)は送られても応えられないため宛先から外す
+export function otayoriShows(): Show[] {
+  return SHOWS.filter((s) => s.group === 'original' && s.feed && !s.ended)
+}
+
+// おたよりの宛先ラベル一覧。フォームの選択肢とAPI検証(/api/contact)が
+// 必ず同じ集合を見るための単一の出所。項目を持つ番組は「番組名 / 項目」に展開
+export function otayoriLabels(): string[] {
+  return otayoriShows().flatMap((s) => {
+    const name = s.shortName ?? s.name
+    return s.otayoriTopics?.length ? s.otayoriTopics.map((t) => `${name} / ${t}`) : [name]
+  })
 }

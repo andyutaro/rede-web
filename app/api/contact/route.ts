@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createService } from '@/lib/supabase/service'
 import { TOPICS } from '@/app/(site)/contact/content'
-import { SHOWS } from '@/lib/site/shows'
+import { otayoriLabels } from '@/lib/site/shows'
 
-// おたより(2026-07-20): topics=[「おたより — 番組名」]で仕事の問い合わせと同じ
-// テーブルに載せる。宛先はオリジナル番組のみ(公開側と同じ制約をここでも守る)
-const OTAYORI_TOPICS = SHOWS.filter((s) => s.group === 'original').map(
-  (s) => `おたより — ${s.shortName ?? s.name}`
-)
+// おたより(2026-07-20): topics=[「おたより — 宛先」]で仕事の問い合わせと同じ
+// テーブルに載せる。宛先の許可リストは公開フォームと同じotayoriLabels()
+// (終了番組は含まれない。項目持ち番組は「番組名 / 項目」)
+const OTAYORI_TOPICS = otayoriLabels().map((l) => `おたより — ${l}`)
 
 // 問い合わせの受付(公開エンドポイント)。
 // - 保存はservice role(anonの書き込みポリシーは作らない=直POSTでの荒らし面を狭める)

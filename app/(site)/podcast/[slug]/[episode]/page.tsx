@@ -105,9 +105,10 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
             </div>
           )}
 
-          {/* この回への便り(ORIGINALのみ、2026-07-20): コメント欄は置かない(ソロ運営)。
-              contactフォームに回のタイトルを焼き込んだ最小の私信の口 */}
-          {isOriginal && (
+          {/* この回への便り(継続中のORIGINALのみ、2026-07-20): コメント欄は置かない(ソロ運営)。
+              contactフォームに回のタイトルを焼き込んだ最小の私信の口。
+              終了番組(ミモリラジオ等)は宛先が無いため出さない */}
+          {isOriginal && !show.ended && (
             <Link
               className="ep-letter"
               href={`/contact?show=${show.slug}&ep=${encodeURIComponent(`${show.display ?? show.name}『${ep.title}』`)}`}

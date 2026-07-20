@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getAboutContent, type AboutContent } from '@/lib/site/about'
 import { getContactContent } from '@/lib/site/pages'
-import { SHOWS } from '@/lib/site/shows'
+import { otayoriShows } from '@/lib/site/shows'
 import Accordion from '../about/Accordion'
 import ContactForm from './ContactForm'
 import ContactModes from './ContactModes'
@@ -24,10 +24,13 @@ export default async function ContactPage() {
     getContactContent(),
   ])
 
-  // おたより宛先: 配信中のオリジナル番組(feedなし=未配信は出さない)
-  const otayoriShows: OtayoriShow[] = SHOWS.filter((s) => s.group === 'original' && s.feed).map(
-    (s) => ({ slug: s.slug, label: s.shortName ?? s.name })
-  )
+  // おたより宛先: 継続中のオリジナル番組のみ(終了・未配信は出さない)。
+  // 項目持ち番組(ロングポスト)はフォーム側でoptgroup展開される
+  const otayoriTargets: OtayoriShow[] = otayoriShows().map((s) => ({
+    slug: s.slug,
+    label: s.shortName ?? s.name,
+    topics: s.otayoriTopics,
+  }))
 
   const work = (
     <>
@@ -145,7 +148,7 @@ export default async function ContactPage() {
           <span>OTAYORI FORM</span>
         </div>
         <div className="section-body">
-          <OtayoriForm shows={otayoriShows} />
+          <OtayoriForm shows={otayoriTargets} />
         </div>
       </section>
     </>
