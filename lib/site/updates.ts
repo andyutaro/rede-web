@@ -27,7 +27,13 @@ function clip(s: string, n: number): string {
 // 「新しく生まれたものだけが流れる」: 対象は日次scribe確定・published記事・新エピソード着信。
 // エピソードの"誕生"はpubDate。編集ではpubDateが変わらないため再掲されない(原則に合致)。
 // compact: HomeのLAST 10 DAYS用。Podcastのエピソードタイトルを厳しめに切って「…」で省略する。
-export async function recentUpdates(limit = 10, compact = false): Promise<UpdateRow[]> {
+// scribeLiveOnly: 確定済みscribeの行を出さない(当日執筆中の行だけ)。Homeは毎日の
+// scribeで埋まりすぎるため当日分のみ(2026-07-20 Andy指定)。/updatesは全量のまま。
+export async function recentUpdates(
+  limit = 10,
+  compact = false,
+  scribeLiveOnly = false
+): Promise<UpdateRow[]> {
   const service = createService()
   const today = todayInTokyo()
 
@@ -35,12 +41,14 @@ export async function recentUpdates(limit = 10, compact = false): Promise<Update
   // (直列だと往復レイテンシが積み上がる)。列は表示に使う分だけ(htmlは当日行のみ)。
   const [{ data: days }, { data: todayRow }, articlesRes, manualRes, feeds] = await Promise.all([
     // ゴミ箱(studio)入りの日はUpdatesにも出さない
-    service
-      .from('scribe_days')
-      .select('date, finalized_at, deleted_at')
-      .not('finalized_at', 'is', null)
-      .order('date', { ascending: false })
-      .limit(limit + 10), // ゴミ箱分を除いてもlimit件を保てるよう余分に取る
+    scribeLiveOnly
+      ? Promise.resolve({ data: [] as { date: string; deleted_at: string | null }[] })
+      : service
+          .from('scribe_days')
+          .select('date, finalized_at, deleted_at')
+          .not('finalized_at', 'is', null)
+          .order('date', { ascending: false })
+          .limit(limit + 10), // ゴミ箱分を除いてもlimit件を保てるよう余分に取る
     service.from('scribe_days').select('html, finalized_at').eq('date', today).maybeSingle(),
     // articlesテーブルはマイグレーション後に有効になる(未作成ならerrorで空のまま)
     service

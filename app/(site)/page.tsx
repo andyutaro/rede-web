@@ -22,7 +22,7 @@ export default async function Home() {
 
   const [todayRes, updates, photo, covers] = await Promise.all([
     service.from('scribe_days').select('html').eq('date', today).maybeSingle(),
-    recentUpdates(10, true), // HomeのLAST 10 DAYSはミニマル表記
+    recentUpdates(10, true, true), // Home: ミニマル表記+scribeは当日分のみ(2026-07-20)
     // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
     randomPhotoWithHref(),
     // 番組カバー+最新エピソード日付はRSSから自動取得
