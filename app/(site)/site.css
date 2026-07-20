@@ -285,31 +285,33 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 }
 
 /* ---- Contactピル(2026-07-12): テーマスイッチの直下・同サイズ。
-   穏やかに明滅して存在を知らせる。ホバーで明滅を止めて応答する。 ---- */
+   穏やかに明滅して存在を知らせる。ホバーで明滅を止めて応答する。
+   MENUと同文字数・同頭文字が並ぶため塗りピルにして区別する(2026-07-20 Andy指摘):
+   MAIL=塗り(送る行為の口)、MENU=線(移動の口)。彩色はしない(§10)。
+   塗りは--ink(真っ黒)ではなく--mut=中間灰(黒すぎる、と2026-07-20 Andy) ---- */
 .contact-pill {
   position: fixed;
   top: 60px; /* テーマスイッチ(top20+高さ30)の下に10px空ける */
   right: 22px;
   width: 88px;
   height: 30px;
-  /* 存在感を上げる(2026-07-12): 塗り+濃いめの枠+ink文字。初見でも押せると分かる */
   border: 1px solid var(--mut);
   border-radius: 999px;
-  background: var(--sel);
+  background: var(--mut);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   letter-spacing: 0.16em;
-  color: var(--ink);
+  color: var(--bg);
   z-index: 20;
   animation: pill-breathe 3.4s ease-in-out infinite;
   transition: color 0.2s, border-color 0.2s, background 0.2s ease;
 }
 
 .contact-pill:hover {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--body);
+  border-color: var(--body);
   color: var(--bg);
   animation: none;
 }
@@ -2507,14 +2509,14 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
     background: var(--bg);
   }
 
-  /* Contactピルはスイッチ(top12+高さ27)の下に8px空ける */
+  /* Contactピルはスイッチ(top12+高さ27)の下に8px空ける。
+     塗り(--ink)は不透明なのでスマホの重なり対策の地色上書きは不要 */
   .contact-pill {
     top: 47px;
     right: 12px;
     width: 74px;
     height: 27px;
     font-size: 9px;
-    background: var(--bg);
   }
 
   .menu-toggle {
