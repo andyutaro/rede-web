@@ -110,7 +110,7 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
           {isOriginal && (
             <Link
               className="ep-letter"
-              href={`/contact?ep=${encodeURIComponent(`${show.display ?? show.name}『${ep.title}』`)}`}
+              href={`/contact?show=${show.slug}&ep=${encodeURIComponent(`${show.display ?? show.name}『${ep.title}』`)}`}
             >
               この回への便りを送る →
             </Link>

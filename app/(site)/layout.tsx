@@ -74,10 +74,11 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       </Suspense>
       {/* 右上の縦積みUI(上から): テーマスイッチ → Contactピル → MENU */}
       <ThemeToggle />
-      {/* Contactはナビから外し、テーマトグルの下に固定ピルとして置く(2026-07-12)。
-          穏やかに明滅して存在を知らせる。ホバーで明滅停止。 */}
-      <Link href="/contact" className="contact-pill">
-        Contact
+      {/* MAILピル(2026-07-20改称、旧Contact): 仕事の相談と番組へのおたよりの
+          両方の入口。「Contact & Otayori」は長いため封筒の一語に畳む。
+          ナビから外しテーマトグルの下に固定、穏やかに明滅(2026-07-12)。 */}
+      <Link href="/contact" className="contact-pill" aria-label="Contact & Otayori — お仕事のご相談・番組へのおたより">
+        MAIL
       </Link>
       {/* ナビはMENUに格納(2026-07-12)。押すとオーバーレイで縦一列に展開 */}
       <SiteMenu />

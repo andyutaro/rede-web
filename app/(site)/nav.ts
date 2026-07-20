@@ -16,5 +16,5 @@ export const NAV = [
   // Membership=rooomの援護導線(2026-07-13、旧andyutaro.comから移植)
   { label: 'Membership', href: '/membership' },
   // Contact=旧andyutaro.comの受注装置を移植(2026-07-12)
-  { label: 'Contact', href: '/contact' },
+  { label: 'Mail', href: '/contact' },
 ] as const

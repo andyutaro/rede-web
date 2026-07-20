@@ -2204,6 +2204,60 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   padding: 40px 36px;
 }
 
+/* CONTACT & OTAYORIのモードタイル(2026-07-20): 開いた瞬間に両用途が見える2枚。
+   選択中はinkの枠で「いまこちらの面」を示す */
+.mail-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.mail-mode {
+  border: 1px solid var(--dot);
+  background: none;
+  padding: 22px 10px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  color: var(--mut);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.mail-mode:hover {
+  color: var(--ink);
+  border-color: var(--mut);
+}
+
+.mail-mode.on {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.mail-mode .mm-en {
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  color: var(--faint);
+}
+
+.mail-mode.on .mm-en {
+  color: var(--mut);
+}
+
+.mail-mode .mm-ja {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+/* おたより面の注記(紹介の可能性) */
+.otayori-note {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+
 .cf-field {
   display: flex;
   flex-direction: column;
@@ -2217,6 +2271,7 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 }
 
 .contact-form input:not([type='checkbox']),
+.contact-form select,
 .contact-form textarea {
   background: none;
   border: none;

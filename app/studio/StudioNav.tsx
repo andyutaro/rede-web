@@ -12,7 +12,7 @@ const ROOMS = [
   { href: '/studio/podcast', label: 'PODCAST INBOX' },
   { href: '/studio/updates', label: 'UPDATES' },
   { href: '/studio/tags', label: 'TAGS' },
-  { href: '/studio/contact', label: 'CONTACT' },
+  { href: '/studio/contact', label: 'MAIL' },
   { href: '/studio/usage', label: 'USAGE' },
 ] as const
 

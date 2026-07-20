@@ -25,7 +25,7 @@ export default async function StudioContact() {
 
   return (
     <>
-      <h1 className="studio-h1">CONTACT</h1>
+      <h1 className="studio-h1">MAIL — 問い合わせとおたより</h1>
       <ContactList rows={rows} />
     </>
   )

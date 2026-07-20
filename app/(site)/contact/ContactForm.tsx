@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { TOPICS } from './content'
 
 // 問い合わせフォーム。送信先は/api/contact(DB保存+メール通知)。
@@ -13,15 +13,6 @@ export default function ContactForm() {
   const [agreed, setAgreed] = useState(false)
   const [website, setWebsite] = useState('') // honeypot(人間には見えない)
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
-
-  // エピソードページの「この回への便り」からの流入(?ep=番組『タイトル』)は
-  // 本文に宛先を焼き込む(2026-07-20)。useSearchParamsでなくlocation直読み
-  // (ISRページでのSuspense境界要求を避ける+マウント時1回で十分)
-  useEffect(() => {
-    const ep = new URLSearchParams(window.location.search).get('ep')
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- マウント時1回のURL→初期値反映(SiteMenuと同前例)
-    if (ep) setMessage((prev) => (prev ? prev : `${ep}への便り：\n\n`))
-  }, [])
 
   const valid = name.trim() && email.includes('@') && message.trim() && agreed
 

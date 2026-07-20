@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createService } from '@/lib/supabase/service'
 import { TOPICS } from '@/app/(site)/contact/content'
+import { SHOWS } from '@/lib/site/shows'
+
+// おたより(2026-07-20): topics=[「おたより — 番組名」]で仕事の問い合わせと同じ
+// テーブルに載せる。宛先はオリジナル番組のみ(公開側と同じ制約をここでも守る)
+const OTAYORI_TOPICS = SHOWS.filter((s) => s.group === 'original').map(
+  (s) => `おたより — ${s.shortName ?? s.name}`
+)
 
 // 問い合わせの受付(公開エンドポイント)。
 // - 保存はservice role(anonの書き込みポリシーは作らない=直POSTでの荒らし面を狭める)
@@ -51,15 +58,19 @@ export async function POST(request: Request) {
   const email = (body.email ?? '').trim()
   const message = (body.message ?? '').trim()
   const topics = Array.isArray(body.topics) ? body.topics : []
+  // おたより=topicsが全て「おたより — 番組名」。メールは任意(書かれていれば形式検証)
+  const isOtayori = topics.length > 0 && topics.every((t) => OTAYORI_TOPICS.includes(t))
+  const emailOk = isOtayori
+    ? !email || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 200)
+    : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 200
   if (
     !name ||
     name.length > 100 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    email.length > 200 ||
+    !emailOk ||
     !message ||
     message.length > 5000 ||
     topics.length > TOPICS.length ||
-    topics.some((t) => !(TOPICS as readonly string[]).includes(t))
+    (!isOtayori && topics.some((t) => !(TOPICS as readonly string[]).includes(t)))
   ) {
     return NextResponse.json({ error: 'invalid fields' }, { status: 400 })
   }
@@ -80,8 +91,10 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           from: 'REDE Contact <onboarding@resend.dev>',
           to: ['andyutaro@gmail.com'],
-          subject: `【Contact】${name}さんから問い合わせ`,
-          text: `名前: ${name}\nメール: ${email}\n内容: ${topics.join(' / ') || '(未選択)'}\n\n${message}\n\n--\nstudio: https://rede-web-chi.vercel.app/studio/contact`,
+          subject: isOtayori
+            ? `【おたより】${name}さんから(${topics[0].replace('おたより — ', '')})`
+            : `【Contact】${name}さんから問い合わせ`,
+          text: `名前: ${name}\nメール: ${email}\n内容: ${topics.join(' / ') || '(未選択)'}\n\n${message}\n\n--\nstudio: https://andyutaro.com/studio/contact`,
         }),
       })
     }
