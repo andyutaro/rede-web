@@ -116,6 +116,18 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
               この回への便りを送る →
             </Link>
           )}
+          {/* 番組専用の外部おたよりフォームを持つ番組(ON-AIRDO等、2026-07-20):
+              サイト内フォームではなく番組自身のフォームへ送る */}
+          {show.otayoriUrl && (
+            <a
+              className="ep-letter"
+              href={show.otayoriUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              番組へのおたよりを送る →
+            </a>
+          )}
         </div>
         {/* ショーノートとROLEはアコーディオン格納(2026-07-10、デフォルト閉)。
             タイトル・プレイヤー・配信先は畳まない(格納するのは長文だけ) */}

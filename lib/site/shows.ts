@@ -31,6 +31,10 @@ export type Show = {
   // 「番組名 / 項目」の複数択になる(参考: 複数番組ポッドキャストグループの宛先UI)。
   // 未設定の番組は番組名そのものが1つの宛先
   otayoriTopics?: string[]
+  // 番組専用の外部おたよりフォーム(2026-07-20 Andy指定、ON-AIRDO=Google Form)。
+  // 設定された番組はエピソード・番組ページからこのURLへ遷移させる
+  // (サイト内のおたよりフォームには載せない=宛先はオリジナル番組のみの原則は不変)
+  otayoriUrl?: string
 }
 
 export const SHOWS: Show[] = [
@@ -87,6 +91,9 @@ export const SHOWS: Show[] = [
     group: 'works',
     feed: 'https://anchor.fm/s/fe6f8048/podcast/rss',
     role: 'ディレクター兼サブMCとして、出演を含め番組制作上のほぼ全てに立ち上げから対応。',
+    // 番組専用のおたよりフォーム(Google Form、2026-07-20 Andy指定)
+    otayoriUrl:
+      'https://docs.google.com/forms/d/e/1FAIpQLSfO1WRlugESfEYprczMrCjO2wEAku4X6zjVRS3pk9urPwg16g/viewform',
     platforms: {
       spotify: 'https://open.spotify.com/show/1EjsDlGdwwEDc1xsNxpEAP',
       apple: 'https://podcasts.apple.com/jp/podcast/id1784693396',

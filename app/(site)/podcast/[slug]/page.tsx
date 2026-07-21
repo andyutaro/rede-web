@@ -107,6 +107,16 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         <PlatformLinks platforms={show.platforms} />
         {/* この番組だけの連続再生(全番組共通)。選ばずに聴き始められる入口 */}
         <ShowPlayAll episodes={playable} />
+        {/* 番組専用の外部おたよりフォームを持つ番組(ON-AIRDO等、2026-07-20):
+            番組ページからも番組自身のフォームへ遷移できる。
+            連続再生ボタンと同じ行に並ばないようブロックで独立させる */}
+        {show.otayoriUrl && (
+          <div>
+            <a className="ep-letter" href={show.otayoriUrl} target="_blank" rel="noopener noreferrer">
+              番組へのおたよりを送る →
+            </a>
+          </div>
+        )}
         {/* ショーノート(channel説明)は長いのでアコーディオン格納(2026-07-10、デフォルト閉)。
             プレーンテキスト(改行保持)。外部由来なのでテキストとして描画し、
             中のURL・ドメイン表記だけLinkifiedでリンク化(2026-07-20、素のままだと全リンクが死ぬ) */}
