@@ -7,11 +7,16 @@
 //   (RSSは外部由来文字列。エスケープ必須の原則)
 // - AI要約はしない。RSSのdescriptionをそのまま表示する
 
+import { htmlToPlainText } from '@/lib/site/text'
+
 export type Episode = {
   id: string
   title: string
   date: string // YYYY-MM-DD (東京)
   description: string // 生HTML。表示側でサニタイズ
+  // 検索用プレーンテキスト(先頭600字)。表示毎にhtmlToPlainTextを全話分
+  // 回すとCPU制限(下記)に効くため、パース時に1回だけ計算して持つ
+  searchText: string
   image: string | null
   link: string | null // 外部リスニングページ(遷移ボタンの行き先)
   audioUrl: string | null // enclosureのMP3(ネイティブ再生プレイヤー用)
@@ -31,34 +36,83 @@ const TTL_MS = 30 * 60 * 1000 // 新エピソードが30分以内にサイトへ
 // サーバーインスタンス内キャッシュ(Nextのデータキャッシュ併用)。
 // フィードは全話分で数百KB〜になるため、リクエストごとの再取得・再パースを避ける。
 // Promiseを入れる=同時リクエスト(layoutのヒーロー+ページ本体等)が同じフィードを
-// 重複fetch+重複パースしない(in-flight共有)。sinceはキャッシュキーに含める。
+// 重複fetch+重複パースしない(in-flight共有)。キーはfeedUrlのみ(全話を持ち、
+// sinceの絞り込みは取り出し時に行う=安価)。
 const cache = new Map<string, { promise: Promise<ShowFeed | null>; ts: number }>()
 
 // since: この日付(東京, YYYY-MM-DD)より前のエピソードを捨てる。
 // 同じAnchor枠で旧番組が配信されていた場合の混入除去(例: BrandShiftは新シリーズ
 // #001=2026-03-10以降のみ。それ以前は別番組がこの枠を使っていた)。
 export function fetchShowFeed(feedUrl: string, since?: string): Promise<ShowFeed | null> {
-  const key = since ? `${feedUrl}#${since}` : feedUrl
-  const hit = cache.get(key)
-  if (hit && Date.now() - hit.ts < TTL_MS) return hit.promise
-  const promise = loadFeed(feedUrl, since)
-  cache.set(key, { promise, ts: Date.now() })
-  return promise
+  const hit = cache.get(feedUrl)
+  let promise: Promise<ShowFeed | null>
+  if (hit && Date.now() - hit.ts < TTL_MS) {
+    promise = hit.promise
+  } else {
+    promise = loadFeed(feedUrl)
+    cache.set(feedUrl, { promise, ts: Date.now() })
+  }
+  if (!since) return promise
+  return promise.then((feed) => {
+    if (!feed) return null
+    const episodes = feed.episodes.filter((e) => e.date >= since)
+    return { ...feed, episodes, latest: episodes[0]?.date ?? null }
+  })
 }
 
-async function loadFeed(feedUrl: string, since?: string): Promise<ShowFeed | null> {
+// Workersランタイムのエッジキャッシュ(Cache API)。Node dev/Vercelには無いため
+// 実行時に存在確認して使う。合成URLをキーにパース済みJSONを置く。
+// v1等のバージョンはEpisodeの形が変わったときに上げる(旧形の読み込み防止)
+const EDGE_KEY_PREFIX = 'https://feed-cache.internal/v1/'
+
+type EdgeCache = {
+  match(key: string): Promise<Response | undefined>
+  put(key: string, res: Response): Promise<void>
+}
+
+function edgeCache(): EdgeCache | null {
+  const c = (globalThis as { caches?: { default?: EdgeCache } }).caches
+  return c?.default ?? null
+}
+
+// 無料プランのCPU制限(10ms/リクエスト)対策(2026-07-21 Error 1102調査):
+// 1MB級XMLの正規表現パースをリクエスト経路から追い出し、パース済みJSONを
+// エッジ拠点毎に30分キャッシュする。コールドなisolateはJSON.parseだけで済む
+// (実測: 成功リクエストのCPU中央値13.7ms・P99 505msの主因がこのパースだった)
+async function loadFeed(feedUrl: string): Promise<ShowFeed | null> {
+  const edge = edgeCache()
+  const edgeKey = EDGE_KEY_PREFIX + encodeURIComponent(feedUrl)
+  if (edge) {
+    try {
+      const hit = await edge.match(edgeKey)
+      if (hit) return (await hit.json()) as ShowFeed
+    } catch {
+      // エッジキャッシュ不調時は素通りして通常経路へ
+    }
+  }
+
   let feed: ShowFeed | null = null
   try {
     const res = await fetch(feedUrl, { next: { revalidate: 1800 } })
-    if (res.ok) {
-      feed = parseFeed(await res.text())
-      if (feed && since) {
-        const episodes = feed.episodes.filter((e) => e.date >= since)
-        feed = { ...feed, episodes, latest: episodes[0]?.date ?? null }
-      }
-    }
+    if (res.ok) feed = parseFeed(await res.text())
   } catch {
     // フィード到達不可: null(表示側はその番組を出さない/エピソードなし扱い)
+  }
+
+  if (feed && edge) {
+    try {
+      await edge.put(
+        edgeKey,
+        new Response(JSON.stringify(feed), {
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': `max-age=${TTL_MS / 1000}`,
+          },
+        })
+      )
+    } catch {
+      // 書き込み失敗は無視(次のリクエストが再パースするだけ)
+    }
   }
   return feed
 }
@@ -170,11 +224,14 @@ function parseFeed(xml: string): ShowFeed {
     const title = tagText(item, 'title')
     const date = toTokyoDate(tagText(item, 'pubDate'))
     if (!id || !title || !date) continue
+    const description = tagText(item, 'description') ?? ''
     episodes.push({
       id,
       title: decodeEntities(title),
       date,
-      description: tagText(item, 'description') ?? '',
+      description,
+      // 検索用(EpisodeIndex)。表示毎に全話へ回すと重いのでここで1回だけ
+      searchText: htmlToPlainText(description).slice(0, 600),
       image: httpsUrl(item.match(/<itunes:image[^>]*\bhref\s*=\s*["']([^"']+)["']/i)?.[1] ?? null),
       link,
       audioUrl: httpsUrl(item.match(/<enclosure[^>]*\burl\s*=\s*["']([^"']+)["']/i)?.[1] ?? null),

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
-import { dateDots, dateShort, htmlToPlainText, tokyoDaysAgo } from '@/lib/site/text'
+import { dateDots, dateShort, tokyoDaysAgo } from '@/lib/site/text'
 import { createService } from '@/lib/supabase/service'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 import Accordion from '../../about/Accordion'
@@ -63,13 +63,13 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
   const episodes = feed?.episodes ?? []
   const starterEps = episodes.filter((e) => starters.has(e.id)).slice(0, 3)
 
-  // 検索索引(タイトル+概要欄プレーンテキスト。転送量を抑えるため600字まで)
+  // 検索索引(タイトル+概要欄プレーンテキスト600字、パース時に計算済み)
   const indexRows: IndexRow[] = episodes.map((ep) => ({
     id: ep.id,
     title: ep.title,
     date: ep.date,
     href: `/podcast/${show.slug}/${ep.id}`,
-    searchText: htmlToPlainText(ep.description).slice(0, 600),
+    searchText: ep.searchText,
   }))
 
   // NEWドット境界(7日前)とWaveformHeroへ渡す連続再生キュー素材
