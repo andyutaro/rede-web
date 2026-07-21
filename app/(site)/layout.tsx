@@ -35,6 +35,12 @@ export const metadata: Metadata = {
 // キーはandy-theme("dark"/"light")、既定はライト。
 const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}`
 
+// Cloudflare Web Analytics(2026-07-21): cookieなし・bot除外の訪問計測。
+// 運用ルール: 数字はAndyに見せない(月1でClaudeが読み、改善の助言だけ渡す)。
+// トークンはビルド時env。未設定なら何も出ない(dev・計測停止時)。公開サイトのみ
+// (studioは自分の作業なので計測しない)
+const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN
+
 // 背景波形+PODCAST連続再生は全ページ共通(2026-07-19)。
 // 音源はON-AIRDO・ミモリラジオ・サカナカイギの3番組から番組均等のラウンドロビンで
 // 10本のキューを組む(約5〜8時間分=実質無限)。フィードは各30分キャッシュ。
@@ -69,6 +75,13 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className={`site ${noto.variable}`}>
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      {CF_BEACON_TOKEN && (
+        <script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={`{"token": "${CF_BEACON_TOKEN}"}`}
+        />
+      )}
       {/* 背景波形(固定・z:-1)+サウンドオン。全ページ共通。エピソード解決を待たず波形を出す */}
       <Suspense fallback={<WaveformHero episodes={null} />}>
         <HeroEpisode />

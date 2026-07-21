@@ -23,13 +23,19 @@ const connectSrc = [
   supabaseUrl && origin(supabaseUrl, true), // wss://xxx.supabase.co (Realtime)
   relayUrl && origin(relayUrl), // scribe中継(https)
   relayUrl && origin(relayUrl, true), // scribe中継(wss=/ws/sub)
+  "https://cloudflareinsights.com", // Web Analyticsビーコン送信先(2026-07-21)
   isDev && "ws://localhost:*",
   isDev && "http://localhost:*",
 ]
   .filter(Boolean)
   .join(" ");
 
-const scriptSrc = ["'self'", "'unsafe-inline'", isDev && "'unsafe-eval'"]
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  "https://static.cloudflareinsights.com", // Web Analyticsビーコン(2026-07-21)
+  isDev && "'unsafe-eval'",
+]
   .filter(Boolean)
   .join(" ");
 
