@@ -4,6 +4,7 @@ export function htmlToPlainText(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/<[^>]+>/g, '')
+    .replace(/[\u2060\u200b-\u200d\ufeff]/g, '') // 不可視文字(RSS概要欄の飾り)は検索一致を妨げるので除去
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')

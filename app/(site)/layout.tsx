@@ -9,7 +9,7 @@ import Wordmark from './Wordmark'
 import WaveformHero from './WaveformHero'
 import ImageLightbox from './ImageLightbox'
 import { showBySlug, type Show } from '@/lib/site/shows'
-import { fetchShowFeed, randomEpisodeQueue } from '@/lib/site/podcastFeed'
+import { fetchShowFeedLight, randomEpisodeQueue } from '@/lib/site/podcastFeed'
 import { dateDots } from '@/lib/site/text'
 import './site.css'
 
@@ -49,7 +49,8 @@ async function HeroEpisode() {
   const heroShows = ['onairdo', 'mimoriradio', 'sakanakaigi']
     .map(showBySlug)
     .filter((s): s is Show => !!s?.feed)
-  const feeds = await Promise.all(heroShows.map((s) => fetchShowFeed(s.feed!, s.since)))
+  // 波形キューに概要欄は不要=軽量版(全ページ共通の負荷なのでここが一番効く)
+  const feeds = await Promise.all(heroShows.map((s) => fetchShowFeedLight(s.feed!, s.since)))
   const episodes = randomEpisodeQueue(feeds, 10).map(({ feedIndex, episode }) => {
     const show = heroShows[feedIndex]
     return {

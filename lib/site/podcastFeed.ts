@@ -53,11 +53,63 @@ export function fetchShowFeed(feedUrl: string, since?: string): Promise<ShowFeed
     cache.set(feedUrl, { promise, ts: Date.now() })
   }
   if (!since) return promise
-  return promise.then((feed) => {
-    if (!feed) return null
-    const episodes = feed.episodes.filter((e) => e.date >= since)
-    return { ...feed, episodes, latest: episodes[0]?.date ?? null }
-  })
+  return promise.then((feed) => applySince(feed, since))
+}
+
+// 軽量フィード(2026-07-21 CPU削減第2弾): description(容量の約9割)と
+// searchTextを空にした版。波形キューは全ページ共通で3番組分を要求するため、
+// ここが軽いとサイト全リクエストのJSON.parseコストが桁で下がる。
+// 概要欄が要るのはPodcast棚の番組/エピソードページだけ(そこはフル版を使う)
+export function fetchShowFeedLight(feedUrl: string, since?: string): Promise<ShowFeed | null> {
+  const hit = lightCache.get(feedUrl)
+  let promise: Promise<ShowFeed | null>
+  if (hit && Date.now() - hit.ts < TTL_MS) {
+    promise = hit.promise
+  } else {
+    promise = loadFeedLight(feedUrl)
+    lightCache.set(feedUrl, { promise, ts: Date.now() })
+  }
+  if (!since) return promise
+  return promise.then((feed) => applySince(feed, since))
+}
+
+const lightCache = new Map<string, { promise: Promise<ShowFeed | null>; ts: number }>()
+
+function applySince(feed: ShowFeed | null, since: string): ShowFeed | null {
+  if (!feed) return null
+  const episodes = feed.episodes.filter((e) => e.date >= since)
+  return { ...feed, episodes, latest: episodes[0]?.date ?? null }
+}
+
+function stripEpisodes(feed: ShowFeed): ShowFeed {
+  return {
+    ...feed,
+    episodes: feed.episodes.map((e) => ({ ...e, description: '', searchText: '' })),
+  }
+}
+
+async function loadFeedLight(feedUrl: string): Promise<ShowFeed | null> {
+  const edge = edgeCache()
+  const edgeKey = EDGE_KEY_PREFIX + 'light/' + encodeURIComponent(feedUrl)
+  if (edge) {
+    try {
+      const hit = await edge.match(edgeKey)
+      if (hit) return (await hit.json()) as ShowFeed
+    } catch {
+      // エッジキャッシュ不調時は素通りしてフル経路へ
+    }
+  }
+  const full = await fetchShowFeed(feedUrl)
+  if (!full) return null
+  const light = stripEpisodes(full)
+  if (edge) {
+    try {
+      await edge.put(edgeKey, feedJsonResponse(light))
+    } catch {
+      // 書き込み失敗は無視
+    }
+  }
+  return light
 }
 
 // Workersランタイムのエッジキャッシュ(Cache API)。Node dev/Vercelには無いため
@@ -101,20 +153,21 @@ async function loadFeed(feedUrl: string): Promise<ShowFeed | null> {
 
   if (feed && edge) {
     try {
-      await edge.put(
-        edgeKey,
-        new Response(JSON.stringify(feed), {
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': `max-age=${TTL_MS / 1000}`,
-          },
-        })
-      )
+      await edge.put(edgeKey, feedJsonResponse(feed))
     } catch {
       // 書き込み失敗は無視(次のリクエストが再パースするだけ)
     }
   }
   return feed
+}
+
+function feedJsonResponse(feed: ShowFeed): Response {
+  return new Response(JSON.stringify(feed), {
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': `max-age=${TTL_MS / 1000}`,
+    },
+  })
 }
 
 // 背景PODCAST連続再生のキューを作る(2026-07-19)。
@@ -159,12 +212,12 @@ export function randomEpisodeQueue(
   return queue
 }
 
-// Homeのカバー+最新日付用の薄いラッパー
+// Homeのカバー+最新日付用の薄いラッパー(概要欄不要なので軽量版を使う)
 export async function channelInfo(
   feedUrl: string,
   since?: string
 ): Promise<{ image: string | null; latest: string | null }> {
-  const feed = await fetchShowFeed(feedUrl, since)
+  const feed = await fetchShowFeedLight(feedUrl, since)
   return { image: feed?.image ?? null, latest: feed?.latest ?? null }
 }
 

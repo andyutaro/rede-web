@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { SHOWS } from '@/lib/site/shows'
-import { fetchShowFeed } from '@/lib/site/podcastFeed'
+import { fetchShowFeedLight } from '@/lib/site/podcastFeed'
 import { tokyoDaysAgo } from '@/lib/site/text'
 import CoverGrid from '../CoverGrid'
 import PodcastEpisodeGrid, { type EpItem } from './PodcastEpisodeGrid'
@@ -10,8 +10,9 @@ export const revalidate = 1800
 export const metadata: Metadata = { title: 'Podcast' }
 
 export default async function PodcastPage() {
+  // 棚はタイトル・日付・カバーだけ使う=軽量版で足りる
   const feeds = await Promise.all(
-    SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))
+    SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : Promise.resolve(null)))
   )
 
   const withArt = SHOWS.map((s, i) => ({
