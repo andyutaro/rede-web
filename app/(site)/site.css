@@ -2665,6 +2665,20 @@ html[data-theme='dark'] .contact-pill:hover {
     width: 170px;
   }
 
+  /* 配信先ボタン(2026-07-22 Andy指摘のスマホゴチャつき整理):
+     幅バラバラの折返し(2+1段でLISTENだけ孤立)をやめ、等幅の縦積みに。
+     サイトの他の単独ボタン(連続再生等)と同じ「中央の一本柱」のリズムに揃える */
+  .platform-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .platform-btn {
+    width: min(100%, 220px);
+    text-align: center;
+  }
+
   .article-tabs {
     gap: 20px;
   }

@@ -91,7 +91,9 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
             </div>
           )}
           <h1 className="episode-title">{ep.title}</h1>
-          {ep.duration && <div className="episode-duration">{ep.duration}</div>}
+          {/* 尺の単独表示はプレイヤーが無い回だけ(プレイヤー右端の合計時間と
+              重複してゴチャつくため、2026-07-22 スマホ整理) */}
+          {ep.duration && !ep.audioUrl && <div className="episode-duration">{ep.duration}</div>}
 
           {/* このエピソードをその場で聴くプレイヤー(enclosure) */}
           {ep.audioUrl && <AudioPlayer src={ep.audioUrl} title={ep.title} />}
