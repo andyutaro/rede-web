@@ -15,6 +15,13 @@
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
       "bucket_name": "rede-web-cache"
+    },
+    // 書いたものの控え(2026-07-23)。scribe・記事・写真はSupabaseの中にしか
+    // 存在せず、無料プランには時点復旧が無い=誤って消したら戻らなかった。
+    // キャッシュとは別バケットにする(こちらは消してはいけないもの)
+    {
+      "binding": "BACKUP_BUCKET",
+      "bucket_name": "rede-web-backup"
     }
   ],
   // 実行ログ(2026-07-23)。これが無いと本番で何が起きたか後から一切追えない

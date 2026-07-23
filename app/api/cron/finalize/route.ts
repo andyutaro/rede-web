@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { backupToR2 } from '@/lib/site/backup'
 
 // 毎日0:01 JST(15:01 UTC)にVercel Cronから呼ばれ、「いま終わった日」の
 // scribe_daysにfinalized_atを立てる(仕様: アーカイブは毎日0:01に確定)。
@@ -37,6 +38,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // 書いたものの控えをR2へ(2026-07-23)。掃除より先に走らせる=消える前の姿を残す。
+  // 失敗しても確定処理を巻き添えにしない
+  let backup: Awaited<ReturnType<typeof backupToR2>>
+  try {
+    backup = await backupToR2()
+  } catch (e) {
+    backup = { error: e instanceof Error ? e.message : 'backup failed' }
+  }
+
   // 確定に続けて未参照メディアの掃除。掃除の失敗で確定を巻き添えにしない
   let cleanup: Awaited<ReturnType<typeof cleanupOrphanMedia>>
   try {
@@ -49,6 +59,7 @@ export async function GET(request: Request) {
     ok: true,
     target,
     finalized: (data ?? []).length > 0, // false = 行がない(その日書かなかった) or 確定済み
+    backup,
     cleanup,
   })
 }
