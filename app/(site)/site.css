@@ -1573,6 +1573,65 @@ html[data-theme='dark'] .contact-pill:hover {
   min-height: 1em; /* 空段落(空白のみのp)も余白として残す */
 }
 
+/* ---- 動きを減らす設定への対応(2026-07-23) ----
+   このサイトの動きは全て装飾(波形・明滅・脈打ち)で、意味を運んでいない。
+   OSで「視差効果を減らす/動きを減らす」を選んでいる人には全て止める。
+   止めても情報は落ちない(明滅する要素はいずれも静止時に見えている)。
+   canvasの波形はCSSでは止まらないのでWaveformHero側でも同じ問い合わせをする。
+   反復のみ止める書き方にして、一度きりの遷移(ホバー等)は即時完了させる。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- 404(2026-07-23): 既定の英語画面をやめ、サイトの言葉で静かに置く ---- */
+.nf-body {
+  text-align: center;
+}
+
+.nf-line {
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 2.2;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.nf-sub {
+  margin-top: 14px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+}
+
+.nf-links {
+  margin-top: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 32px;
+}
+
+.nf-links a {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--mut);
+  border-bottom: 1px solid var(--dot);
+  padding-bottom: 3px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.nf-links a:hover {
+  color: var(--ink);
+  border-color: var(--mut);
+}
+
 /* ---- About ----
    楽章(movement)単位のリズム: Homeの均等150pxをやめ、内容の重さで呼吸させる。
    大きな塊の間は広く、楽章内は詰める。 */

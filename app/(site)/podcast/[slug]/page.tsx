@@ -21,6 +21,11 @@ export function generateStaticParams() {
   return SHOWS.filter((s) => s.feed).map((s) => ({ slug: s.slug }))
 }
 
+// 知らないslugはルーティング段階で弾く(2026-07-23)。番組は上の5枠で確定なので
+// 動的解決の余地が無く、こうすると本物の404が返る(ページを描いてからnotFound()を
+// 投げるとストリーミング済みで200のままになる=soft 404)
+export const dynamicParams = false
+
 type Params = { slug: string }
 
 export async function generateMetadata({

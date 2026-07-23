@@ -114,13 +114,20 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     let raf = 0
     let last = 0
 
+    // 「動きを減らす」設定(2026-07-23): 波形はcanvasなのでCSSでは止まらない。
+    // 流れを止めて静止した一本の波形として一度だけ描く(存在は残す)
+    const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)')
+
     let color = '#c7c7c1'
     const readColor = () => {
       const c = getComputedStyle(document.documentElement).getPropertyValue('--wave').trim()
       if (c) color = c
     }
     readColor()
-    const themeObs = new MutationObserver(readColor)
+    const themeObs = new MutationObserver(() => {
+      readColor()
+      if (reduceMq.matches) draw(0) // 止めている間はテーマ切替で描き直す
+    })
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 
     const resize = () => {
@@ -132,6 +139,7 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       canvas.height = Math.round(h * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       readColor()
+      if (reduceMq.matches) draw(0)
     }
     window.addEventListener('resize', resize)
     resize()
@@ -188,11 +196,19 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       } // ~30fps
       raf = requestAnimationFrame(loop)
     }
-    raf = requestAnimationFrame(loop)
+    // 設定を切り替えたその場で従う(OS側でいつでも変えられるため)
+    const applyMotionPref = () => {
+      cancelAnimationFrame(raf)
+      if (reduceMq.matches) draw(0)
+      else raf = requestAnimationFrame(loop)
+    }
+    reduceMq.addEventListener('change', applyMotionPref)
+    applyMotionPref()
 
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
+      reduceMq.removeEventListener('change', applyMotionPref)
       themeObs.disconnect()
     }
   }, [])
