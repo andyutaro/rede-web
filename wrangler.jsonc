@@ -8,6 +8,15 @@
   "main": "worker.js",
   // 毎日15:01 UTC = 0:01 JST(Vercel Cronから移管)
   "triggers": { "crons": ["1 15 * * *"] },
+  // ISRの永続キャッシュ(2026-07-23)。これが無い間、全ページが毎リクエストで
+  // 再生成されていた(Error 1102の構造的な原因)。バケット名はrede-web-cache。
+  // バインディング名はOpenNextの規約で固定(NEXT_INC_CACHE_R2_BUCKET)
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "rede-web-cache"
+    }
+  ],
   // 実行ログ(2026-07-23)。これが無いと本番で何が起きたか後から一切追えない
   // (1102を追えたのは分析APIの数字だけで、中身の記録は残っていなかった)。
   // cronの成否・例外のdigestはここに出る。無料枠は日20万イベント、この規模なら余る
