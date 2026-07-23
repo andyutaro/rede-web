@@ -19,13 +19,16 @@ Disallow: /
 
 User-agent: *
 Content-Signal: search=yes, ai-train=yes, use=reference
-Allow: /
+# Disallowを先に置く: 「最も具体的な規則が勝つ」解釈(Google等)と
+# 「先に一致した規則が勝つ」解釈(古典的な実装)の両方で同じ結果になるようにするため。
+# Allow: / を先頭に置くと後者で非公開の口が開いてしまう(2026-07-23に実測で発見)
 Disallow: /studio
 Disallow: /desk
 Disallow: /api/
 Disallow: /live
 Disallow: /search
 Disallow: /login
+Allow: /
 
 Host: https://andyutaro.com
 Sitemap: https://andyutaro.com/sitemap.xml
