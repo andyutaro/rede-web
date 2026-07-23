@@ -1,0 +1,31 @@
+# andyutaro.com — Andy 〔 Podcaster 〕
+#
+# AIクローラーへの方針(2026-07-23 Andy決定):
+# 引用・参照してくれる相手には開き、持っていくだけの相手には閉じる。
+# このサイトにあるのは音声とキュレーションへの案内板であり、守るべき本体(番組そのもの)は
+# ここに置かれていない。参照されて名が届くことの方に価値がある。
+#
+# 除いた2つ:
+#   Bytespider — robots.txtを無視した大量取得の実績があり、無料枠のCPUを脅かす
+#   CCBot      — 一括再配布のアーカイブで、引用が返ってこない
+#
+# 非公開の口(編集室・放送卓・API・その日限りの生放送・検索)はどのクローラーにも開けない。
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: *
+Content-Signal: search=yes, ai-train=yes, use=reference
+Allow: /
+Disallow: /studio
+Disallow: /desk
+Disallow: /api/
+Disallow: /live
+Disallow: /search
+Disallow: /login
+
+Host: https://andyutaro.com
+Sitemap: https://andyutaro.com/sitemap.xml
