@@ -8,6 +8,10 @@
   "main": "worker.js",
   // 毎日15:01 UTC = 0:01 JST(Vercel Cronから移管)
   "triggers": { "crons": ["1 15 * * *"] },
+  // 実行ログ(2026-07-23)。これが無いと本番で何が起きたか後から一切追えない
+  // (1102を追えたのは分析APIの数字だけで、中身の記録は残っていなかった)。
+  // cronの成否・例外のdigestはここに出る。無料枠は日20万イベント、この規模なら余る
+  "observability": { "enabled": true },
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {

@@ -8,7 +8,11 @@
   /* 地はhtmlが持つ。ここは透明にして固定波形(z:-1)を本文背後に見せる */
   background: transparent;
   color: var(--body);
-  font-family: var(--font-noto), -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  /* --font-notoはnext/fontのクラスが付いた要素でしか定義されない。既定値を書かないと
+     未定義の時に宣言ごと無効になり、後ろのフォールバック列ごとArialに落ちる
+     (global-errorで実際に踏んだ。2026-07-23) */
+  font-family: var(--font-noto, -apple-system), -apple-system, 'Hiragino Sans',
+    'Noto Sans JP', sans-serif;
   font-weight: 300;
   font-size: 15px;
   line-height: 2.6;
@@ -1573,6 +1577,23 @@ html[data-theme='dark'] .contact-pill:hover {
   min-height: 1em; /* 空段落(空白のみのp)も余白として残す */
 }
 
+/* ---- global-error専用の配色(2026-07-23) ----
+   通常のページはlocalStorageのandy-themeで明暗を切り替えるが、この画面は
+   Reactが文書ごと描き直す経路があり初期化スクリプトが走らないことがある。
+   その場合でも暗所の読者に全画面の白を出さないよう、OSの配色設定に従わせる。
+   サイト全体の既定(常にライトで、切替は手動)は変えない=ここだけの限定指定。 */
+@media (prefers-color-scheme: dark) {
+  .site-standalone {
+    --bg: #1d2420;
+    --ink: #dfe7e2;
+    --body: #b9c3bd;
+    --mut: #77847d;
+    --faint: #56635b;
+    --dot: #2e3a34;
+    background: var(--bg);
+  }
+}
+
 /* ---- 動きを減らす設定への対応(2026-07-23) ----
    このサイトの動きは全て装飾(波形・明滅・脈打ち)で、意味を運んでいない。
    OSで「視差効果を減らす/動きを減らす」を選んでいる人には全て止める。
@@ -1630,6 +1651,34 @@ html[data-theme='dark'] .contact-pill:hover {
 .nf-links a:hover {
   color: var(--ink);
   border-color: var(--mut);
+}
+
+/* 例外画面の「もう一度試す」。見た目は隣のリンクと同じ(役目が同じ列なので) */
+.nf-retry {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--dot);
+  padding: 0 0 3px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--mut);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.nf-retry:hover {
+  color: var(--ink);
+  border-color: var(--mut);
+}
+
+/* 突き合わせ用の識別子(Workers Logsの同じ値を探せる)。読ませる文字ではない */
+.nf-digest {
+  margin-top: 40px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- About ----
@@ -1927,6 +1976,13 @@ html[data-theme='dark'] .contact-pill:hover {
 
 .search-form input:focus {
   outline: none;
+}
+
+/* 既定の輪郭を消す以上、代わりの目印は必ず置く(2026-07-23)。他の入力欄は
+   下線の色で応えているのに、ここだけ無反応でキーボード操作の現在地が消えていた。
+   枠はラッパーが持っているので、線を足さず色で応える(行送りがずれない) */
+.search-form:focus-within {
+  border-bottom-color: var(--mut);
 }
 
 .search-form input::placeholder {

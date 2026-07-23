@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
-import { scribeTitle } from '@/lib/site/text'
+import { firstImageSrc, scribeTitle } from '@/lib/site/text'
+import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import ScribeArchive from '../ScribeArchive'
 
@@ -28,7 +29,25 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { date } = await params
   // 確定scribeのタイトル規則(2026-07-10): 「Scribe Archive + 日付導出タイトル」
-  return { title: `Scribe Archive ${scribeTitle(date)}` }
+  const title = `Scribe Archive ${scribeTitle(date)}`
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title }
+  // SNSカードにその日のサムネイルを出す(2026-07-23)。
+  // 公開されない日(未確定・ゴミ箱)はページ本体がnotFound()するので、
+  // ここでも同じ条件で弾く(でないと非公開の日の画像がmetaタグに漏れる)。
+  const service = createService()
+  const { data } = await service
+    .from('scribe_days')
+    .select('html, thumbnail_url, thumbnail_source, finalized_at, deleted_at')
+    .eq('date', date)
+    .maybeSingle()
+  if (!data || !data.html || data.deleted_at || !data.finalized_at) return { title }
+  // 優先順位は一覧(app/(site)/notes/page.tsx)の正典に合わせる:
+  // manual > 本文の最初の画像 > 充当(焼き込み)。thumbnail_urlを無条件に優先すると、
+  // 充当の借り物写真が後から入った本文写真より優先されてカードだけ食い違う
+  const first = firstImageSrc((data.html as string) ?? '')
+  const stored = data.thumbnail_url as string | null
+  const thumb = data.thumbnail_source === 'manual' && stored ? stored : (first ?? stored)
+  return ogpImage(title, thumb, { large: true })
 }
 
 export default async function ScribeDayPage({ params }: { params: Promise<Params> }) {
