@@ -45,13 +45,14 @@ export default async function StudioPodcast() {
   })
   rows.sort((a, b) => b.date.localeCompare(a.date))
 
-  // 入門トグルの対象(STARTERSが出るのはオリジナル番組の番組ページだけ)
-  const originalSlugs = SHOWS.filter((s) => s.group === 'original' && s.feed).map((s) => s.slug)
+  // 入門トグルの対象(2026-07-23 Andy: オリジナル・仕事番組を問わず全番組)。
+  // 順はSHOWSの並びに従う=上部の本数表示が毎回同じ順で出る
+  const starterSlugs = SHOWS.filter((s) => s.feed).map((s) => s.slug)
 
   return (
     <>
       <h1 className="studio-h1">PODCAST INBOX</h1>
-      <PodcastInbox rows={rows} tagVocabulary={tagVocabulary} originalSlugs={originalSlugs} />
+      <PodcastInbox rows={rows} tagVocabulary={tagVocabulary} starterSlugs={starterSlugs} />
     </>
   )
 }

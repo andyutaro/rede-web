@@ -41,7 +41,9 @@ export async function generateMetadata({
 }
 
 // 入門3選(2026-07-20): studioのPODCAST INBOXで「入門」タグを付けた回。
-// RSSには「推奨入口」という概念が無い=アプリに出来ない編集行為。ORIGINAL番組のみ
+// RSSには「推奨入口」という概念が無い=アプリに出来ない編集行為。
+// 当初ORIGINAL限定だったが全番組で設定可に(2026-07-23 Andy)。「どこから聴くか」の
+// 案内は制作参加番組でも同じ値打ちがある(おたより・scribe裏面はORIGINAL限定のまま)
 const STARTER_TAG = '入門'
 
 async function starterIds(slug: string): Promise<Set<string>> {
@@ -54,7 +56,7 @@ async function starterIds(slug: string): Promise<Set<string>> {
   return new Set((data ?? []).map((r) => r.episode_id as string))
 }
 
-// 番組ページ: カバー・番組名・配信先・(ORIGINALのみ)入門3選・連続再生・
+// 番組ページ: カバー・番組名・配信先・入門3選・連続再生・
 // SHOW NOTES・検索付きエピソード索引。
 export default async function ShowPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
@@ -64,7 +66,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
   const isOriginal = show.group === 'original'
   const [feed, starters] = await Promise.all([
     fetchShowFeed(show.feed, show.since),
-    isOriginal ? starterIds(slug) : Promise.resolve(new Set<string>()),
+    starterIds(slug),
   ])
 
   const episodes = feed?.episodes ?? []
@@ -138,10 +140,11 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         )}
       </section>
 
-      {/* 入門3選(ORIGINALのみ): 逆時系列は初見の入口として機能しないため、
-          Andyが選んだ「まずこの3本」を置く。studioで「入門」タグを付けると載る。
-          1〜2本しか付いていない間は見出しが嘘にならない文言に落とす(2026-07-23) */}
-      {isOriginal && starterEps.length > 0 && (
+      {/* 入門3選(全番組、2026-07-23にORIGINAL限定を解除): 逆時系列は初見の
+          入口として機能しないため、Andyが選んだ「まずこの3本」を置く。
+          studioで「入門」タグを付けると載る。
+          1〜2本しか付いていない間は見出しが嘘にならない文言に落とす */}
+      {starterEps.length > 0 && (
         <section className="section">
           <div className="section-head">
             <span>STARTERS — {starterEps.length === 3 ? 'まずこの3本' : 'まずはここから'}</span>

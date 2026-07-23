@@ -19,7 +19,8 @@ type Filter = 'untagged' | 'all' | 'trash'
 
 // 番組ページのSTARTERS(まずこの3本)を作る特別なタグ。手打ち規約では
 // ダッシュボード上で存在が分からない(2026-07-23 Andy指摘)ため、
-// 行ごとのワンクリックトグル+ヘッダーの進捗表示で見れば分かる形にする
+// 行ごとのワンクリックトグル+ヘッダーの進捗表示で見れば分かる形にする。
+// 対象はオリジナル・仕事番組を問わず全番組(同日Andy)
 const STARTER_TAG = '入門'
 
 // 未タグ/全件/ゴミ箱の切替+行ごとのタグ付け(TagPicker=既存タグのサジェスト付き)
@@ -27,11 +28,11 @@ const STARTER_TAG = '入門'
 export default function PodcastInbox({
   rows,
   tagVocabulary,
-  originalSlugs,
+  starterSlugs,
 }: {
   rows: InboxRow[]
   tagVocabulary: string[]
-  originalSlugs: string[]
+  starterSlugs: string[]
 }) {
   const router = useRouter()
   const [filter, setFilter] = useState<Filter>('untagged')
@@ -179,7 +180,7 @@ export default function PodcastInbox({
   }
 
   // 番組ごとの入門本数(ヘッダーの進捗表示。表に出るのは3本まで)
-  const starterCounts = originalSlugs
+  const starterCounts = starterSlugs
     .map((slug) => {
       const inShow = rows.filter((r) => r.showSlug === slug && !isHidden(r))
       if (inShow.length === 0) return null
@@ -197,7 +198,7 @@ export default function PodcastInbox({
       {starterCounts.length > 0 && (
         <p className="inbox-hint">
           行の「入門」を押した回は、番組ページの STARTERS(まずこの3本)に載ります
-          (オリジナル番組のみ・表示は新しい順に3本まで) —{' '}
+          (表示は新しい順に3本まで) —{' '}
           {starterCounts.map((c, i) => (
             <span key={c.slug}>
               {i > 0 && ' / '}
@@ -291,12 +292,12 @@ export default function PodcastInbox({
               </span>
               {filter !== 'trash' && (
                 <>
-                  {originalSlugs.includes(r.showSlug) && (
+                  {starterSlugs.includes(r.showSlug) && (
                     <button
                       type="button"
                       className={`starter-toggle${isStarter(r) ? ' on' : ''}`}
                       onClick={() => toggleStarter(r)}
-                      title="番組ページの STARTERS(まずこの3本)に載せる"
+                      title="この回を番組ページの STARTERS(まずこの3本)に載せる"
                       aria-pressed={isStarter(r)}
                     >
                       入門
