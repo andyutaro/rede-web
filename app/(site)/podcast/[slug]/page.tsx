@@ -139,11 +139,12 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
       </section>
 
       {/* 入門3選(ORIGINALのみ): 逆時系列は初見の入口として機能しないため、
-          Andyが選んだ「まずこの3本」を置く。studioで「入門」タグを付けると載る */}
+          Andyが選んだ「まずこの3本」を置く。studioで「入門」タグを付けると載る。
+          1〜2本しか付いていない間は見出しが嘘にならない文言に落とす(2026-07-23) */}
       {isOriginal && starterEps.length > 0 && (
         <section className="section">
           <div className="section-head">
-            <span>STARTERS — まずこの3本</span>
+            <span>STARTERS — {starterEps.length === 3 ? 'まずこの3本' : 'まずはここから'}</span>
           </div>
           <div className="section-body starter-list">
             {starterEps.map((ep) => (

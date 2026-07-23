@@ -17,9 +17,22 @@ export type InboxRow = {
 
 type Filter = 'untagged' | 'all' | 'trash'
 
+// 番組ページのSTARTERS(まずこの3本)を作る特別なタグ。手打ち規約では
+// ダッシュボード上で存在が分からない(2026-07-23 Andy指摘)ため、
+// 行ごとのワンクリックトグル+ヘッダーの進捗表示で見れば分かる形にする
+const STARTER_TAG = '入門'
+
 // 未タグ/全件/ゴミ箱の切替+行ごとのタグ付け(TagPicker=既存タグのサジェスト付き)
 // +チェックボックス一括操作。タグ保存は行単位。ゴミ箱=hiddenフラグ(いつでも戻せる)。
-export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]; tagVocabulary: string[] }) {
+export default function PodcastInbox({
+  rows,
+  tagVocabulary,
+  originalSlugs,
+}: {
+  rows: InboxRow[]
+  tagVocabulary: string[]
+  originalSlugs: string[]
+}) {
   const router = useRouter()
   const [filter, setFilter] = useState<Filter>('untagged')
   const [saved, setSaved] = useState<Map<string, string[]>>(
@@ -32,6 +45,9 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
   // 行ごとの未確定入力(保存時に含める=打ちかけでも保存ボタンで拾う)
   const draftsRef = useRef<Map<string, string>>(new Map())
   const [status, setStatus] = useState<Map<string, 'saving' | 'saved' | 'error'>>(() => new Map())
+  // この画面で今タグを付けた行(2026-07-23): 付けた瞬間に「未タグ」から消えると
+  // 行が削除されたように見え、押し間違いも直せない。次に開くまでは留める
+  const [stickyKeys, setStickyKeys] = useState<Set<string>>(() => new Set())
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -41,11 +57,18 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
     return `${r.showSlug}/${r.episodeId}`
   }
 
-  async function saveTags(r: InboxRow) {
+  // overrideTags: 入門トグル等の「この内容で即保存」用(打ちかけドラフトは混ぜない)。
+  // 戻り値は成否(トグルは失敗時に見た目を巻き戻す)
+  async function saveTags(r: InboxRow, overrideTags?: string[]): Promise<boolean> {
     const k = key(r)
-    const draft = (draftsRef.current.get(k) ?? '').trim()
-    const tags = [...(editing.get(k) ?? saved.get(k) ?? [])]
-    if (draft && !tags.includes(draft)) tags.push(draft)
+    let tags: string[]
+    if (overrideTags) {
+      tags = overrideTags
+    } else {
+      const draft = (draftsRef.current.get(k) ?? '').trim()
+      tags = [...(editing.get(k) ?? saved.get(k) ?? [])]
+      if (draft && !tags.includes(draft)) tags.push(draft)
+    }
     setStatus((m) => new Map(m).set(k, 'saving'))
     try {
       const res = await fetch('/api/episode-tags', {
@@ -56,8 +79,11 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
       setSaved((m) => new Map(m).set(k, tags))
       setEditing((m) => new Map(m).set(k, tags)) // 打ちかけ分を含めた確定形をチップに反映
       setStatus((m) => new Map(m).set(k, 'saved'))
+      setStickyKeys((s) => new Set(s).add(k))
+      return true
     } catch {
       setStatus((m) => new Map(m).set(k, 'error'))
+      return false
     }
   }
 
@@ -99,7 +125,12 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
       if (!isHidden(r)) return false
     } else {
       if (isHidden(r)) return false
-      if (filter === 'untagged' && (saved.get(key(r)) ?? []).length > 0) return false
+      if (
+        filter === 'untagged' &&
+        (saved.get(key(r)) ?? []).length > 0 &&
+        !stickyKeys.has(key(r))
+      )
+        return false
     }
     if (!needle) return true
     return (
@@ -126,8 +157,55 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
     setSelected((prev) => (prev.size === keys.length ? new Set() : new Set(keys)))
   }
 
+  function currentTags(k: string): string[] {
+    return editing.get(k) ?? saved.get(k) ?? []
+  }
+
+  function isStarter(r: InboxRow): boolean {
+    return currentTags(key(r)).includes(STARTER_TAG)
+  }
+
+  // 入門トグル: 付け外しと保存をワンクリックで(タグ欄への手打ち不要)。
+  // 見た目は先に動かし、保存に失敗したら元に戻す
+  async function toggleStarter(r: InboxRow) {
+    const k = key(r)
+    const cur = currentTags(k)
+    const tags = cur.includes(STARTER_TAG)
+      ? cur.filter((t) => t !== STARTER_TAG)
+      : [...cur, STARTER_TAG]
+    setEditing((m) => new Map(m).set(k, tags))
+    const ok = await saveTags(r, tags)
+    if (!ok) setEditing((m) => new Map(m).set(k, cur))
+  }
+
+  // 番組ごとの入門本数(ヘッダーの進捗表示。表に出るのは3本まで)
+  const starterCounts = originalSlugs
+    .map((slug) => {
+      const inShow = rows.filter((r) => r.showSlug === slug && !isHidden(r))
+      if (inShow.length === 0) return null
+      return {
+        slug,
+        label: inShow[0].showLabel,
+        n: inShow.filter((r) => (saved.get(key(r)) ?? []).includes(STARTER_TAG)).length,
+      }
+    })
+    .filter((c): c is { slug: string; label: string; n: number } => c !== null)
+
   return (
     <>
+      {/* 入門3選の案内+進捗: 「入門」が特別なタグであることをUIで語る */}
+      {starterCounts.length > 0 && (
+        <p className="inbox-hint">
+          行の「入門」を押した回は、番組ページの STARTERS(まずこの3本)に載ります
+          (オリジナル番組のみ・表示は新しい順に3本まで) —{' '}
+          {starterCounts.map((c, i) => (
+            <span key={c.slug}>
+              {i > 0 && ' / '}
+              {c.label} <strong>{c.n}</strong>本
+            </span>
+          ))}
+        </p>
+      )}
       <div className="inbox-filter">
         {(
           [
@@ -143,6 +221,7 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
             onClick={() => {
               setFilter(f)
               setSelected(new Set())
+              setStickyKeys(new Set()) // 絞り込みを切り替えたら留めていた行は解除
             }}
           >
             {label}
@@ -212,6 +291,17 @@ export default function PodcastInbox({ rows, tagVocabulary }: { rows: InboxRow[]
               </span>
               {filter !== 'trash' && (
                 <>
+                  {originalSlugs.includes(r.showSlug) && (
+                    <button
+                      type="button"
+                      className={`starter-toggle${isStarter(r) ? ' on' : ''}`}
+                      onClick={() => toggleStarter(r)}
+                      title="番組ページの STARTERS(まずこの3本)に載せる"
+                      aria-pressed={isStarter(r)}
+                    >
+                      入門
+                    </button>
+                  )}
                   <div className="inbox-tagpicker">
                     <TagPicker
                       value={editing.get(k) ?? saved.get(k) ?? []}

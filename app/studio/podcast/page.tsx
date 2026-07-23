@@ -45,10 +45,13 @@ export default async function StudioPodcast() {
   })
   rows.sort((a, b) => b.date.localeCompare(a.date))
 
+  // 入門トグルの対象(STARTERSが出るのはオリジナル番組の番組ページだけ)
+  const originalSlugs = SHOWS.filter((s) => s.group === 'original' && s.feed).map((s) => s.slug)
+
   return (
     <>
       <h1 className="studio-h1">PODCAST INBOX</h1>
-      <PodcastInbox rows={rows} tagVocabulary={tagVocabulary} />
+      <PodcastInbox rows={rows} tagVocabulary={tagVocabulary} originalSlugs={originalSlugs} />
     </>
   )
 }

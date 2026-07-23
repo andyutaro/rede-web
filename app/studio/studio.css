@@ -1010,6 +1010,13 @@
   text-overflow: ellipsis;
 }
 
+/* 行頭のチェックボックスは伸ばさない(下の.inbox-row inputはタグ入力欄向けの
+   指定で、チェックボックスまで伸びて日付が右へ流れていた。2026-07-23) */
+.inbox-row .row-check {
+  flex: none;
+  min-width: 0;
+}
+
 .inbox-row input {
   flex: 1;
   min-width: 120px;
@@ -1046,6 +1053,47 @@
 .inbox-row .row-save.saved {
   color: #7fb08a;
   border-color: rgba(127, 176, 138, 0.4);
+}
+
+/* 入門トグル(2026-07-23): 番組ページのSTARTERSに載せる特別なタグは
+   手打ち規約だとダッシュボード上で存在が分からない(Andy指摘)。
+   ONは塗りで「立っている」ことを一目で示す。押した時点で保存まで走る */
+.inbox-row .starter-toggle {
+  flex: none;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #6b6b6b;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.inbox-row .starter-toggle:hover {
+  color: #a8a49c;
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.inbox-row .starter-toggle.on {
+  background: #e8e6e0;
+  border-color: #e8e6e0;
+  color: #1a1a1a;
+}
+
+/* 入門3選の案内+番組ごとの本数(この機能の存在と現状を上部で語る) */
+.inbox-hint {
+  margin-bottom: 18px;
+  font-size: 11px;
+  line-height: 1.9;
+  color: #6b6b6b;
+}
+
+.inbox-hint strong {
+  font-weight: 400;
+  color: #a8a49c;
 }
 
 /* ==== スマホ(≦640px、2026-07-11) ==== */
@@ -1096,8 +1144,19 @@
     padding-left: 26px;
   }
 
-  .inbox-row .row-save {
+  /* 入門トグルは日付行ではなくタグ行へ降ろす(対象の回のすぐ下で操作する)。
+     トグルのある行はタグ欄を詰めて「タグ/入門/保存」を1行に収める */
+  .inbox-row .starter-toggle {
     order: 12;
+  }
+
+  .inbox-row:has(.starter-toggle) .inbox-tagpicker {
+    flex-basis: 40%;
+    min-width: 0; /* デスクトップのmin-width:200pxを解いて3つを1行に収める */
+  }
+
+  .inbox-row .row-save {
+    order: 13;
   }
 
   .thumb-row {
