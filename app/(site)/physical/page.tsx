@@ -47,7 +47,12 @@ export default async function PhysicalPage() {
         <div className="section-body grid4">
           {items.map((item) => (
             <div key={item.id}>
-              <Link href={`/physical/${item.id}`} className="sq">
+              {/* 同上(2026-07-23): サムネイルは装飾でタイトルは兄弟div。リンク名を与える */}
+              <Link
+                href={`/physical/${item.id}`}
+                className="sq"
+                aria-label={`PHYSICAL ${item.title} ${dateShort(item.date)}`}
+              >
                 {item.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

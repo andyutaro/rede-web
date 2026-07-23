@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // 番組へのおたよりフォーム(2026-07-20)。送信先は仕事の問い合わせと同じ
 // /api/contact(保存はcontact_messages、studioのCONTACT室で確認)。
@@ -20,6 +20,13 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
   const [agreed, setAgreed] = useState(false)
   const [website, setWebsite] = useState('') // honeypot
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  // 送信完了の合図(2026-07-23): 押した瞬間に送信ボタンがdisabledになり
+  // フォーカスがbodyへ落ちるため、差し替わった完了文は誰にも読まれなかった。
+  // 完了文へフォーカスを移して「送れた」を必ず届ける
+  const doneRef = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (state === 'done') doneRef.current?.focus()
+  }, [state])
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -60,7 +67,13 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
   }
 
   if (state === 'done') {
-    return <p className="contact-done">届きました。読んでくれてありがとうございます。</p>
+    // 送信結果を伝える唯一の場所。完了文へフォーカスを移して読み上げさせる
+    // (2026-07-23。それまでは無音でフォーカスもbodyへ落ちていた)
+    return (
+      <p className="contact-done" ref={doneRef} tabIndex={-1}>
+        届きました。読んでくれてありがとうございます。
+      </p>
+    )
   }
 
   return (
@@ -134,7 +147,7 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
         <button type="submit" className="cf-submit" disabled={!valid || state === 'sending'}>
           {state === 'sending' ? '送信中…' : '送 信'}
         </button>
-        {state === 'error' && <span className="cf-error">送信に失敗しました。時間をおいてお試しください</span>}
+        {state === 'error' && <span className="cf-error" role="alert">送信に失敗しました。時間をおいてお試しください</span>}
       </div>
     </form>
   )

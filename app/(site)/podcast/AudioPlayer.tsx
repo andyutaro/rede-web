@@ -74,6 +74,9 @@ export default function AudioPlayer({ src, title }: { src: string; title: string
         onChange={seek}
         disabled={!ready}
         aria-label="再生位置"
+        // 値が生の秒数(「1837」)で読まれ、1時間の回のどこにいるか分からなかった
+        // (2026-07-23)。画面に出ているのと同じ整形済みの時刻を読ませる
+        aria-valuetext={ready ? `${fmt(current)} / ${fmt(duration)}` : fmt(current)}
       />
       <span className="audio-time">
         {fmt(current)} / {ready ? fmt(duration) : '--:--'}

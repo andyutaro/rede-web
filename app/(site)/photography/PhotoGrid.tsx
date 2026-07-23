@@ -41,7 +41,13 @@ export default function PhotoGrid({ items }: { items: PhotoItem[] }) {
       <div className="section-body grid4">
         {shown.map((item) => (
           <div key={item.id}>
-            <Link href={`/photography/${item.id}`} className="sq">
+            {/* サムネイルはalt=""(装飾)でタイトルは兄弟divにあるため、リンク名が
+                空でURL(UUID)が読み上げられていた(2026-07-23)。可視ラベルと同じ文言を与える */}
+            <Link
+              href={`/photography/${item.id}`}
+              className="sq"
+              aria-label={`${item.kind.toUpperCase()} ${item.title} ${dateShort(item.date)}`}
+            >
               {item.thumb ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

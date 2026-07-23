@@ -57,7 +57,9 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
         {shown.map((item) =>
           item.kind === 'live' ? (
             <div key={item.key}>
-              <Link href={item.href} className="sq">
+              {/* 中身は装飾のspanだけなのでリンクに名前が無かった(2026-07-23)。
+                  可視ラベルと同じ文言を読み上げ名にする(表示は変わらない) */}
+              <Link href={item.href} className="sq" aria-label={`SCRIBE LIVE ${dateShort(item.date)}`}>
                 <span className="live-cell">
                   <span className="ripple" aria-hidden="true" />
                   <span className="core" aria-hidden="true" />
@@ -72,7 +74,13 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
             </div>
           ) : (
             <div key={item.key}>
-              <Link href={item.href} className="sq">
+              {/* サムネイルはalt=""(装飾)なのでリンク名が空だった(2026-07-23)。
+                  タイトルは兄弟divにあり読み上げ名にならない。可視ラベルと同じ文言を与える */}
+              <Link
+                href={item.href}
+                className="sq"
+                aria-label={`${item.kind.toUpperCase()} ${item.title ?? (item.kind === 'scribe' ? 'Archive' : '')} ${dateShort(item.date)}`}
+              >
                 {item.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

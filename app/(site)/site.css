@@ -1050,7 +1050,12 @@ html[data-theme='dark'] .contact-pill:hover {
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s, transform 0.25s;
+  /* visibilityも落とす(2026-07-23): opacityだけだとボタンがタブ順と
+     アクセシビリティツリーに残り、画面のどこにも見えない場所でフォーカスが
+     消える。transitionにvisibilityを足して、消える瞬間だけ遅らせる
+     (見た目のフェードは従来どおり) */
+  visibility: hidden;
+  transition: opacity 0.25s, transform 0.25s, visibility 0s linear 0.25s;
   user-select: none;
   z-index: 10;
 }
@@ -1058,6 +1063,8 @@ html[data-theme='dark'] .contact-pill:hover {
 .jump-chip.visible {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
+  transition: opacity 0.25s, transform 0.25s, visibility 0s;
   transform: translateX(-50%) translateY(0);
 }
 
@@ -2449,7 +2456,11 @@ html[data-theme='dark'] .contact-pill:hover {
   line-height: 2.2;
 }
 
-.contact-form input:focus,
+/* :not([type='checkbox']) は2432行と同じ除外(2026-07-23に追補)。
+   これが無いとチェックボックスの既定のフォーカス輪郭まで消え、しかも代わりの
+   border-colorは自前描画のcheckbox側の指定に負けて何も出ない=キーボードだけで
+   操作する人が現在地を見失う。用件6個+同意(押さないと送信できない)が並ぶ場所なので実害が出る */
+.contact-form input:not([type='checkbox']):focus,
 .contact-form textarea:focus {
   outline: none;
   border-color: var(--mut);

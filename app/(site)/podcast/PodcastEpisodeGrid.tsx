@@ -73,7 +73,13 @@ export default function PodcastEpisodeGrid({
       <div className="section-body grid4">
         {shown.map((ep) => (
           <div key={ep.key}>
-            <Link href={`/podcast/${ep.slug}/${ep.epId}`} className="sq">
+            {/* 同上(2026-07-23)。ここは301タイルあり、名前が無いと一覧から
+                目的の回を選ぶ操作が事実上できなかった。新着はラベル側で伝える */}
+            <Link
+              href={`/podcast/${ep.slug}/${ep.epId}`}
+              className="sq"
+              aria-label={`${ep.showLabel} ${ep.title} ${dateShort(ep.date)}${ep.date >= newSince ? ' 新着' : ''}`}
+            >
               {ep.thumb ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imgThumb(ep.thumb, IMG_W.ep)} alt="" loading="lazy" decoding="async" className="cover-frame" />

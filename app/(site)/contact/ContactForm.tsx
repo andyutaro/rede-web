@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { TOPICS } from './content'
 
 // 問い合わせフォーム。送信先は/api/contact(DB保存+メール通知)。
@@ -13,6 +13,13 @@ export default function ContactForm() {
   const [agreed, setAgreed] = useState(false)
   const [website, setWebsite] = useState('') // honeypot(人間には見えない)
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  // 送信完了の合図(2026-07-23): 押した瞬間に送信ボタンがdisabledになり
+  // フォーカスがbodyへ落ちるため、差し替わった完了文は誰にも読まれなかった。
+  // 完了文へフォーカスを移して「送れた」を必ず届ける
+  const doneRef = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (state === 'done') doneRef.current?.focus()
+  }, [state])
 
   const valid = name.trim() && email.includes('@') && message.trim() && agreed
 
@@ -37,8 +44,12 @@ export default function ContactForm() {
   }
 
   if (state === 'done') {
+    // 送信結果は画面上の唯一の受領証(送信者への自動返信は無い)。
+    // 押した瞬間に送信ボタンがdisabled→DOMから消え、フォーカスがbodyへ落ちて
+    // 完了文も読み上げられなかった(2026-07-23)。完了文自身へフォーカスを移す。
+    // 見た目は変わらない(プログラム的focusは:focus-visibleに一致しない)
     return (
-      <p className="contact-done">
+      <p className="contact-done" ref={doneRef} tabIndex={-1}>
         送信しました。メールにて返信いたしますので、しばらくお待ちください。
       </p>
     )
@@ -105,7 +116,7 @@ export default function ContactForm() {
         <button type="submit" className="cf-submit" disabled={!valid || state === 'sending'}>
           {state === 'sending' ? '送信中…' : '送 信'}
         </button>
-        {state === 'error' && <span className="cf-error">送信に失敗しました。時間をおいてお試しください</span>}
+        {state === 'error' && <span className="cf-error" role="alert">送信に失敗しました。時間をおいてお試しください</span>}
       </div>
     </form>
   )

@@ -82,7 +82,8 @@ export default async function Home() {
             {/* 掲載ページ(Photography作品/Notes記事/scribe)へのリンクは
                 randomPhotoWithHrefが本文照合で解決済み */}
             {photo.href ? (
-              <Link href={photo.href}>
+              // 中身は装飾のimgだけでリンク名が空だった(2026-07-23)
+              <Link href={photo.href} aria-label="この写真の掲載ページへ">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imgThumb(photo.url, IMG_W.photo)} alt="" loading="lazy" decoding="async" />
               </Link>
