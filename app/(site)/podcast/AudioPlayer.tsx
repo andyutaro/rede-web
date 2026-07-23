@@ -21,13 +21,24 @@ export default function AudioPlayer({ src, title }: { src: string; title: string
       setReady(true)
     }
     const onEnd = () => setPlaying(false)
+    // 読み込みに失敗した回でも押せる状態にする(押せばブラウザが取得を再試行する)。
+    // 灰色のまま理由も出ずに詰むより、鳴らないかもしれない方がまし
+    const onError = () => setReady(true)
     a.addEventListener('timeupdate', onTime)
     a.addEventListener('loadedmetadata', onMeta)
     a.addEventListener('ended', onEnd)
+    a.addEventListener('error', onError)
+    // 取り逃した loadedmetadata を拾う(2026-07-23、本番で再生ボタンが永久に
+    // 押せなくなっていた)。preload="metadata"の読み込みはHTMLのパース中に始まるので、
+    // Nextのチャンクを読んでハイドレートし、このeffectがリスナーを付ける頃には
+    // 既に発火し終わっていることがある。回線が速いほど、また音源がキャッシュ済みの
+    // 再訪ほど確実に負ける。マウント時点の状態を見て自分で追いつく
+    if (a.readyState >= 1) onMeta()
     return () => {
       a.removeEventListener('timeupdate', onTime)
       a.removeEventListener('loadedmetadata', onMeta)
       a.removeEventListener('ended', onEnd)
+      a.removeEventListener('error', onError)
     }
   }, [])
 
