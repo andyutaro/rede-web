@@ -25,7 +25,7 @@ export default function CoverGrid({
   return (
     <section className="section">
       <div className="section-head">
-        <span>{heading}</span>
+        <h2>{heading}</h2>
       </div>
       <div className="section-body grid4">
         {shows.map((show) => (

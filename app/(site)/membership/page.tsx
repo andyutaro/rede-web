@@ -19,7 +19,7 @@ export default async function MembershipPage() {
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <span>MEMBERSHIP — @andy</span>
+          <h1>MEMBERSHIP — @andy</h1>
         </div>
         <div className="section-body membership">
           <div className="about-prose about-prose-tight">
@@ -55,7 +55,7 @@ export default async function MembershipPage() {
 
       <section className="section">
         <div className="section-head">
-          <span>THE REASON</span>
+          <h2>THE REASON</h2>
         </div>
         <div className="section-body">
           <p className="about-lead">{m.reasonLead}</p>

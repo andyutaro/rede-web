@@ -15,7 +15,7 @@ export default async function PrivacyPage() {
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <span>PRIVACY POLICY</span>
+          <h1>PRIVACY POLICY</h1>
         </div>
         <div className="section-body policy">
           <p>{p.intro}</p>

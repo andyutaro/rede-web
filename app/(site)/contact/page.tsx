@@ -36,7 +36,7 @@ export default async function ContactPage() {
     <>
       <section className="section">
         <div className="section-head">
-          <span>FOR CLIENT</span>
+          <h2>FOR CLIENT</h2>
         </div>
         <div className="section-body contact-intro">
           {page.intro.map((p, i) => (
@@ -48,7 +48,7 @@ export default async function ContactPage() {
 
       <section className="section">
         <div className="section-head">
-          <span>Q&amp;A FOR CLIENT</span>
+          <h2>Q&amp;A FOR CLIENT</h2>
         </div>
         <div className="section-body contact-qa">
           {page.qa.map((qa) => (
@@ -68,7 +68,7 @@ export default async function ContactPage() {
       {/* PROFILE/OVERVIEWはAboutと同じ内容(site_content)を再掲する */}
       <section className="section">
         <div className="section-head">
-          <span>PROFILE &amp; OVERVIEW</span>
+          <h2>PROFILE &amp; OVERVIEW</h2>
         </div>
         <div className="section-body">
           <Accordion label="PROFILE">
@@ -120,7 +120,7 @@ export default async function ContactPage() {
 
       <section className="section">
         <div className="section-head">
-          <span>FORM</span>
+          <h2>FORM</h2>
         </div>
         <div className="section-body">
           <ContactForm />
@@ -133,7 +133,7 @@ export default async function ContactPage() {
     <>
       <section className="section">
         <div className="section-head">
-          <span>FOR LISTENER</span>
+          <h2>FOR LISTENER</h2>
         </div>
         <div className="section-body contact-intro">
           <p>
@@ -145,7 +145,7 @@ export default async function ContactPage() {
 
       <section className="section">
         <div className="section-head">
-          <span>OTAYORI FORM</span>
+          <h2>OTAYORI FORM</h2>
         </div>
         <div className="section-body">
           <OtayoriForm shows={otayoriTargets} />
@@ -158,7 +158,7 @@ export default async function ContactPage() {
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <span>CONTACT &amp; OTAYORI</span>
+          <h1>CONTACT &amp; OTAYORI</h1>
         </div>
         <div className="section-body">
           <ContactModes work={work} otayori={otayori} />

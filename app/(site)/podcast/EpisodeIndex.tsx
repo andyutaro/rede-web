@@ -28,7 +28,7 @@ export default function EpisodeIndex({ rows, newSince }: { rows: IndexRow[]; new
   return (
     <section className="section">
       <div className="section-head">
-        <span>EPISODES — {needle ? `${shown.length}/${rows.length}` : rows.length}</span>
+        <h2>EPISODES — {needle ? `${shown.length}/${rows.length}` : rows.length}</h2>
       </div>
       {/* 検索(下線1本の文法=Notesのアーカイブ検索と同じ) */}
       <div className="article-search ep-search">

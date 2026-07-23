@@ -68,7 +68,7 @@ export default function LiveWindow({ relay, today, initialHtml }: Props) {
   return (
     <section className="section" aria-label="scribe live">
       <div className="section-head">
-        <span>SCRIBE</span>
+        <h2>SCRIBE</h2>
         <span className={`live-status ${mode === 'live' ? 'is-live' : ''}`}>
           <span className="live-dot" aria-hidden="true" />
           {mode === 'live' ? 'LIVE' : 'AWAY'}

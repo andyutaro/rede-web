@@ -29,6 +29,7 @@ export default async function AboutPage() {
 
   return (
     <div className="measure about">
+      <h1 className="sr-only">About</h1>
       {/* 楽章1: 導入エッセイ(署名→リード→本文→帰結) */}
       <section className="about-opening">
         <p className="about-name">{c.name}</p>
@@ -102,7 +103,7 @@ export default async function AboutPage() {
       {/* 楽章4: 姿勢(STANCE) */}
       <section className="about-movement about-stance-block">
         <div className="section-head">
-          <span>STANCE</span>
+          <h2>STANCE</h2>
         </div>
         <ol className="about-stance">
           {c.stance.map((s, i) => (
@@ -126,7 +127,7 @@ function ShowList({
   return (
     <section className="about-movement">
       <div className="section-head">
-        <span>{heading}</span>
+        <h2>{heading}</h2>
       </div>
       <div className="about-shows">
         {shows.map((s) => (

@@ -40,6 +40,7 @@ export default async function PhotographyPage() {
 
   return (
     <div className="measure">
+      <h1 className="sr-only">Photography</h1>
       <PhotoGrid items={items} />
     </div>
   )

@@ -44,6 +44,7 @@ export default async function PodcastPage() {
 
   return (
     <div className="measure">
+      <h1 className="sr-only">Podcast</h1>
       <CoverGrid heading="ORIGINAL" shows={withArt.filter((s) => s.group === 'original')} />
       <CoverGrid heading="WORKS" shows={withArt.filter((s) => s.group === 'works')} />
       <PodcastEpisodeGrid

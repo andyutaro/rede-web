@@ -90,7 +90,7 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
         {/* 右側に所属バッジ(2026-07-14 Andy指摘): 初見者が「本人の番組か制作参加か」を
             エピソード直リンクでも判別できる。WORKSは単語だけでは通じないので注記付き */}
         <div className="section-head">
-          <span>{(show.display ?? show.name).toUpperCase()} — {dateDots(ep.date)}</span>
+          <h2>{(show.display ?? show.name).toUpperCase()} — {dateDots(ep.date)}</h2>
           <span className="head-affiliation">
             {show.group === 'original' ? 'ORIGINAL' : 'WORKS — 制作参加'}
           </span>

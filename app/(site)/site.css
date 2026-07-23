@@ -50,6 +50,31 @@
   align-items: baseline;
 }
 
+/* 棚見出しは見た目のまま中身を見出しタグにする(2026-07-23)。
+   spanのままだと支援技術から「見出し」に見えず、目の見えない人はページを
+   見出しで移動できない(晴眼者が一瞬で棚を見分けているのに対して不利)。
+   font: inherit で既定のh1/h2の字面(大きさ・太さ)を打ち消し、表示は1pxも変えない */
+.section-head h1,
+.section-head h2 {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+/* 読み上げ専用(2026-07-23)。視覚的な題を持たない一覧ページに、そのページが
+   何なのかを支援技術にだけ伝えるために置く。見た目には一切出ない */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .section-head a {
   font-size: 9px;
   letter-spacing: 0.22em;

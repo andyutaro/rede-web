@@ -21,7 +21,7 @@ export default async function SearchPage({
     <div className="measure search">
       <section className="section">
         <div className="section-head">
-          <span>SEARCH — SCRIBE</span>
+          <h1>SEARCH — SCRIBE</h1>
         </div>
         <div className="section-body">
           <form className="search-form" action="/search" method="get">

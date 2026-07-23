@@ -105,7 +105,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         {/* 初見者が「本人の番組か制作参加か」を判別できる棚見出し(2026-07-14 Andy指摘)。
             語彙はHomeの棚(PODCAST — ORIGINAL/WORKS)と同一=サイト内で意味が通る */}
         <div className="section-head show-shelf-head">
-          <span>PODCAST — {isOriginal ? 'ORIGINAL' : 'WORKS'}</span>
+          <h2>PODCAST — {isOriginal ? 'ORIGINAL' : 'WORKS'}</h2>
         </div>
         {feed?.image && (
           <div className="sq cover-frame show-cover">
@@ -153,7 +153,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
       {starterEps.length > 0 && (
         <section className="section">
           <div className="section-head">
-            <span>STARTERS — {starterEps.length === 3 ? 'まずこの3本' : 'まずはここから'}</span>
+            <h2>STARTERS — {starterEps.length === 3 ? 'まずこの3本' : 'まずはここから'}</h2>
           </div>
           <div className="section-body starter-list">
             {starterEps.map((ep) => (
@@ -179,7 +179,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
       {show.role && (
         <section className="section">
           <div className="section-head">
-            <span>ROLE</span>
+            <h2>ROLE</h2>
           </div>
           <p className="show-role">{show.role}</p>
         </section>

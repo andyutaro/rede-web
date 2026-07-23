@@ -42,7 +42,7 @@ export default async function PhysicalPage() {
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <span>PHYSICAL — {items.length}</span>
+          <h1>PHYSICAL — {items.length}</h1>
         </div>
         <div className="section-body grid4">
           {items.map((item) => (

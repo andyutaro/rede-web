@@ -112,6 +112,7 @@ export default async function ArticlePage() {
 
   return (
     <div className="measure">
+      <h1 className="sr-only">Notes</h1>
       {/* scribeアーカイブ検索の入口(結果は/searchへ) */}
       <form className="article-search" action="/search" method="get">
         <input

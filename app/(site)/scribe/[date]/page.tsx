@@ -95,7 +95,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
       <article className="section">
         {/* scribeのタイトルは日付導出(20260706)。日付はdatetimeとして併記 */}
         <div className="section-head">
-          <span>SCRIBE ARCHIVE — {scribeTitle(date)}</span>
+          <h1>SCRIBE ARCHIVE — {scribeTitle(date)}</h1>
         </div>
         <p className="scribe-preamble">
           {PREAMBLE_LINES.map((line) => (

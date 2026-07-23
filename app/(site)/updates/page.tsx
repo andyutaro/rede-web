@@ -13,7 +13,7 @@ export default async function UpdatesPage() {
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <span>UPDATES</span>
+          <h1>UPDATES</h1>
         </div>
         <div className="section-body">
           <UpdateList rows={rows} />

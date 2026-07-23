@@ -51,12 +51,13 @@ export default async function Home() {
 
   return (
     <div className="measure">
+      <h1 className="sr-only">Andy — Podcaster</h1>
       {originals.length > 0 && <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} />}
       {works.length > 0 && <CoverGrid heading="PODCAST — WORKS" shows={works} />}
 
       <section className="section">
         <div className="section-head">
-          <span>UPDATES — LAST 10 DAYS</span>
+          <h2>UPDATES — LAST 10 DAYS</h2>
           <Link href="/updates">ALL UPDATES →</Link>
         </div>
         <div className="section-body">
@@ -75,7 +76,7 @@ export default async function Home() {
       {photo && (
         <section className="section">
           <div className="section-head">
-            <span>PHOTOGRAPHY</span>
+            <h2>PHOTOGRAPHY</h2>
           </div>
           <div className="section-body photo-single">
             {/* 掲載ページ(Photography作品/Notes記事/scribe)へのリンクは

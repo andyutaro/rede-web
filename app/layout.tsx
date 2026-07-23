@@ -40,8 +40,10 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning: data-themeはペイント前のインラインスクリプトが
     // 付与する(公開サイトのダークモード)ため、サーバーHTMLとの属性差分は意図的
+    // lang="ja": 中身は全て日本語なのにenのままだった(2026-07-23)。
+    // 支援技術が日本語を英語の音声で読み上げてしまう=読み上げが実質成立しない
     <html
-      lang="en"
+      lang="ja"
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >

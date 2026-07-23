@@ -9,7 +9,7 @@ export default function NotFoundBody() {
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <span>NOT FOUND</span>
+          <h1>NOT FOUND</h1>
         </div>
         <div className="section-body nf-body">
           <p className="nf-line">その頁は見つかりませんでした。</p>

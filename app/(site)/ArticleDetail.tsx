@@ -82,13 +82,13 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
         <div className="section-head">
           {/* photographyは下位区分(ARTWORK/PHOTOLOG)を種別として掲げる(2026-07-11)。
               physicalはPHYSICAL、notesはARTICLE */}
-          <span>
+          <h2>
             {a.type === 'photography'
               ? ((a.photo_kind as string | null) ?? 'photolog').toUpperCase()
               : a.type === 'physical'
                 ? 'PHYSICAL'
                 : 'ARTICLE'}
-          </span>
+          </h2>
           {date && <span className="article-date">{dateDots(date)}</span>}
         </div>
         <h1 className="article-title">{a.title || '(無題)'}</h1>

@@ -23,7 +23,7 @@ export default function ErrorBody({
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <span>ERROR</span>
+          <h1>ERROR</h1>
         </div>
         <div className="section-body nf-body">
           <p className="nf-line">うまく表示できませんでした。</p>
