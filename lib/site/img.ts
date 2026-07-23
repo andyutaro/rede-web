@@ -10,6 +10,8 @@ const CDN_BASE = 'https://andyutaro.com/cdn-cgi/image'
 // 用途別の幅(表示幅×2=Retina想定)
 export const IMG_W = {
   tile: 480, // 棚のタイル(カバー・サムネ、表示138〜220px)
+  og: 1200, // SNSカード(OGP)。正方形アートをそのまま出す
+
   ep: 320, // エピソード一覧の小サムネ
   photo: 1280, // 本文写真・Homeのランダム写真(measure640の2倍)
   studio: 96, // studioの行内サムネ(34px)

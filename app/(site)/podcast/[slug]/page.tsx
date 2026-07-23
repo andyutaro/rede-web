@@ -30,7 +30,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const show = showBySlug(slug)
-  return { title: show?.name ?? 'Podcast' }
+  if (!show?.feed) return { title: show?.name ?? 'Podcast' }
+  // 番組単位のOGP(2026-07-22): カードに番組カバーを出す(エピソードページと同じ文法)
+  const img = `https://andyutaro.com/api/og-image?show=${show.slug}`
+  return {
+    title: show.name,
+    openGraph: { title: show.name, images: [{ url: img, alt: show.name }] },
+    twitter: { card: 'summary', images: [{ url: img, alt: show.name }] },
+  }
 }
 
 // 入門3選(2026-07-20): studioのPODCAST INBOXで「入門」タグを付けた回。

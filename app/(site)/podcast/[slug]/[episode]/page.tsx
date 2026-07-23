@@ -33,7 +33,19 @@ export async function generateMetadata({
   params: Promise<Params>
 }): Promise<Metadata> {
   const data = await loadEpisode(params)
-  return { title: data ? data.ep.title : 'Podcast' }
+  if (!data) return { title: 'Podcast' }
+  const { show, feed, ep } = data
+  // エピソード単位のOGP(2026-07-22): シェアカードにその回のアートを出す。
+  // 画像はAnchor URLの失効に備えて安定ルート(/api/og-image)経由の絶対URL。
+  // アートは正方形なのでtwitterはsummary(large_imageだと切られる)
+  if (!(ep.image ?? feed.image)) return { title: ep.title }
+  const img = `https://andyutaro.com/api/og-image?show=${show.slug}&ep=${ep.id}`
+  const alt = `${show.display ?? show.name}『${ep.title}』`
+  return {
+    title: ep.title,
+    openGraph: { title: alt, images: [{ url: img, alt }] },
+    twitter: { card: 'summary', images: [{ url: img, alt }] },
+  }
 }
 
 // エピソードページ: タイトル・サムネイル・ネイティブ再生プレイヤー・

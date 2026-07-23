@@ -4,7 +4,10 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "rede-web",
-  "main": ".open-next/worker.js",
+  // カスタムエントリ(2026-07-22): OpenNextのfetch+scheduled(scribe確定cron)
+  "main": "worker.js",
+  // 毎日15:01 UTC = 0:01 JST(Vercel Cronから移管)
+  "triggers": { "crons": ["1 15 * * *"] },
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
