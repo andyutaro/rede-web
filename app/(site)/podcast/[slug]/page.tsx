@@ -21,10 +21,11 @@ export function generateStaticParams() {
   return SHOWS.filter((s) => s.feed).map((s) => ({ slug: s.slug }))
 }
 
-// 知らないslugはルーティング段階で弾く(2026-07-23)。番組は上の5枠で確定なので
-// 動的解決の余地が無く、こうすると本物の404が返る(ページを描いてからnotFound()を
-// 投げるとストリーミング済みで200のままになる=soft 404)
-export const dynamicParams = false
+// dynamicParams=falseは試して取り下げた(2026-07-23)。ステータスは404になるが
+// Nextの組み込み404(英語)が出てしまい、人が見る画面としては悪化する。
+// 知らないslugはページ側のnotFound()に任せる=サイトの言葉の404が出る。
+// ストリーミング中なのでステータスは200のままだが、Nextがnoindexを入れるため
+// 検索には載らない(node_modules/next/dist/docs .../loading.md の Status Codes)
 
 type Params = { slug: string }
 
