@@ -1,4 +1,5 @@
 import { createService } from '@/lib/supabase/service'
+import { cachedJson } from '@/lib/site/edgeCache'
 
 const BUCKET = 'scribe-media'
 const IMG_RE = /\.(jpe?g|png|gif|webp|avif)$/i
@@ -62,14 +63,17 @@ function imageUrlsInHtml(html: string): string[] {
   return urls
 }
 
-// 候補プール(掲載画像→掲載ページの対応表)は30分キャッシュ。全記事+全scribeの
+// 候補プール(掲載画像→掲載ページの対応表)はキャッシュする。全記事+全scribeの
 // 本文HTMLをDBから毎リクエスト転送して正規表現走査するのはコンテンツ量に比例して
-// 重くなるため。ランダム抽選自体は毎リクエスト行う(訪問ごとに違う写真=挙動維持)。
+// 重くなるため(トップページはforce-dynamicなので毎リクエストこれを踏み、コールドな
+// isolateではメモリキャッシュも効かず、Error 1102の主因になっていた。2026-07-24)。
+// エッジキャッシュ(拠点毎)を第一段、メモリキャッシュを第二段に重ねる。
+// ランダム抽選自体は毎リクエスト行う(訪問ごとに違う写真=挙動維持)。
 let photoPoolCache: { promise: Promise<{ url: string; href: string }[]>; ts: number } | null = null
 
 function photoPool(): Promise<{ url: string; href: string }[]> {
   if (photoPoolCache && Date.now() - photoPoolCache.ts < POOL_TTL_MS) return photoPoolCache.promise
-  const promise = loadPhotoPool()
+  const promise = cachedJson('photo-pool', POOL_TTL_MS / 1000, loadPhotoPool)
   photoPoolCache = { promise, ts: Date.now() }
   return promise
 }
