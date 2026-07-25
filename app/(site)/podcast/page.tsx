@@ -7,7 +7,17 @@ import PodcastEpisodeGrid, { type EpItem } from './PodcastEpisodeGrid'
 
 export const revalidate = 1800
 
-export const metadata: Metadata = { title: 'Podcast' }
+// 棚のdescription: 番組名はshows.tsから組む(番組が増えても追従、散文は書かない)
+const showNames = (group: 'original' | 'works') =>
+  SHOWS.filter((s) => s.group === group && s.feed)
+    .map((s) => s.shortName ?? s.name)
+    .join('、')
+
+export const metadata: Metadata = {
+  title: 'Podcast',
+  description: `Andyのポッドキャスト番組一覧。オリジナル番組: ${showNames('original')}。制作参加: ${showNames('works')}。`,
+  alternates: { canonical: 'https://andyutaro.com/podcast' },
+}
 
 export default async function PodcastPage() {
   // 棚はタイトル・日付・カバーだけ使う=軽量版で足りる

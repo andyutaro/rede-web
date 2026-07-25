@@ -9,7 +9,15 @@ import { imgThumb, IMG_W } from '@/lib/site/img'
 // ISR: 番組カバーをRSSから引くため。文言編集は保存時にrevalidatePath('/about')で即反映
 export const revalidate = 1800
 
-export const metadata: Metadata = { title: 'About' }
+// description: Aboutの署名+リード(Andy自身の言葉、studio編集が即反映)から組成
+export async function generateMetadata(): Promise<Metadata> {
+  const c = await getAboutContent()
+  return {
+    title: 'About',
+    description: `${c.name}。${c.lead}`,
+    alternates: { canonical: 'https://andyutaro.com/about' },
+  }
+}
 
 async function coverMap(slugs: string[]): Promise<Record<string, string | null>> {
   const entries = await Promise.all(

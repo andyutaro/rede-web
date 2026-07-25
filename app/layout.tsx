@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SITE_DESCRIPTION } from "@/lib/site/about";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,7 +19,9 @@ const OG_ALT = "Andy — Podcaster。闇に発光するツノホコリと音の�
 export const metadata: Metadata = {
   metadataBase: new URL("https://andyutaro.com"),
   title: "Andy 〔 Podcaster 〕",
-  description: "Andy — Podcaster",
+  // description不在だとGoogleが本文から適当に抜く(ページャー矢印まで出た、
+  // 2026-07-25)。文言はAndyの署名+Aboutリードからの組成(lib/site/about.ts)
+  description: SITE_DESCRIPTION,
   // OGP画像は絶対URLで明示する(2026-07-14)。この改変版Nextはファイル規約
   // (opengraph-image.jpg)のURL解決がmetadataBaseを拾わず、実行環境の
   // フォールバック(worker=localhost, Vercel=配備URL)になるため、

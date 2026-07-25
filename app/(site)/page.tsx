@@ -13,6 +13,34 @@ import { imgThumb, IMG_W } from '@/lib/site/img'
 // ライブ・ランダム写真・当日行はリクエストごとに変わるので静的化しない
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  alternates: { canonical: 'https://andyutaro.com' },
+}
+
+// 検索エンジンへの身元表明(2026-07-25、JSON-LD)。事実データのみ(散文なし)。
+// InstagramはロングポストのAndy自身の紹介文に出る公開アカウント
+const IDENTITY_JSONLD = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Person',
+      '@id': 'https://andyutaro.com/#andy',
+      name: 'Andy',
+      alternateName: '安田裕太郎',
+      jobTitle: 'Podcaster',
+      url: 'https://andyutaro.com',
+      image: 'https://andyutaro.com/og.jpg',
+      sameAs: ['https://www.instagram.com/andyutaro/'],
+    },
+    {
+      '@type': 'WebSite',
+      name: 'Andy 〔 Podcaster 〕',
+      url: 'https://andyutaro.com',
+      publisher: { '@id': 'https://andyutaro.com/#andy' },
+    },
+  ],
+}).replace(/</g, '\\u003c')
+
 // Home構成(handoff-notes §2、上から):
 // ワードマーク/ナビ(layout) → Podcast Original → Podcast Works →
 // UPDATES → scribe窓 → Photography → Tags → フッター(layout)
@@ -51,6 +79,7 @@ export default async function Home() {
 
   return (
     <div className="measure">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: IDENTITY_JSONLD }} />
       <h1 className="sr-only">Andy — Podcaster</h1>
       {originals.length > 0 && <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} />}
       {works.length > 0 && <CoverGrid heading="PODCAST — WORKS" shows={works} />}

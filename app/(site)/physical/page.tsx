@@ -7,7 +7,11 @@ import { imgThumb, IMG_W } from '@/lib/site/img'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Physical' }
+export const metadata: Metadata = {
+  title: 'Physical',
+  description: 'Andyの物理的な作品のアーカイブ。',
+  alternates: { canonical: 'https://andyutaro.com/physical' },
+}
 
 // Physical棚(2026-07-12): 物理的な作品のアーカイブ(物+軽い文章)。
 // データはarticlesのtype=physical。レイアウトはNotes/Photographyと共通の

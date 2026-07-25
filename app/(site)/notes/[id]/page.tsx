@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { ogpImage } from '@/lib/site/ogp'
-import { firstImageSrc } from '@/lib/site/text'
+import { firstImageSrc, plainExcerpt } from '@/lib/site/text'
 import ArticleDetail, { loadPublishedArticle } from '../../ArticleDetail'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,12 @@ export async function generateMetadata({
   if (!a) return { title: 'Notes' }
   // SNSカードにその記事の画像を出す(2026-07-23)。手動サムネイル→本文の1枚目の順
   const thumb = (a.thumbnail_url as string | null) ?? firstImageSrc((a.html as string) ?? '')
-  return ogpImage((a.title as string) || 'Notes', thumb, { large: true })
+  return {
+    ...ogpImage((a.title as string) || 'Notes', thumb, { large: true }),
+    // description: 本文の書き出し(Andy自身の言葉)から抜粋(2026-07-25)
+    description: plainExcerpt((a.html as string) ?? '') || undefined,
+    alternates: { canonical: `https://andyutaro.com/notes/${id}` },
+  }
 }
 
 export default async function NotesArticlePage({ params }: { params: Promise<Params> }) {

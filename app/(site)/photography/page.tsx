@@ -6,7 +6,11 @@ import PhotoGrid, { type PhotoItem } from './PhotoGrid'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Photography' }
+export const metadata: Metadata = {
+  title: 'Photography',
+  description: 'Andyの写真。作品(ARTWORK)と、日々アップした写真の流れ(PHOTOLOG)。',
+  alternates: { canonical: 'https://andyutaro.com/photography' },
+}
 
 // Photography棚(2026-07-10独立)。下位区分artwork/photologのタブ(2026-07-11)。
 // データはarticlesのtype=photography。セルは3段ラベル(区分/タイトル/日付)。

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { createService } from '@/lib/supabase/service'
-import { dateDots, scribeTitle } from '@/lib/site/text'
+import { dateDots, plainExcerpt, scribeTitle } from '@/lib/site/text'
 import Accordion from '../../../about/Accordion'
 import Pager from '../../../Pager'
 import EpisodeNotes from '../../EpisodeNotes'
@@ -35,14 +35,21 @@ export async function generateMetadata({
   const data = await loadEpisode(params)
   if (!data) return { title: 'Podcast' }
   const { show, feed, ep } = data
+  // description: その回の概要欄(番組側の言葉)から抜粋(2026-07-25)。
+  // canonicalは?s=1等のクエリ付きシェアURLを正典に束ねる
+  const base = {
+    title: ep.title,
+    description: ep.searchText ? plainExcerpt(ep.searchText, 120) : undefined,
+    alternates: { canonical: `https://andyutaro.com/podcast/${show.slug}/${ep.id}` },
+  }
   // エピソード単位のOGP(2026-07-22): シェアカードにその回のアートを出す。
   // 画像はAnchor URLの失効に備えて安定ルート(/api/og-image)経由の絶対URL。
   // アートは正方形なのでtwitterはsummary(large_imageだと切られる)
-  if (!(ep.image ?? feed.image)) return { title: ep.title }
+  if (!(ep.image ?? feed.image)) return base
   const img = `https://andyutaro.com/api/og-image?show=${show.slug}&ep=${ep.id}`
   const alt = `${show.display ?? show.name}『${ep.title}』`
   return {
-    title: ep.title,
+    ...base,
     openGraph: { title: alt, images: [{ url: img, alt }] },
     twitter: { card: 'summary', images: [{ url: img, alt }] },
   }
@@ -84,8 +91,29 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
   const pagerLink = (e?: { id: string; title: string }) =>
     e ? { href: `/podcast/${show.slug}/${e.id}`, title: e.title } : null
 
+  // 検索エンジン向けのエピソード構造化データ(2026-07-25、事実データのみ)
+  const epUrl = `https://andyutaro.com/podcast/${show.slug}/${ep.id}`
+  const episodeJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'PodcastEpisode',
+    name: ep.title,
+    url: epUrl,
+    datePublished: ep.date,
+    ...(ep.searchText ? { description: plainExcerpt(ep.searchText, 200) } : {}),
+    ...(thumb ? { image: thumb } : {}),
+    ...(ep.audioUrl
+      ? { associatedMedia: { '@type': 'MediaObject', contentUrl: ep.audioUrl } }
+      : {}),
+    partOfSeries: {
+      '@type': 'PodcastSeries',
+      name: feed.title || show.name,
+      url: `https://andyutaro.com/podcast/${show.slug}`,
+    },
+  }).replace(/</g, '\\u003c')
+
   return (
     <div className="measure">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: episodeJsonLd }} />
       <article className="section">
         {/* 右側に所属バッジ(2026-07-14 Andy指摘): 初見者が「本人の番組か制作参加か」を
             エピソード直リンクでも判別できる。WORKSは単語だけでは通じないので注記付き */}

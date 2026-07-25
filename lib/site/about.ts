@@ -10,6 +10,12 @@ export type OverviewItem = { text: string; sub?: boolean }
 export type OverviewActivity = { head: string; items: OverviewItem[] }
 export type AboutShow = { slug: string; name: string; blurb: string; role?: string }
 
+// サイト共通のmeta description(2026-07-25): Andy自身の署名+リードから組成する
+// (AI散文をサイトに載せない原則。文言の出所はAboutのDEFAULT=本人の言葉)。
+// studioでリードを変えた場合、ここは次のデプロイで同期される
+export const SITE_DESCRIPTION =
+  'Andy（安田裕太郎）のオフィシャルサイト。北海道から日本各地で活動しているPodcasterです。'
+
 export type AboutContent = {
   name: string // 署名(名前)
   lead: string // 役割リード

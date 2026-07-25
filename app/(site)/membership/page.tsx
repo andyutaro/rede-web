@@ -5,7 +5,11 @@ import Linkified from '../Linkified'
 // ISR: 文言は/api/pages/saveのrevalidatePathで即時反映されるので毎リクエスト読まない
 export const revalidate = 1800
 
-export const metadata: Metadata = { title: 'Membership' }
+export const metadata: Metadata = {
+  title: 'Membership',
+  description: 'Andyのメンバーシップ(rooom)の案内。',
+  alternates: { canonical: 'https://andyutaro.com/membership' },
+}
 
 // メンバーシップ(2026-07-13、旧andyutaro.com/membershipから移植。文言はsite_content駆動=studioで編集可)。
 // rooomの参加ページ(2026-07-14 Andy提供)。本文は「rooomで運営」と書きながら

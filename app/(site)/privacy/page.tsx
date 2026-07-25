@@ -4,7 +4,11 @@ import { getPrivacyContent } from '@/lib/site/pages'
 // ISR: 文言は/api/pages/saveのrevalidatePathで即時反映されるので毎リクエスト読まない
 export const revalidate = 1800
 
-export const metadata: Metadata = { title: 'Privacy Policy' }
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'プライバシーポリシーと、サイト内コンテンツの著作権について。',
+  alternates: { canonical: 'https://andyutaro.com/privacy' },
+}
 
 // プライバシーポリシー+著作権(2026-07-12。文言はsite_content駆動=studioで編集可)。
 // 本文はAndy提供の原文、著作権の節はClaude起草をAndy承認。

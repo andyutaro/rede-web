@@ -7,7 +7,11 @@ import ArticleGrid, { type GridItem } from './ArticleGrid'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Notes' }
+export const metadata: Metadata = {
+  title: 'Notes',
+  description: 'Andyの書きもの。記事と、日々のscribeの確定アーカイブ。',
+  alternates: { canonical: 'https://andyutaro.com/notes' },
+}
 
 // Article一覧(handoff-notes §6): scribe棚はここに統合。
 // サムネイル決定(§11): ①本文の最初の画像 → ②プールから充当(一度決まったら固定)

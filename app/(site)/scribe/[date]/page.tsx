@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
-import { firstImageSrc, scribeTitle } from '@/lib/site/text'
+import { firstImageSrc, plainExcerpt, scribeTitle } from '@/lib/site/text'
 import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import ScribeArchive from '../ScribeArchive'
@@ -47,7 +47,12 @@ export async function generateMetadata({
   const first = firstImageSrc((data.html as string) ?? '')
   const stored = data.thumbnail_url as string | null
   const thumb = data.thumbnail_source === 'manual' && stored ? stored : (first ?? stored)
-  return ogpImage(title, thumb, { large: true })
+  return {
+    ...ogpImage(title, thumb, { large: true }),
+    // description: その日の書き出し(Andy自身の言葉)から抜粋(2026-07-25)
+    description: plainExcerpt(data.html as string) || undefined,
+    alternates: { canonical: `https://andyutaro.com/scribe/${date}` },
+  }
 }
 
 export default async function ScribeDayPage({ params }: { params: Promise<Params> }) {

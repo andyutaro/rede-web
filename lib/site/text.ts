@@ -16,6 +16,13 @@ export function htmlToPlainText(html: string): string {
 }
 
 // 本文の最初の<img>のsrc(サムネイル決定ロジック①、handoff-notes §11)
+// meta description用の本文抜粋(2026-07-25): タグ・実体参照を落とし、空白を詰めて
+// n字で切る。検索結果のスニペットにAndy自身の言葉を出すためのもの(生成はしない)
+export function plainExcerpt(html: string, max = 110): string {
+  const t = htmlToPlainText(html).replace(/\s+/g, ' ').trim()
+  return t.length > max ? `${t.slice(0, max)}…` : t
+}
+
 export function firstImageSrc(html: string): string | null {
   const m = html.match(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i)
   return m ? m[1] : null

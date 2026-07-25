@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { SITE_DESCRIPTION } from '@/lib/site/about'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { Noto_Sans_JP } from 'next/font/google'
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     default: 'Andy 〔 Podcaster 〕',
     template: '%s — Andy',
   },
-  description: 'Andy — Podcaster',
+  description: SITE_DESCRIPTION,
   // OGP/Twitter画像とカード種別はルートレイアウトで宣言済み(ここでtwitterを
   // 再定義するとルートのtwitter設定ごと上書きされるため定義しない)
 }

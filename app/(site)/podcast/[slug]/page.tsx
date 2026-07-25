@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
-import { dateDots, dateShort, firstImageSrc, tokyoDaysAgo, tokyoYmd } from '@/lib/site/text'
+import { dateDots, dateShort, firstImageSrc, plainExcerpt, tokyoDaysAgo, tokyoYmd } from '@/lib/site/text'
 import { createService } from '@/lib/supabase/service'
 import { assignedOf, listAllImages } from '@/lib/site/photos'
 import { imgThumb, IMG_W } from '@/lib/site/img'
@@ -39,10 +39,17 @@ export async function generateMetadata({
   const { slug } = await params
   const show = showBySlug(slug)
   if (!show?.feed) return { title: show?.name ?? 'Podcast' }
+  // description: RSSのchannel説明(番組側の言葉)から抜粋(2026-07-25)。
+  // channelInfoは軽量フィード(description空)なので、ページ本体と同じフルフィードを
+  // 使う(30分キャッシュ共有=追加コストなし)。不在時はサイト共通descriptionに落ちる
+  const feed = await fetchShowFeed(show.feed, show.since)
+  const description = feed?.description ? plainExcerpt(feed.description, 120) : undefined
   // 番組単位のOGP(2026-07-22): カードに番組カバーを出す(エピソードページと同じ文法)
   const img = `https://andyutaro.com/api/og-image?show=${show.slug}`
   return {
     title: show.name,
+    description,
+    alternates: { canonical: `https://andyutaro.com/podcast/${show.slug}` },
     openGraph: { title: show.name, images: [{ url: img, alt: show.name }] },
     twitter: { card: 'summary', images: [{ url: img, alt: show.name }] },
   }
@@ -133,8 +140,21 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
       href: `/podcast/${show.slug}/${e.id}`,
     }))
 
+  // 検索エンジン向けの番組の構造化データ(2026-07-25、事実データのみ)
+  const seriesJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'PodcastSeries',
+    name: feed?.title || show.name,
+    url: `https://andyutaro.com/podcast/${show.slug}`,
+    ...(feed?.image ? { image: feed.image } : {}),
+    ...(feed?.description ? { description: plainExcerpt(feed.description, 200) } : {}),
+    webFeed: show.feed,
+    ...(isOriginal ? { author: { '@type': 'Person', name: 'Andy', url: 'https://andyutaro.com' } } : {}),
+  }).replace(/</g, '\\u003c')
+
   return (
     <div className="measure">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: seriesJsonLd }} />
       <section className="section show-header">
         {/* 番組の識別部(棚見出し・カバー・番組名・所属)。heroVideoを持つ番組は
             この一塊の背後にイワシの水を沈め、グローバル波形がその上を泳ぐ(2026-07-25)。

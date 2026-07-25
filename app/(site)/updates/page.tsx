@@ -4,7 +4,11 @@ import UpdateList from '../UpdateList'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Updates' }
+export const metadata: Metadata = {
+  title: 'Updates',
+  description: '新しいエピソード・記事・scribeが生まれた記録。',
+  alternates: { canonical: 'https://andyutaro.com/updates' },
+}
 
 // 全更新履歴。100件を超えたら月別グルーピングを入れる(それまでは素の一覧)
 export default async function UpdatesPage() {

@@ -10,7 +10,11 @@ import OtayoriForm, { type OtayoriShow } from './OtayoriForm'
 // ISR: 文言は/api/pages/saveのrevalidatePathで即時反映されるので毎リクエスト読まない
 export const revalidate = 1800
 
-export const metadata: Metadata = { title: 'Contact & Otayori' }
+export const metadata: Metadata = {
+  title: 'Contact & Otayori',
+  description: 'お仕事のご相談と、番組へのおたよりの窓口。',
+  alternates: { canonical: 'https://andyutaro.com/contact' },
+}
 
 // CONTACT & OTAYORIページ(2026-07-20再編、旧Contact)。
 // 開いた瞬間に「仕事の相談」と「番組へのおたより」の両方が送れると分かる
