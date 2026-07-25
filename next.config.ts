@@ -15,7 +15,11 @@ const origin = (raw: string, wsOnly = false): string => {
     return "";
   }
 };
-const relayUrl = process.env.SCRIBE_RELAY_URL ?? "";
+// scribe中継のオリジン。next.config.tsはビルド時に実行されるため、envを持たない
+// ビルド環境(Workers Builds等)でもCSPのconnect-srcから中継が欠けないよう、
+// 公開オリジン(全レスポンスのCSPヘッダに載る値=秘密ではない)を既定値に持つ。
+// 2026-07-25の初回CIビルドで欠落しライブ配信が全停止した事故の恒久対策。
+const relayUrl = process.env.SCRIBE_RELAY_URL ?? "wss://rede-relay.onrender.com";
 
 const connectSrc = [
   "'self'",
