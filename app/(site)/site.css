@@ -935,6 +935,14 @@ html[data-theme='dark'] .contact-pill:hover {
   animation: rec-breathe 2.2s ease-in-out infinite;
 }
 
+/* AWAYの正式表記はAWAY FROM SCREEN(2026-07-25)。スマホは頭の幅が足りないので
+   後半を落としてAWAYに圧縮(語彙は同じ、長さだけ変える) */
+@media (max-width: 640px) {
+  .live-status .ls-long {
+    display: none;
+  }
+}
+
 @keyframes rec-breathe {
   0%,
   100% {
