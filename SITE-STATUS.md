@@ -78,6 +78,9 @@
 - **Error 1102（Worker exceeded resource limits）**: 無料プランのCPU 10ms超過で稀に発生。R2キャッシュとエッジキャッシュで大幅に減ったが、**force-dynamicなページ（Home/notes/updates/photography/physical/scribe/live/search）が毎回生成される構造**が残る要因。7/24にHomeの重い処理をエッジキャッシュ化。効果を様子見中。選択肢は「様子見」「残る動的ページをISR化（体感ほぼ不変・微妙な鮮度低下）」「Workers Paid $5/月でCPU上限30秒」の3つ。
 - **X(Twitter)のOGPキャッシュ**: 7/23より前に共有したURLは、Xが旧・サイト共通画像をキャッシュしている。約1週間で自動更新、または `?s=1` を付ければ即再取得。コード側は正しい。
 - **月次レビュー**: 毎月1日にClaudeがWeb Analyticsを読み、数字抜きの助言だけ渡す（スケジュールタスク化済み）。最初の意味あるデータは8月下旬〜9月。
+- **サカナカイギ番組ページのヒーロー映像（2026-07-25、実装済み）**: 旧sakanakaigi.comのブランド（イワシの群れ映像）を番組ページ識別部の背後に沈め、波形がその上を泳ぐ形に。`shows.ts`の`heroVideo`（データ駆動、他番組はopt-in）。映像は`public/bg/sakanakaigi-school.{mp4,jpg}`（静的配信＝CPU非増）。**この1ページだけ「彩色はLIVE赤のみ」の確定ルールをAndy承認で曲げている**。元動画は`~/rede/泳ぐイワシ_website用.mp4`。調整の余地: 水の暗さ（veil 46%）・波形の見え方。**ループのギクシャク修正済み（2026-07-25）**: 初版は末尾→先頭が不連続でループのたびに絵が飛んだ。元動画から「末尾1.5秒を先頭1.5秒にクロスフェード」したシームレスループ版（5.7秒・1.6MB・crf27）を生成して差し替え。再生成する場合はffmpegのxfade（trim start=1.5 / duration=1.5, offset=4.19）で同じ手順。ポスターjpgも新しい先頭フレームから再生成済み。
+- **デプロイ運用の注意**: `npm run deploy:cf`は通常これだけで100%公開されるが、途中で`wrangler versions deploy`を手動で挟むとWorkerが「バージョン上書きモード」に入り自動公開が止まる（7/23夜に踏んだ）。デプロイ後は`wrangler deployments list`で最新versionが(100%)か必ず確認する。
+- **検証の注意**: Claude Codeのブラウザペインはエピソード/番組ページをハイドレートせず、JS計測（getBoundingClientRect等）が0や異常値を返すことがある。確実な検証は`~/rede/`でheadless Chrome + CDP（`--autoplay-policy=no-user-gesture-required`）を使う。スクリーンショットはペインでも撮れる。
 
 ## Andyの確定した好み・制約（重要）
 
