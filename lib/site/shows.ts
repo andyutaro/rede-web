@@ -44,9 +44,10 @@ export type Show = {
   // 設定された番組はエピソード・番組ページからこのURLへ遷移させる
   // (サイト内のおたよりフォームには載せない=宛先はオリジナル番組のみの原則は不変)
   otayoriUrl?: string
-  // 番組ページのヘッダー背後に沈める映像(2026-07-25 Andy、サカナカイギ)。
+  // 番組ページのヘッダー背後に沈める映像(2026-07-25 Andy)。
   // 拡張子なしのベースパス(.mp4/.jpg を付けて使う)。番組ごとにページが分岐する方針の一環。
-  // ※これはサイトの「彩色はLIVE赤のみ」を1ページだけ曲げる、Andy承認の意図的な例外
+  // 映像はシームレスループ必須(末尾を先頭にクロスフェード。手順はSITE-STATUS.md)。
+  // ※「彩色はLIVE赤のみ」を番組ページ群だけ曲げる、Andy承認の意図的な例外
   heroVideo?: string
   // 番組の舞台(番組ページの識別部とAboutのPLACES節に出す)
   place?: ShowPlace
@@ -79,6 +80,8 @@ export const SHOWS: Show[] = [
     ended: true, // 終了番組(最終更新を年入りで表示)
     group: 'original',
     feed: 'https://anchor.fm/s/ccd5236c/podcast/rss',
+    // サクラマスが滝を跳ぶ(2026-07-25 Andy素材)
+    heroVideo: '/bg/mimoriradio-falls',
     place: { ja: '北海道白老町', coords: '42°32′N 141°21′E' },
     // Ecce Planta / mimori Herbal Bathsalt / ZINE(2026-07-25 Andy指定の3つ)
     products: [
@@ -104,6 +107,8 @@ export const SHOWS: Show[] = [
     display: 'LONGPOST',
     group: 'original',
     feed: 'https://anchor.fm/s/f20aee28/podcast/rss',
+    // 夕暮れの白老の浜(2026-07-25 Andy素材)
+    heroVideo: '/bg/longpost-sea',
     place: { ja: '北海道白老町', coords: '42°32′N 141°21′E' },
     // おたより項目(2026-07-20 Andy指定の3つ)
     otayoriTopics: ['制作', '生活', 'ポッドキャストをやっててよかったこと'],
@@ -120,6 +125,8 @@ export const SHOWS: Show[] = [
     display: 'ON-AIRDO',
     group: 'works',
     feed: 'https://anchor.fm/s/fe6f8048/podcast/rss',
+    // 機窓の雲海(2026-07-25 Andy素材。縦動画から反射光を避けて16:9切出し)
+    heroVideo: '/bg/onairdo-flight',
     // 「声で旅する北海道」=島全体が舞台なので座標は丸める
     place: { ja: '北海道', coords: '43°N 142°E' },
     role: 'ディレクター兼サブMCとして、出演を含め番組制作上のほぼ全てに立ち上げから対応。',
