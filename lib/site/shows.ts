@@ -35,6 +35,10 @@ export type Show = {
   // 設定された番組はエピソード・番組ページからこのURLへ遷移させる
   // (サイト内のおたよりフォームには載せない=宛先はオリジナル番組のみの原則は不変)
   otayoriUrl?: string
+  // 番組ページのヘッダー背後に沈める映像(2026-07-25 Andy、サカナカイギ)。
+  // 拡張子なしのベースパス(.mp4/.jpg を付けて使う)。番組ごとにページが分岐する方針の一環。
+  // ※これはサイトの「彩色はLIVE赤のみ」を1ページだけ曲げる、Andy承認の意図的な例外
+  heroVideo?: string
 }
 
 export const SHOWS: Show[] = [
@@ -44,6 +48,7 @@ export const SHOWS: Show[] = [
     display: 'SAKANAKAIGI',
     group: 'original',
     feed: 'https://anchor.fm/s/1039cb824/podcast/rss',
+    heroVideo: '/bg/sakanakaigi-school',
     platforms: {
       spotify: 'https://open.spotify.com/show/2oyDL4w0U7hRmwIFRC7jDK',
       apple: 'https://podcasts.apple.com/jp/podcast/id1811565002',

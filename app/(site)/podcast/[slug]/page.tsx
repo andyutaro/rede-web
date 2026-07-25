@@ -11,6 +11,7 @@ import Linkified from '../../Linkified'
 import PlatformLinks from '../PlatformLinks'
 import EpisodeIndex, { type IndexRow } from '../EpisodeIndex'
 import ShowPlayAll from '../ShowPlayAll'
+import ShowHeroWater from '../ShowHeroWater'
 
 // ISR: 30分ごとに再検証し、新エピソードを自動で番組ページに反映する
 export const revalidate = 1800
@@ -102,22 +103,39 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
   return (
     <div className="measure">
       <section className="section show-header">
-        {/* 初見者が「本人の番組か制作参加か」を判別できる棚見出し(2026-07-14 Andy指摘)。
-            語彙はHomeの棚(PODCAST — ORIGINAL/WORKS)と同一=サイト内で意味が通る */}
-        <div className="section-head show-shelf-head">
-          <h2>PODCAST — {isOriginal ? 'ORIGINAL' : 'WORKS'}</h2>
-        </div>
-        {feed?.image && (
-          <div className="sq cover-frame show-cover">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imgThumb(feed.image, IMG_W.tile)} alt={show.name} decoding="async" />
-          </div>
-        )}
-        <h1 className="show-title">{feed?.title || show.name}</h1>
-        {/* 所属の一行(初見への直接回答)。詳細な担当領域はROLE欄 */}
-        <p className="show-affiliation">
-          {isOriginal ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
-        </p>
+        {/* 番組の識別部(棚見出し・カバー・番組名・所属)。heroVideoを持つ番組は
+            この一塊の背後にイワシの水を沈め、グローバル波形がその上を泳ぐ(2026-07-25)。
+            カバータイルはそのまま=水の上に白いタイルが浮く。 */}
+        {(() => {
+          const identity = (
+            <>
+              {/* 初見者が「本人の番組か制作参加か」を判別できる棚見出し(2026-07-14 Andy指摘)。
+                  語彙はHomeの棚(PODCAST — ORIGINAL/WORKS)と同一=サイト内で意味が通る */}
+              <div className="section-head show-shelf-head">
+                <h2>PODCAST — {isOriginal ? 'ORIGINAL' : 'WORKS'}</h2>
+              </div>
+              {feed?.image && (
+                <div className="sq cover-frame show-cover">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imgThumb(feed.image, IMG_W.tile)} alt={show.name} decoding="async" />
+                </div>
+              )}
+              <h1 className="show-title">{feed?.title || show.name}</h1>
+              {/* 所属の一行(初見への直接回答)。詳細な担当領域はROLE欄 */}
+              <p className="show-affiliation">
+                {isOriginal ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
+              </p>
+            </>
+          )
+          return show.heroVideo ? (
+            <div className="show-hero on-water">
+              <ShowHeroWater base={show.heroVideo} />
+              {identity}
+            </div>
+          ) : (
+            identity
+          )
+        })()}
         {/* 配信先(番組単位)。設定された分だけ */}
         <PlatformLinks platforms={show.platforms} />
         {/* この番組だけの連続再生(全番組共通)。選ばずに聴き始められる入口 */}

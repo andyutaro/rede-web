@@ -1271,6 +1271,62 @@ html[data-theme='dark'] .contact-pill:hover {
   margin-bottom: 70px;
 }
 
+/* ---- 番組ヘッダーに沈める水(2026-07-25、サカナカイギ) ----
+   識別部(棚見出し・カバー・番組名・所属)を包み、その背後にイワシの映像を置く。
+   波形(fixed z:-1)がこの水の上を泳ぐよう、水はz-index:-2で紙の地の直上・波形の背後に敷く。
+   カバータイルは白いまま水の上に浮く=カバーには干渉しない。 */
+.show-hero {
+  position: relative;
+  padding: 40px 24px 56px;
+  margin: 0 -24px 8px;
+}
+
+.hero-water {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  background-color: #0c1c33;
+  background-size: cover;
+  background-position: center;
+  /* 下辺を紙へ溶かす(エピソード索引の手前で水が引く) */
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+
+.hero-water-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 波形と番組名が主役に立つよう水を暗く沈める(彩色はここだけの例外=イワシの青) */
+.hero-water-veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 18, 34, 0.46);
+}
+
+/* 水の上は暗いので文字を明色へ(サイトのダーク側の値に寄せる)。カバーは対象外 */
+.show-hero.on-water .show-shelf-head h2 {
+  color: #b7c6d4;
+}
+
+.show-hero.on-water .show-title {
+  color: #f2f6f9;
+}
+
+.show-hero.on-water .show-affiliation {
+  color: #9fb0bd;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-water-video {
+    display: none;
+  }
+}
+
 .show-cover {
   width: 220px;
   margin: 0 auto;
