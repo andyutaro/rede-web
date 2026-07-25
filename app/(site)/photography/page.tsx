@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createService } from '@/lib/supabase/service'
 import { firstImageSrc, tokyoYmd } from '@/lib/site/text'
-import { assignedOf, listAllImages } from '@/lib/site/photos'
+import { assignedOf, listAllImages, photologPhotos } from '@/lib/site/photos'
 import PhotoGrid, { type PhotoItem } from './PhotoGrid'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Photography' }
 // データはarticlesのtype=photography。セルは3段ラベル(区分/タイトル/日付)。
 export default async function PhotographyPage() {
   const service = createService()
-  const [{ data: rows }, pool] = await Promise.all([
+  const [{ data: rows }, pool, photolog] = await Promise.all([
     // '*': photo_kind/description列のマイグレーション未実行でも壊れない
     service
       .from('articles')
@@ -21,6 +21,9 @@ export default async function PhotographyPage() {
       .eq('type', 'photography')
       .order('published_at', { ascending: false }),
     listAllImages(),
+    // PHOTOLOG=本文に載っている全アップロード写真(2026-07-25 Andy指定)。
+    // エッジキャッシュ済みの掲載対応表から引くので毎リクエストの走査はしない
+    photologPhotos(),
   ])
 
   const items: PhotoItem[] = (rows ?? [])
@@ -41,7 +44,7 @@ export default async function PhotographyPage() {
   return (
     <div className="measure">
       <h1 className="sr-only">Photography</h1>
-      <PhotoGrid items={items} />
+      <PhotoGrid items={items} photolog={photolog} />
     </div>
   )
 }

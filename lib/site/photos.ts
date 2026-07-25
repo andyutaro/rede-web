@@ -69,45 +69,91 @@ function imageUrlsInHtml(html: string): string[] {
 // isolateではメモリキャッシュも効かず、Error 1102の主因になっていた。2026-07-24)。
 // エッジキャッシュ(拠点毎)を第一段、メモリキャッシュを第二段に重ねる。
 // ランダム抽選自体は毎リクエスト行う(訪問ごとに違う写真=挙動維持)。
-let photoPoolCache: { promise: Promise<{ url: string; href: string }[]>; ts: number } | null = null
+//
+// エントリはPHOTOLOG(2026-07-25)も使うため、掲載元の区分と日付を持つ:
+// - kind: 'artwork'(photography/artwork) | 'photography' | 'physical' | 'article' | 'scribe'
+// - date: 写真が追加された日(パスのYYYY-MM-DDフォルダ=アップロード日。
+//         旧ルート直置きファイルだけ掲載ページの日付で代用)
+type PoolEntry = { url: string; href: string; kind: string; date: string }
 
-function photoPool(): Promise<{ url: string; href: string }[]> {
+let photoPoolCache: { promise: Promise<PoolEntry[]>; ts: number } | null = null
+
+function photoPool(): Promise<PoolEntry[]> {
   if (photoPoolCache && Date.now() - photoPoolCache.ts < POOL_TTL_MS) return photoPoolCache.promise
-  const promise = cachedJson('photo-pool', POOL_TTL_MS / 1000, loadPhotoPool)
+  const promise = cachedJson('photo-pool-2', POOL_TTL_MS / 1000, loadPhotoPool)
   photoPoolCache = { promise, ts: Date.now() }
   return promise
 }
 
-async function loadPhotoPool(): Promise<{ url: string; href: string }[]> {
+// アップロード日: scribe-mediaのパス構造「YYYY-MM-DD/uuid.ext」から取る
+function uploadDateOf(url: string): string | null {
+  const m = url.match(/scribe-media\/(\d{4}-\d{2}-\d{2})\//)
+  return m ? m[1] : null
+}
+
+async function loadPhotoPool(): Promise<PoolEntry[]> {
   const service = createService()
   // 走査に必要な列だけ読む(htmlが本体。他の列は転送しない)
   const [{ data: arts }, { data: days }] = await Promise.all([
-    service.from('articles').select('id, type, html, deleted_at').eq('status', 'published'),
+    service
+      .from('articles')
+      .select('id, type, photo_kind, published_at, html, deleted_at')
+      .eq('status', 'published'),
     service.from('scribe_days').select('date, html, deleted_at').not('finalized_at', 'is', null),
   ])
 
-  const candidates: { url: string; href: string }[] = []
+  const candidates: PoolEntry[] = []
   const seen = new Set<string>()
-  const add = (html: string, href: string) => {
+  const add = (html: string, href: string, kind: string, pageDate: string) => {
     for (const url of imageUrlsInHtml(html)) {
       if (seen.has(url)) continue
       seen.add(url)
-      candidates.push({ url, href })
+      candidates.push({ url, href, kind, date: uploadDateOf(url) ?? pageDate })
     }
   }
+  const ymd = (ts: string | null) => (ts ? String(ts).slice(0, 10) : '')
 
   const liveArts = (arts ?? []).filter((a) => !a.deleted_at)
   // 作品棚(photography/physical/将来のtype)を先に、Notes(article)を後に、scribeを最後に
   for (const a of liveArts.filter((a) => a.type !== 'article')) {
-    add(a.html as string, `${shelfPathForType(a.type as string)}/${a.id}`)
+    const kind =
+      a.type === 'photography' && (a.photo_kind ?? 'photolog') === 'artwork'
+        ? 'artwork'
+        : (a.type as string)
+    add(a.html as string, `${shelfPathForType(a.type as string)}/${a.id}`, kind, ymd(a.published_at))
   }
   for (const a of liveArts.filter((a) => a.type === 'article')) {
-    add(a.html as string, `${shelfPathForType(a.type as string)}/${a.id}`)
+    add(
+      a.html as string,
+      `${shelfPathForType(a.type as string)}/${a.id}`,
+      'article',
+      ymd(a.published_at)
+    )
   }
   for (const d of (days ?? []).filter((d) => !d.deleted_at)) {
-    add(d.html as string, `/scribe/${d.date}`)
+    add(d.html as string, `/scribe/${d.date}`, 'scribe', d.date as string)
   }
   return candidates
+}
+
+// PHOTOLOG(2026-07-25 Andy指定): 「scribeに写真を上げていることこそフォトログ」。
+// 公開中コンテンツの本文に載っている全アップロード写真(サムネイルの1枚に限らない)を
+// 新しい順に流す。タップ先は掲載ページの当該写真(#p=ファイル名、ScribeArchiveが
+// スクロール)。除外: photography/artworkに載る写真(作品はARTWORKの領分)。
+// ポッドキャストのカバー・エピソード画像はRSSの外部URLなので最初から母集団外。
+// 当日の未確定scribeも母集団外(アーカイブは確定テキストの原則)。
+export type PhotologPhoto = { url: string; href: string; date: string }
+
+export async function photologPhotos(): Promise<PhotologPhoto[]> {
+  const entries = await photoPool()
+  return entries
+    .filter((e) => e.kind !== 'artwork')
+    .map((e) => ({
+      url: e.url,
+      href: `${e.href}#p=${encodeURIComponent(e.url.split('/').pop() ?? '')}`,
+      date: e.date,
+    }))
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.url < b.url ? -1 : 1))
 }
 
 // Homeのランダム写真: 「公開中コンテンツの本文に実際に載っている画像」だけから選ぶ。
