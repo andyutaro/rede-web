@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
 import { dateDots, tokyoYmd } from '@/lib/site/text'
+import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import Pager from './Pager'
 import ScribeArchive from './scribe/ScribeArchive'
 
@@ -76,8 +77,16 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
   const pagerLink = (row: { id: string; title: string } | null) =>
     row ? { href: `/${shelf}/${row.id}`, title: (row.title || '').trim() || '無題' } : null
 
+  // パンくず(2026-07-25): 検索結果の階層表示用。語彙はナビ表記(Notes等)に揃える
+  const crumbs = breadcrumbJsonLd([
+    { name: 'Home', path: '' },
+    { name: shelf.charAt(0).toUpperCase() + shelf.slice(1), path: `/${shelf}` },
+    { name: ((a.title as string) || '').trim() || '(無題)', path: `/${shelf}/${id}` },
+  ])
+
   return (
     <div className="measure">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <article className="section">
         <div className="section-head">
           {/* photographyは下位区分(ARTWORK/PHOTOLOG)を種別として掲げる(2026-07-11)。

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
+import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { dateDots, dateShort, firstImageSrc, plainExcerpt, tokyoDaysAgo, tokyoYmd } from '@/lib/site/text'
 import { createService } from '@/lib/supabase/service'
 import { assignedOf, listAllImages } from '@/lib/site/photos'
@@ -152,9 +153,17 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
     ...(isOriginal ? { author: { '@type': 'Person', name: 'Andy', url: 'https://andyutaro.com' } } : {}),
   }).replace(/</g, '\\u003c')
 
+  // パンくず(2026-07-25): 検索結果の階層表示用
+  const crumbs = breadcrumbJsonLd([
+    { name: 'Home', path: '' },
+    { name: 'Podcast', path: '/podcast' },
+    { name: feed?.title || show.name, path: `/podcast/${show.slug}` },
+  ])
+
   return (
     <div className="measure">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: seriesJsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <section className="section show-header">
         {/* 番組の識別部(棚見出し・カバー・番組名・所属)。heroVideoを持つ番組は
             この一塊の背後にイワシの水を沈め、グローバル波形がその上を泳ぐ(2026-07-25)。

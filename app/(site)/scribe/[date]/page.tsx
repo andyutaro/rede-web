@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { firstImageSrc, plainExcerpt, scribeTitle } from '@/lib/site/text'
+import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import ScribeArchive from '../ScribeArchive'
@@ -97,6 +98,17 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
 
   return (
     <div className="measure">
+      {/* パンくず(2026-07-25): scribeの棚はNotes */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: breadcrumbJsonLd([
+            { name: 'Home', path: '' },
+            { name: 'Notes', path: '/notes' },
+            { name: `Scribe Archive ${scribeTitle(date)}`, path: `/scribe/${date}` },
+          ]),
+        }}
+      />
       <article className="section">
         {/* scribeのタイトルは日付導出(20260706)。日付はdatetimeとして併記 */}
         <div className="section-head">

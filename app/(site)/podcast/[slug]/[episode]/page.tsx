@@ -5,6 +5,7 @@ import { showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { createService } from '@/lib/supabase/service'
 import { dateDots, plainExcerpt, scribeTitle } from '@/lib/site/text'
+import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import Accordion from '../../../about/Accordion'
 import Pager from '../../../Pager'
 import EpisodeNotes from '../../EpisodeNotes'
@@ -111,9 +112,18 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
     },
   }).replace(/</g, '\\u003c')
 
+  // パンくず(2026-07-25): 検索結果の階層表示用
+  const crumbs = breadcrumbJsonLd([
+    { name: 'Home', path: '' },
+    { name: 'Podcast', path: '/podcast' },
+    { name: feed.title || show.name, path: `/podcast/${show.slug}` },
+    { name: ep.title, path: `/podcast/${show.slug}/${ep.id}` },
+  ])
+
   return (
     <div className="measure">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: episodeJsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <article className="section">
         {/* 右側に所属バッジ(2026-07-14 Andy指摘): 初見者が「本人の番組か制作参加か」を
             エピソード直リンクでも判別できる。WORKSは単語だけでは通じないので注記付き */}
