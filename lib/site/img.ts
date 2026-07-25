@@ -13,6 +13,7 @@ export const IMG_W = {
   og: 1200, // SNSカード(OGP)。正方形アートをそのまま出す
 
   ep: 320, // エピソード一覧の小サムネ
+  product: 640, // 番組ページの派生プロダクト(2列グリッド、表示約306px)
   photo: 1280, // 本文写真・Homeのランダム写真(measure640の2倍)
   studio: 96, // studioの行内サムネ(34px)
   pick: 240, // studioのプール選択グリッド

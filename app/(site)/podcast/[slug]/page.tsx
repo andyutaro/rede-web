@@ -3,8 +3,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
-import { dateDots, dateShort, tokyoDaysAgo } from '@/lib/site/text'
+import { dateDots, dateShort, firstImageSrc, tokyoDaysAgo, tokyoYmd } from '@/lib/site/text'
 import { createService } from '@/lib/supabase/service'
+import { assignedOf, listAllImages } from '@/lib/site/photos'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 import Accordion from '../../about/Accordion'
 import Linkified from '../../Linkified'
@@ -63,6 +64,37 @@ async function starterIds(slug: string): Promise<Set<string>> {
   return new Set((data ?? []).map((r) => r.episode_id as string))
 }
 
+// 番組から派生したプロダクト(2026-07-25 Andy指定): shows.tsのproducts
+// (physical記事ID)を、指定の並び順のまま引く。サムネイル解決は
+// Physical棚と同一(manual > 本文の最初の画像 > 充当=グレースケール)
+type ProductCell = { id: string; title: string; date: string; thumb: string | null; assigned: boolean }
+
+async function productCells(ids?: string[]): Promise<ProductCell[]> {
+  if (!ids?.length) return []
+  const service = createService()
+  const [{ data }, pool] = await Promise.all([
+    service.from('articles').select('*').in('id', ids),
+    listAllImages(),
+  ])
+  const byId = new Map((data ?? []).map((a) => [a.id as string, a]))
+  return ids
+    .map((id) => byId.get(id))
+    .filter((a): a is NonNullable<typeof a> =>
+      Boolean(a && a.status === 'published' && a.published_at && !a.deleted_at)
+    )
+    .map((a) => {
+      const first = firstImageSrc((a.html as string) ?? '')
+      const thumb = (a.thumbnail_url as string | null) ?? first ?? assignedOf(pool, a.id as string)
+      return {
+        id: a.id as string,
+        title: ((a.title as string) || '').trim() || '(無題)',
+        date: tokyoYmd(a.published_at as string),
+        thumb,
+        assigned: !a.thumbnail_url && !first && Boolean(thumb),
+      }
+    })
+}
+
 // 番組ページ: カバー・番組名・配信先・入門3選・連続再生・
 // SHOW NOTES・検索付きエピソード索引。
 export default async function ShowPage({ params }: { params: Promise<Params> }) {
@@ -71,9 +103,10 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
   if (!show || !show.feed) notFound()
 
   const isOriginal = show.group === 'original'
-  const [feed, starters] = await Promise.all([
+  const [feed, starters, products] = await Promise.all([
     fetchShowFeed(show.feed, show.since),
     starterIds(slug),
+    productCells(show.products),
   ])
 
   const episodes = feed?.episodes ?? []
@@ -136,10 +169,33 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             identity
           )
         })()}
+        {/* 番組の舞台(2026-07-25 Andy指定): 各地に根ざした制作という
+            ユニークネスを、座標付きの銘板一行で記す(地図・彩色は使わない)。
+            水を持つ番組でも水の外=紙の上に置く(マスクのフェード上では明色文字が
+            沈むため。図版の下のマットに打たれた銘板の位置) */}
+        {show.place && (
+          <>
+            <p className="show-place">
+              <span>{show.place.ja}</span>
+              <span className="show-place-coords">{show.place.coords}</span>
+            </p>
+            {show.place.note && <p className="show-place-note">{show.place.note}</p>}
+          </>
+        )}
         {/* 配信先(番組単位)。設定された分だけ */}
         <PlatformLinks platforms={show.platforms} />
         {/* この番組だけの連続再生(全番組共通)。選ばずに聴き始められる入口 */}
         <ShowPlayAll episodes={playable} />
+        {/* 番組へのおたより(2026-07-25 Andy指定): 継続中のORIGINALはサイト内の
+            おたよりフォームへ(エピソードページ「この回への便り」の番組版)。
+            専用フォームを持つ番組は下の外部ボタンが担うため出さない */}
+        {isOriginal && !show.ended && !show.otayoriUrl && (
+          <div>
+            <Link className="ep-letter" href={`/contact?show=${show.slug}`}>
+              番組へのおたよりを送る →
+            </Link>
+          </div>
+        )}
         {/* 番組専用の外部おたよりフォームを持つ番組(ON-AIRDO等、2026-07-20):
             番組ページからも番組自身のフォームへ遷移できる。
             連続再生ボタンと同じ行に並ばないようブロックで独立させる */}
@@ -188,6 +244,46 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
                 <span className="starter-title">{ep.title}</span>
                 <span className="starter-date">{dateShort(ep.date)}</span>
               </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 番組から派生して制作されたプロダクト(2026-07-25 Andy指定):
+          「番組から生まれた物が番組ページにあってしかるべし」。通常の4列より
+          一段深い2列(トップ写真を大きく)、正方形とラベルの文法はPhysical棚と共通 */}
+      {products.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>PRODUCTS — 番組から生まれたもの</h2>
+          </div>
+          <div className="section-body grid2">
+            {products.map((item) => (
+              <div key={item.id}>
+                <Link
+                  href={`/physical/${item.id}`}
+                  className="sq"
+                  aria-label={`PHYSICAL ${item.title} ${dateShort(item.date)}`}
+                >
+                  {item.thumb ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={imgThumb(item.thumb, IMG_W.product)}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className={item.assigned ? 'thumb-assigned' : undefined}
+                    />
+                  ) : (
+                    <span className="empty-cell" />
+                  )}
+                </Link>
+                <div className="ep-cell-label">
+                  <span className="ep-show">PHYSICAL</span>
+                  <span className="ep-title">{item.title}</span>
+                  <span className="ep-date">{dateShort(item.date)}</span>
+                </div>
+              </div>
             ))}
           </div>
         </section>

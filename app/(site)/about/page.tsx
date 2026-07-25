@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { showBySlug } from '@/lib/site/shows'
+import { placeRows, showBySlug } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import { getAboutContent, type AboutContent, type AboutShow } from '@/lib/site/about'
 import Accordion from './Accordion'
@@ -99,6 +99,32 @@ export default async function AboutPage() {
       {/* 楽章3: 番組ポートフォリオ */}
       <ShowList heading="ORIGINAL PODCASTS" shows={c.original} covers={covers} />
       <ShowList heading="BRANDED PODCASTS" shows={c.branded} covers={covers} />
+
+      {/* 楽章3.5: 番組の舞台(2026-07-25 Andy指定)。各地に根ざした制作という
+          ユニークネスを、地図でなく座標の活字で示す。並びは北から南=リストで引く地図 */}
+      <section className="about-movement">
+        <div className="section-head">
+          <h2>PLACES — 番組の舞台</h2>
+        </div>
+        <div className="about-places">
+          {placeRows().map((row) => (
+            <div className="about-place" key={row.ja}>
+              <div className="ap-head">
+                <span className="ap-name">{row.ja}</span>
+                <span className="ap-coords">{row.coords}</span>
+              </div>
+              <div className="ap-shows">
+                {row.shows.map((s) => (
+                  <Link key={s.slug} href={`/podcast/${s.slug}`}>
+                    {s.display ?? s.shortName ?? s.name}
+                  </Link>
+                ))}
+                {row.note && <span className="ap-note">{row.note}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* 楽章4: 姿勢(STANCE) */}
       <section className="about-movement about-stance-block">

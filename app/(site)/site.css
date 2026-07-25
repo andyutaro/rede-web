@@ -93,6 +93,24 @@
   gap: 44px 28px;
 }
 
+/* ---- 番組ページの派生プロダクト(2026-07-25): 4列より一段深い2列。
+   正方形ラッパー(§9)とラベル文法はPhysical棚と完全共通=視覚言語を増やさない ---- */
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 44px 28px;
+}
+
+@media (max-width: 640px) {
+  /* 全幅ストレッチは重い(2026-07-14のセル上限の思想と同じ)。
+     1列・上限272pxで中央に置き、左右に余白を残す */
+  .grid2 {
+    grid-template-columns: minmax(0, 272px);
+    justify-content: center;
+    gap: 40px;
+  }
+}
+
 /* 正方形セルは「aspect-ratio:1のラッパー + 中身100%×100%」構造(§9)。
    画像スロット自体にaspect-ratioを掛けると中身の高さで縦長に崩れる(実際に踏んだバグ)。 */
 .sq {
@@ -1348,6 +1366,36 @@ html[data-theme='dark'] .contact-pill:hover {
   color: var(--faint);
 }
 
+/* 番組の舞台(2026-07-25): 識別部の最後に場所と座標の銘板一行。
+   各地に根ざした制作というユニークネスを、地図・彩色なしの活字だけで立てる。
+   水を持つ番組でも水の外=紙の上(フェード上では明色文字が沈むため) */
+.show-place {
+  margin-top: 26px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--mut);
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.show-place-coords {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.show-place-note {
+  margin-top: 8px;
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  color: var(--faint);
+}
+
 /* エピソードヘッド右側の所属バッジ(ORIGINAL / WORKS — 制作参加) */
 .head-affiliation {
   font-size: 9px;
@@ -1987,6 +2035,62 @@ html[data-theme='dark'] .contact-pill:hover {
   letter-spacing: 0.2em;
   color: var(--faint);
   margin-right: 1em;
+}
+
+/* PLACES(2026-07-25): 場所の銘板+番組名。北から南への索引 */
+.about-places {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.ap-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ap-name {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+
+.ap-coords {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.ap-shows {
+  margin-top: 10px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--mut);
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.ap-shows a {
+  color: var(--mut);
+  border-bottom: 1px solid var(--dot);
+  padding-bottom: 2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.ap-shows a:hover {
+  color: var(--ink);
+  border-color: var(--mut);
+}
+
+.ap-note {
+  color: var(--faint);
+  letter-spacing: 0.18em;
 }
 
 /* STANCE: 全幅罫線をやめ、静かな番号+テキストの信条に(表組み感を消す) */

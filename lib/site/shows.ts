@@ -12,6 +12,15 @@ export type Platforms = {
   listen?: string
 }
 
+// 番組の舞台(2026-07-25 Andy指定)。各地に根ざして制作されていることが
+// Andyのユニークネスであり、番組ページとAboutに銘板として記す。
+// 地図・彩色は持ち込まない(座標の活字だけで場所を立てる)
+export type ShowPlace = {
+  ja: string // 宮城県女川町
+  coords: string // 38°27′N 141°27′E
+  note?: string // BrandShift: ビデオ通話で繋いで収録
+}
+
 export type Show = {
   slug: string
   name: string
@@ -39,6 +48,11 @@ export type Show = {
   // 拡張子なしのベースパス(.mp4/.jpg を付けて使う)。番組ごとにページが分岐する方針の一環。
   // ※これはサイトの「彩色はLIVE赤のみ」を1ページだけ曲げる、Andy承認の意図的な例外
   heroVideo?: string
+  // 番組の舞台(番組ページの識別部とAboutのPLACES節に出す)
+  place?: ShowPlace
+  // 番組から派生して制作されたプロダクト(2026-07-25 Andy指定)。
+  // articles(type=physical)のIDを、この並び順のまま番組ページのPRODUCTS節に出す
+  products?: string[]
 }
 
 export const SHOWS: Show[] = [
@@ -49,6 +63,9 @@ export const SHOWS: Show[] = [
     group: 'original',
     feed: 'https://anchor.fm/s/1039cb824/podcast/rss',
     heroVideo: '/bg/sakanakaigi-school',
+    place: { ja: '宮城県女川町', coords: '38°27′N 141°27′E' },
+    // MADNESSタイアップルアー(2026-07-25 Andy指定)
+    products: ['00d06869-b0b8-40b3-a06b-0dbf8d7ef145'],
     platforms: {
       spotify: 'https://open.spotify.com/show/2oyDL4w0U7hRmwIFRC7jDK',
       apple: 'https://podcasts.apple.com/jp/podcast/id1811565002',
@@ -62,6 +79,13 @@ export const SHOWS: Show[] = [
     ended: true, // 終了番組(最終更新を年入りで表示)
     group: 'original',
     feed: 'https://anchor.fm/s/ccd5236c/podcast/rss',
+    place: { ja: '北海道白老町', coords: '42°32′N 141°21′E' },
+    // Ecce Planta / mimori Herbal Bathsalt / ZINE(2026-07-25 Andy指定の3つ)
+    products: [
+      'ed4d2a90-4f1d-47f8-99a7-7a4f4e4c9693',
+      '155be65e-e074-4b75-9160-9cf8d9bacaba',
+      'ee33af5d-b1e6-4fb7-8db8-acbbd8c0faee',
+    ],
     platforms: {
       spotify: 'https://open.spotify.com/show/0rkdfNkYUCfMyQmki7fdc1',
       apple: 'https://podcasts.apple.com/jp/podcast/id1654874149',
@@ -80,6 +104,7 @@ export const SHOWS: Show[] = [
     display: 'LONGPOST',
     group: 'original',
     feed: 'https://anchor.fm/s/f20aee28/podcast/rss',
+    place: { ja: '北海道白老町', coords: '42°32′N 141°21′E' },
     // おたより項目(2026-07-20 Andy指定の3つ)
     otayoriTopics: ['制作', '生活', 'ポッドキャストをやっててよかったこと'],
     platforms: {
@@ -95,6 +120,8 @@ export const SHOWS: Show[] = [
     display: 'ON-AIRDO',
     group: 'works',
     feed: 'https://anchor.fm/s/fe6f8048/podcast/rss',
+    // 「声で旅する北海道」=島全体が舞台なので座標は丸める
+    place: { ja: '北海道', coords: '43°N 142°E' },
     role: 'ディレクター兼サブMCとして、出演を含め番組制作上のほぼ全てに立ち上げから対応。',
     // 番組専用のおたよりフォーム(Google Form、2026-07-20 Andy指定)
     otayoriUrl:
@@ -112,6 +139,11 @@ export const SHOWS: Show[] = [
     feed: 'https://anchor.fm/s/10f799928/podcast/rss',
     // 同じAnchor枠で旧番組が#158まで配信されていたため、新シリーズ#001以降のみ取り込む
     since: '2026-03-10',
+    place: {
+      ja: 'ニューヨーク ⇄ 東京',
+      coords: '40°43′N 74°00′W ⇄ 35°41′N 139°42′E',
+      note: 'ビデオ通話で繋いで収録',
+    },
     role: 'ディレクターとしてChronicleチームに参画し立ち上げから対応。',
     platforms: {
       spotify: 'https://open.spotify.com/show/53kqwZLMXYHUaPH8X7UFev',
@@ -134,6 +166,26 @@ export function showBySlug(slug: string): Show | undefined {
 // 終了番組(ミモリラジオ等)は送られても応えられないため宛先から外す
 export function otayoriShows(): Show[] {
   return SHOWS.filter((s) => s.group === 'original' && s.feed && !s.ended)
+}
+
+// AboutのPLACES節(2026-07-25): 舞台ごとに番組を束ねる。並びは北から南
+// (地図を持たないサイトの、リストで引く地図)。placeを持つ番組だけが対象
+export type PlaceRow = { ja: string; coords: string; note?: string; shows: Show[] }
+
+export function placeRows(): PlaceRow[] {
+  const rows: PlaceRow[] = []
+  for (const s of SHOWS) {
+    if (!s.place) continue
+    const found = rows.find((r) => r.ja === s.place!.ja)
+    if (found) found.shows.push(s)
+    else rows.push({ ja: s.place.ja, coords: s.place.coords, note: s.place.note, shows: [s] })
+  }
+  const order = ['北海道', '北海道白老町', '宮城県女川町', 'ニューヨーク ⇄ 東京']
+  const idx = (ja: string) => {
+    const i = order.indexOf(ja)
+    return i === -1 ? order.length : i
+  }
+  return rows.sort((a, b) => idx(a.ja) - idx(b.ja))
 }
 
 // おたよりの宛先ラベル一覧。フォームの選択肢とAPI検証(/api/contact)が
