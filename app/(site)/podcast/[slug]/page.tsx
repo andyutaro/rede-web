@@ -220,84 +220,103 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         )}
       </section>
 
-      {/* 入門3選(全番組、2026-07-23にORIGINAL限定を解除): 逆時系列は初見の
-          入口として機能しないため、Andyが選んだ「まずこの3本」を置く。
-          studioで「入門」タグを付けると載る。
-          1〜2本しか付いていない間は見出しが嘘にならない文言に落とす */}
-      {starterEps.length > 0 && (
-        <section className="section">
-          <div className="section-head">
-            <h2>STARTERS — {starterEps.length === 3 ? 'まずこの3本' : 'まずはここから'}</h2>
-          </div>
-          <div className="section-body starter-list">
-            {starterEps.map((ep) => (
-              <Link key={ep.id} href={`/podcast/${show.slug}/${ep.id}`} className="starter-row">
-                {(ep.image ?? feed?.image) && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={imgThumb(ep.image ?? feed!.image, IMG_W.ep)}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                  />
-                )}
-                <span className="starter-title">{ep.title}</span>
-                <span className="starter-date">{dateShort(ep.date)}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 番組から派生して制作されたプロダクト(2026-07-25 Andy指定):
-          「番組から生まれた物が番組ページにあってしかるべし」。通常の4列より
-          一段深い2列(トップ写真を大きく)、正方形とラベルの文法はPhysical棚と共通 */}
-      {products.length > 0 && (
-        <section className="section">
-          <div className="section-head">
-            <h2>PRODUCTS — 番組から生まれたもの</h2>
-          </div>
-          <div className="section-body grid2">
-            {products.map((item) => (
-              <div key={item.id}>
-                <Link
-                  href={`/physical/${item.id}`}
-                  className="sq"
-                  aria-label={`PHYSICAL ${item.title} ${dateShort(item.date)}`}
-                >
-                  {item.thumb ? (
+      {/* セクションの並び(2026-07-25 Andy指定):
+          ORIGINAL = STARTERS → PRODUCTS → ROLE(通常なし)
+          WORKS    = ROLE → STARTERS(制作参加番組は担当の提示が先=ポートフォリオの文法) */}
+      {(() => {
+        // 入門3選(全番組、2026-07-23にORIGINAL限定を解除): 逆時系列は初見の
+        // 入口として機能しないため、Andyが選んだ「まずこの3本」を置く。
+        // studioで「入門」タグを付けると載る。
+        // 1〜2本しか付いていない間は見出しが嘘にならない文言に落とす
+        const starters = starterEps.length > 0 && (
+          <section className="section" key="starters">
+            <div className="section-head">
+              <h2>STARTERS — {starterEps.length === 3 ? 'まずこの3本' : 'まずはここから'}</h2>
+            </div>
+            <div className="section-body starter-list">
+              {starterEps.map((ep) => (
+                <Link key={ep.id} href={`/podcast/${show.slug}/${ep.id}`} className="starter-row">
+                  {(ep.image ?? feed?.image) && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={imgThumb(item.thumb, IMG_W.product)}
+                      src={imgThumb(ep.image ?? feed!.image, IMG_W.ep)}
                       alt=""
                       loading="lazy"
                       decoding="async"
-                      className={item.assigned ? 'thumb-assigned' : undefined}
                     />
-                  ) : (
-                    <span className="empty-cell" />
                   )}
+                  <span className="starter-title">{ep.title}</span>
+                  <span className="starter-date">{dateShort(ep.date)}</span>
                 </Link>
-                <div className="ep-cell-label">
-                  <span className="ep-show">PHYSICAL</span>
-                  <span className="ep-title">{item.title}</span>
-                  <span className="ep-date">{dateShort(item.date)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </div>
+          </section>
+        )
 
-      {/* ROLE: 番組カタログがポートフォリオを兼ねる(旧サイト移植)。文言未設定なら出さない */}
-      {show.role && (
-        <section className="section">
-          <div className="section-head">
-            <h2>ROLE</h2>
-          </div>
-          <p className="show-role">{show.role}</p>
-        </section>
-      )}
+        // 番組から派生して制作されたプロダクト(2026-07-25 Andy指定):
+        // 「番組から生まれた物が番組ページにあってしかるべし」。通常の4列より
+        // 一段深い2列(トップ写真を大きく)、正方形とラベルの文法はPhysical棚と共通
+        const productsSection = products.length > 0 && (
+          <section className="section" key="products">
+            <div className="section-head">
+              <h2>PRODUCTS — 番組から生まれたもの</h2>
+            </div>
+            <div className="section-body grid2">
+              {products.map((item) => (
+                <div key={item.id}>
+                  <Link
+                    href={`/physical/${item.id}`}
+                    className="sq"
+                    aria-label={`PHYSICAL ${item.title} ${dateShort(item.date)}`}
+                  >
+                    {item.thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imgThumb(item.thumb, IMG_W.product)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className={item.assigned ? 'thumb-assigned' : undefined}
+                      />
+                    ) : (
+                      <span className="empty-cell" />
+                    )}
+                  </Link>
+                  <div className="ep-cell-label">
+                    <span className="ep-show">PHYSICAL</span>
+                    <span className="ep-title">{item.title}</span>
+                    <span className="ep-date">{dateShort(item.date)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+
+        // ROLE: 番組カタログがポートフォリオを兼ねる(旧サイト移植)。文言未設定なら出さない
+        const role = show.role && (
+          <section className="section" key="role">
+            <div className="section-head">
+              <h2>ROLE</h2>
+            </div>
+            <p className="show-role">{show.role}</p>
+          </section>
+        )
+
+        return isOriginal ? (
+          <>
+            {starters}
+            {productsSection}
+            {role}
+          </>
+        ) : (
+          <>
+            {role}
+            {starters}
+            {productsSection}
+          </>
+        )
+      })()}
 
       {episodes.length > 0 && <EpisodeIndex rows={indexRows} newSince={newSince} />}
     </div>
