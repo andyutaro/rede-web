@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { placeRows, showBySlug } from '@/lib/site/shows'
+import { showBySlug } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import { getAboutContent, type AboutContent, type AboutShow } from '@/lib/site/about'
 import Accordion from './Accordion'
@@ -96,35 +96,10 @@ export default async function AboutPage() {
         </Accordion>
       </section>
 
-      {/* 楽章3: 番組ポートフォリオ */}
+      {/* 楽章3: 番組ポートフォリオ。各エントリに番組の舞台の銘板を組み込む
+          (2026-07-25 Andy指定「地名はこの一覧に落とし込む」。独立のPLACES節は廃止) */}
       <ShowList heading="ORIGINAL PODCASTS" shows={c.original} covers={covers} />
       <ShowList heading="BRANDED PODCASTS" shows={c.branded} covers={covers} />
-
-      {/* 楽章3.5: 番組の舞台(2026-07-25 Andy指定)。各地に根ざした制作という
-          ユニークネスを、地図でなく座標の活字で示す。並びは北から南=リストで引く地図 */}
-      <section className="about-movement">
-        <div className="section-head">
-          <h2>PLACES — 番組の舞台</h2>
-        </div>
-        <div className="about-places">
-          {placeRows().map((row) => (
-            <div className="about-place" key={row.ja}>
-              <div className="ap-head">
-                <span className="ap-name">{row.ja}</span>
-                <span className="ap-coords">{row.coords}</span>
-              </div>
-              <div className="ap-shows">
-                {row.shows.map((s) => (
-                  <Link key={s.slug} href={`/podcast/${s.slug}`}>
-                    {s.display ?? s.shortName ?? s.name}
-                  </Link>
-                ))}
-                {row.note && <span className="ap-note">{row.note}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* 楽章4: 姿勢(STANCE) */}
       <section className="about-movement about-stance-block">
@@ -168,6 +143,18 @@ function ShowList({
             </div>
             <div className="about-show-text">
               <div className="about-show-name">{s.name}</div>
+              {/* 番組の舞台(2026-07-25 Andy指定): 番組名の直下に場所+座標の銘板。
+                  出所はshows.tsのplace(番組ページと同じ単一の真実) */}
+              {(() => {
+                const place = showBySlug(s.slug)?.place
+                return place ? (
+                  <p className="about-show-place">
+                    <span>{place.ja}</span>
+                    <span className="asp-coords">{place.coords}</span>
+                    {place.note && <span className="asp-note">{place.note}</span>}
+                  </p>
+                ) : null
+              })()}
               <p className="about-show-blurb">{s.blurb}</p>
               {s.role && (
                 <p className="about-show-role">

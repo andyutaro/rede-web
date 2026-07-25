@@ -168,26 +168,6 @@ export function otayoriShows(): Show[] {
   return SHOWS.filter((s) => s.group === 'original' && s.feed && !s.ended)
 }
 
-// AboutのPLACES節(2026-07-25): 舞台ごとに番組を束ねる。並びは北から南
-// (地図を持たないサイトの、リストで引く地図)。placeを持つ番組だけが対象
-export type PlaceRow = { ja: string; coords: string; note?: string; shows: Show[] }
-
-export function placeRows(): PlaceRow[] {
-  const rows: PlaceRow[] = []
-  for (const s of SHOWS) {
-    if (!s.place) continue
-    const found = rows.find((r) => r.ja === s.place!.ja)
-    if (found) found.shows.push(s)
-    else rows.push({ ja: s.place.ja, coords: s.place.coords, note: s.place.note, shows: [s] })
-  }
-  const order = ['北海道', '北海道白老町', '宮城県女川町', 'ニューヨーク ⇄ 東京']
-  const idx = (ja: string) => {
-    const i = order.indexOf(ja)
-    return i === -1 ? order.length : i
-  }
-  return rows.sort((a, b) => idx(a.ja) - idx(b.ja))
-}
-
 // おたよりの宛先ラベル一覧。フォームの選択肢とAPI検証(/api/contact)が
 // 必ず同じ集合を見るための単一の出所。項目を持つ番組は「番組名 / 項目」に展開
 export function otayoriLabels(): string[] {

@@ -2037,60 +2037,31 @@ html[data-theme='dark'] .contact-pill:hover {
   margin-right: 1em;
 }
 
-/* PLACES(2026-07-25): 場所の銘板+番組名。北から南への索引 */
-.about-places {
-  margin-top: 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
-.ap-head {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.ap-name {
-  font-size: 13px;
-  letter-spacing: 0.16em;
-  color: var(--ink);
-}
-
-.ap-coords {
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: var(--faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.ap-shows {
+/* 番組の舞台の銘板(2026-07-25 Andy指定「地名は一覧に落とし込む」):
+   ポートフォリオの番組名直下に場所+座標を一行。番組ページの銘板と同じ文法 */
+.about-show-place {
   margin-top: 10px;
   font-size: 10px;
   letter-spacing: 0.2em;
   color: var(--mut);
   display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
   align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
-.ap-shows a {
-  color: var(--mut);
-  border-bottom: 1px solid var(--dot);
-  padding-bottom: 2px;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.ap-shows a:hover {
-  color: var(--ink);
-  border-color: var(--mut);
-}
-
-.ap-note {
-  color: var(--faint);
+.asp-coords {
+  font-size: 9px;
   letter-spacing: 0.18em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.asp-note {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--faint);
 }
 
 /* STANCE: 全幅罫線をやめ、静かな番号+テキストの信条に(表組み感を消す) */
