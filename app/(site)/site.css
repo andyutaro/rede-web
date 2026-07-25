@@ -2037,31 +2037,15 @@ html[data-theme='dark'] .contact-pill:hover {
   margin-right: 1em;
 }
 
-/* 番組の舞台の銘板(2026-07-25 Andy指定「地名は一覧に落とし込む」):
-   ポートフォリオの番組名直下に場所+座標を一行。番組ページの銘板と同じ文法 */
-.about-show-place {
-  margin-top: 10px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: var(--mut);
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.asp-coords {
+/* 番組の舞台(2026-07-25 Andy指定「一覧に落とし込む」): 担当と同じラベル行に
+   「舞台 場所（注記） 座標」。座標だけ一段小さく退く(行が折れる時は塊のまま) */
+.about-show-role .asp-coords {
   font-size: 9px;
   letter-spacing: 0.18em;
   color: var(--faint);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.asp-note {
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: var(--faint);
+  margin-left: 0.9em;
 }
 
 /* STANCE: 全幅罫線をやめ、静かな番号+テキストの信条に(表組み感を消す) */

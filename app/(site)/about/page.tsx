@@ -143,19 +143,21 @@ function ShowList({
             </div>
             <div className="about-show-text">
               <div className="about-show-name">{s.name}</div>
-              {/* 番組の舞台(2026-07-25 Andy指定): 番組名の直下に場所+座標の銘板。
-                  出所はshows.tsのplace(番組ページと同じ単一の真実) */}
+              <p className="about-show-blurb">{s.blurb}</p>
+              {/* 番組の舞台(2026-07-25 Andy指定「一覧に落とし込む」): 担当と同じ
+                  ラベル行の文法で紹介文の下に。名前と紹介文の間に挟む初版は
+                  段が増えてごちゃついたため廃止。出所はshows.tsのplace(単一の真実) */}
               {(() => {
                 const place = showBySlug(s.slug)?.place
                 return place ? (
-                  <p className="about-show-place">
-                    <span>{place.ja}</span>
+                  <p className="about-show-role">
+                    <span className="role-label">舞台</span>
+                    {place.ja}
+                    {place.note && `（${place.note}）`}
                     <span className="asp-coords">{place.coords}</span>
-                    {place.note && <span className="asp-note">{place.note}</span>}
                   </p>
                 ) : null
               })()}
-              <p className="about-show-blurb">{s.blurb}</p>
               {s.role && (
                 <p className="about-show-role">
                   <span className="role-label">担当</span>
