@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getAboutContent, type AboutContent } from '@/lib/site/about'
 import { getContactContent } from '@/lib/site/pages'
-import { otayoriShows } from '@/lib/site/shows'
+import { otayoriShows, otayoriTopicsOf } from '@/lib/site/shows'
 import Accordion from '../about/Accordion'
 import ContactForm from './ContactForm'
 import ContactModes from './ContactModes'
@@ -29,11 +29,12 @@ export default async function ContactPage() {
   ])
 
   // おたより宛先: 継続中のオリジナル番組のみ(終了・未配信は出さない)。
-  // 項目持ち番組(ロングポスト)はフォーム側でoptgroup展開される
+  // 全番組を【 番組名 】+項目の同じ形で出す(2026-07-25 Andy指定)。
+  // 項目なし番組は既定の「自由おたより」1つに正規化される
   const otayoriTargets: OtayoriShow[] = otayoriShows().map((s) => ({
     slug: s.slug,
     label: s.shortName ?? s.name,
-    topics: s.otayoriTopics,
+    topics: otayoriTopicsOf(s),
   }))
 
   const work = (

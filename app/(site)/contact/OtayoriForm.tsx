@@ -8,8 +8,9 @@ import { useEffect, useRef, useState } from 'react'
 // おたよりは継続中のオリジナル番組のみ(Andy指定。終了番組は宛先に出さない)。
 // メールは任意(返信不要の便りが自然)。
 // エピソードページから来た場合(?show=/?ep=)は番組の事前選択+本文への宛先焼き込み。
-// 項目(topics)を持つ番組はoptgroupで「番組名 / 項目」から選ぶ(2026-07-20 Andy指定)
-export type OtayoriShow = { slug: string; label: string; topics?: string[] }
+// 全番組をoptgroup【 番組名 】+項目で揃える(2026-07-25 Andy指定。以前は項目持ちの
+// ロングポストだけ括られて見た目が不揃いだった)。項目なし番組は「自由おたより」1つ
+export type OtayoriShow = { slug: string; label: string; topics: string[] }
 
 export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
   // 選択値は宛先ラベルそのもの(「サカナカイギ」「ロングポスト / 制作」等)
@@ -32,11 +33,11 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
     const p = new URLSearchParams(window.location.search)
     const s = p.get('show')
     const ep = p.get('ep')
-    // 項目なし番組はラベルを直接選べる。項目持ち番組はどの項目宛かを
-    // 本人に選んでもらう(こちらで推測して誤配しない)ため事前選択しない
-    const target = shows.find((x) => x.slug === s && !x.topics?.length)
+    // 項目が1つだけの番組は誤配しようがないので事前選択する。
+    // 複数項目の番組はどの項目宛かを本人に選んでもらう(推測して誤配しない)
+    const target = shows.find((x) => x.slug === s && x.topics.length === 1)
     // eslint-disable-next-line react-hooks/set-state-in-effect -- マウント時1回のURL→初期値反映(SiteMenuと同前例)
-    if (target) setShow(target.label)
+    if (target) setShow(`${target.label} / ${target.topics[0]}`)
     if (ep) setMessage((prev) => (prev ? prev : `${ep}への便り：\n\n`))
     // showsはサーバー定数(オリジナル番組リスト)で不変
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,21 +83,15 @@ export default function OtayoriForm({ shows }: { shows: OtayoriShow[] }) {
         <span className="cf-label">宛先 *</span>
         <select value={show} onChange={(e) => setShow(e.target.value)} required>
           <option value="">宛先を選ぶ</option>
-          {shows.map((s) =>
-            s.topics?.length ? (
-              <optgroup key={s.slug} label={`【 ${s.label} 】`}>
-                {s.topics.map((t) => (
-                  <option key={t} value={`${s.label} / ${t}`}>
-                    {t}
-                  </option>
-                ))}
-              </optgroup>
-            ) : (
-              <option key={s.slug} value={s.label}>
-                {s.label}
-              </option>
-            )
-          )}
+          {shows.map((s) => (
+            <optgroup key={s.slug} label={`【 ${s.label} 】`}>
+              {s.topics.map((t) => (
+                <option key={t} value={`${s.label} / ${t}`}>
+                  {t}
+                </option>
+              ))}
+            </optgroup>
+          ))}
         </select>
       </label>
       <label className="cf-field">

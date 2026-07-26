@@ -175,11 +175,20 @@ export function otayoriShows(): Show[] {
   return SHOWS.filter((s) => s.group === 'original' && s.feed && !s.ended)
 }
 
+// 項目を持たない番組の唯一の宛先項目(2026-07-25 Andy指定)。
+// フォームの見た目を全番組【 番組名 】+項目の同じ形に揃えるための既定項目
+export const DEFAULT_OTAYORI_TOPIC = '自由おたより'
+
+export function otayoriTopicsOf(s: Show): string[] {
+  return s.otayoriTopics?.length ? s.otayoriTopics : [DEFAULT_OTAYORI_TOPIC]
+}
+
 // おたよりの宛先ラベル一覧。フォームの選択肢とAPI検証(/api/contact)が
-// 必ず同じ集合を見るための単一の出所。項目を持つ番組は「番組名 / 項目」に展開
+// 必ず同じ集合を見るための単一の出所。全番組「番組名 / 項目」に展開
+// (項目なし番組は既定の「自由おたより」1つ)
 export function otayoriLabels(): string[] {
   return otayoriShows().flatMap((s) => {
     const name = s.shortName ?? s.name
-    return s.otayoriTopics?.length ? s.otayoriTopics.map((t) => `${name} / ${t}`) : [name]
+    return otayoriTopicsOf(s).map((t) => `${name} / ${t}`)
   })
 }
