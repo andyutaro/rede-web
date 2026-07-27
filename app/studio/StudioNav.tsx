@@ -11,6 +11,7 @@ const ROOMS = [
   { href: '/studio/photography', label: 'PHOTOGRAPHY' },
   { href: '/studio/podcast', label: 'PODCAST INBOX' },
   { href: '/studio/updates', label: 'UPDATES' },
+  { href: '/studio/bookmarks', label: 'BOOKMARKS' },
   { href: '/studio/tags', label: 'TAGS' },
   { href: '/studio/contact', label: 'MAIL' },
   { href: '/studio/usage', label: 'USAGE' },

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { backupToR2 } from '@/lib/site/backup'
+import { scanBookmarks, fetchTitles } from '@/lib/studio/bookmarks'
 
 // 毎日0:01 JST(15:01 UTC)にVercel Cronから呼ばれ、「いま終わった日」の
 // scribe_daysにfinalized_atを立てる(仕様: アーカイブは毎日0:01に確定)。
@@ -55,12 +56,24 @@ export async function GET(request: Request) {
     cleanup = { deleted: 0, error: e instanceof Error ? e.message : 'cleanup failed' }
   }
 
+  // ブックマークの夜間同期(2026-07-27): 本文のリンクを索引へ、タイトルは
+  // 少量ずつ取得(サブリクエスト上限を食い潰さないよう8件)。失敗しても他を巻き添えにしない
+  let bookmarks: unknown
+  try {
+    const scan = await scanBookmarks(supabase)
+    const titles = await fetchTitles(supabase, 8)
+    bookmarks = { ...scan, ...titles }
+  } catch (e) {
+    bookmarks = { error: e instanceof Error ? e.message : 'bookmarks failed' }
+  }
+
   return NextResponse.json({
     ok: true,
     target,
     finalized: (data ?? []).length > 0, // false = 行がない(その日書かなかった) or 確定済み
     backup,
     cleanup,
+    bookmarks,
   })
 }
 

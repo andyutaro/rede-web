@@ -1385,3 +1385,88 @@
   font-size: 11px;
   color: #6b6b6b;
 }
+
+/* ---- BOOKMARKS室(2026-07-27): 本文に貼ったリンクの索引 ---- */
+.studio-note {
+  font-size: 12px;
+  color: #6b6b6b;
+  margin: 12px 0;
+}
+
+.bm-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0 6px;
+}
+
+.bm-search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.bm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #6b6b6b;
+}
+
+.bm-spacer {
+  flex: 1;
+}
+
+.bm-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.bm-row {
+  padding: 14px 0;
+  border-bottom: 1px solid #e3e3de;
+}
+
+.bm-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bm-title {
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.bm-domain {
+  font-size: 11px;
+  color: #8a8a84;
+}
+
+.bm-context {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.9;
+  color: #6b6b6b;
+}
+
+.bm-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #8a8a84;
+}
+
+.bm-source {
+  color: #6b6b6b;
+  border-bottom: 1px solid #d8d8d2;
+}
+
+.bm-date {
+  font-variant-numeric: tabular-nums;
+}
