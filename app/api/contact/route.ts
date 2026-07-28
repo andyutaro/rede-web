@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createService } from '@/lib/supabase/service'
 import { TOPICS } from '@/app/(site)/contact/content'
 import { otayoriLabels } from '@/lib/site/shows'
+import { judgeSpam } from '@/lib/site/spamFilter'
 
 // おたより(2026-07-20): topics=[「おたより — 宛先」]で仕事の問い合わせと同じ
 // テーブルに載せる。宛先の許可リストは公開フォームと同じotayoriLabels()
@@ -75,8 +76,36 @@ export async function POST(request: Request) {
   }
 
   const service = createService()
-  const { error } = await service.from('contact_messages').insert({ name, email, topics, message })
+
+  // 迷惑メール・中身のない罵倒の隔離(2026-07-27 Andy指定)。
+  // 消さずにDBへ入れ、spam=trueならメール通知を送らない(=目に入らない)。
+  // 誤判定はstudioのSPAMタブから救出できる。同一本文の連投も材料に使う
+  let duplicate = false
+  try {
+    const { data: dup } = await service
+      .from('contact_messages')
+      .select('id')
+      .eq('message', message)
+      .limit(1)
+    duplicate = (dup ?? []).length > 0
+  } catch {
+    // 重複チェックの失敗で受付自体を落とさない(他の材料だけで判定する)
+  }
+  const verdict = judgeSpam({ name, email, message }, { duplicate })
+
+  const { error } = await service.from('contact_messages').insert({
+    name,
+    email,
+    topics,
+    message,
+    spam: verdict.spam,
+    spam_score: verdict.score,
+    spam_reasons: verdict.reasons,
+  })
   if (error) return NextResponse.json({ error: 'save failed' }, { status: 500 })
+
+  // 隔離した分は通知しない。送信者には成功を返す(弾かれたと分かると回避を試みるため)
+  if (verdict.spam) return NextResponse.json({ ok: true })
 
   // メール通知(best effort)。onboarding@resend.devはアカウント所有者宛のみ送れる
   try {

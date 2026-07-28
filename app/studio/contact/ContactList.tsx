@@ -13,9 +13,13 @@ export type ContactRow = {
   createdAt: string
   read: boolean
   deleted: boolean
+  spam: boolean
+  spamReasons: string[]
 }
 
-type Filter = 'unread' | 'all' | 'trash'
+// SPAMタブ(2026-07-27): 自動隔離した分。消さずにここに残り、
+// 「スパムではない」で受信箱へ戻せる(判定は必ず間違えるので救出路を必ず持つ)
+type Filter = 'unread' | 'all' | 'spam' | 'trash'
 
 // 問い合わせ受信箱v2(2026-07-17): 列を整列した表形式(日付/状態/名前/メール/用件/本文冒頭)。
 // 行クリックで本文展開(展開と同時に既読)。検索+行単位クイック操作(既読⇄未読/ゴミ箱)
@@ -34,8 +38,11 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
     return rows.filter((r) => {
       if (filter === 'trash') {
         if (!r.deleted) return false
+      } else if (filter === 'spam') {
+        if (r.deleted || !r.spam) return false
       } else {
-        if (r.deleted) return false
+        // 受信箱(未読/全件)には隔離分を出さない=目に入らない
+        if (r.deleted || r.spam) return false
         if (filter === 'unread' && r.read) return false
       }
       if (!needle) return true
@@ -48,11 +55,15 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
     })
   }, [rows, filter, q])
 
-  const unreadCount = rows.filter((r) => !r.deleted && !r.read).length
-  const allCount = rows.filter((r) => !r.deleted).length
+  const unreadCount = rows.filter((r) => !r.deleted && !r.spam && !r.read).length
+  const allCount = rows.filter((r) => !r.deleted && !r.spam).length
+  const spamCount = rows.filter((r) => !r.deleted && r.spam).length
   const trashCount = rows.filter((r) => r.deleted).length
 
-  async function act(action: 'read' | 'unread' | 'trash' | 'restore' | 'purge', ids: string[]) {
+  async function act(
+    action: 'read' | 'unread' | 'trash' | 'restore' | 'purge' | 'spam' | 'notspam',
+    ids: string[]
+  ) {
     if (ids.length === 0 || busy) return
     if (action === 'purge') {
       if (!window.confirm(`選択した${ids.length}件を完全に消去します。よろしいですか？`)) return
@@ -100,6 +111,7 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
           [
             ['unread', `未読(${unreadCount})`],
             ['all', `全件(${allCount})`],
+            ['spam', `SPAM(${spamCount})`],
             ['trash', `ゴミ箱(${trashCount})`],
           ] as const
         ).map(([f, label]) => (
@@ -149,6 +161,15 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
                 選択を完全に消去
               </button>
             </>
+          ) : filter === 'spam' ? (
+            <>
+              <button type="button" className="bulk-btn" disabled={selected.size === 0 || busy} onClick={() => act('notspam', [...selected])}>
+                選択はスパムではない
+              </button>
+              <button type="button" className="bulk-btn" disabled={selected.size === 0 || busy} onClick={() => act('trash', [...selected])}>
+                選択をゴミ箱へ
+              </button>
+            </>
           ) : (
             <>
               <button type="button" className="bulk-btn" disabled={selected.size === 0 || busy} onClick={() => act(filter === 'unread' ? 'read' : 'unread', [...selected])}>
@@ -189,7 +210,7 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
               />
               <span className="row-date">{dateDots(r.createdAt.slice(0, 10))}</span>
               <span className="contact-state">
-                {r.deleted ? 'ゴミ箱' : r.read ? '既読' : <span className="contact-unread-dot">未読</span>}
+                {r.deleted ? 'ゴミ箱' : r.spam ? '隔離' : r.read ? '既読' : <span className="contact-unread-dot">未読</span>}
               </span>
               <button type="button" className="contact-row-title" onClick={() => toggleOpen(r)}>
                 <span className="contact-name">{r.name}</span>
@@ -204,6 +225,15 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
                   <button type="button" className="row-act" disabled={busy} onClick={() => act('restore', [r.id])}>
                     戻す
                   </button>
+                ) : r.spam ? (
+                  <>
+                    <button type="button" className="row-act" disabled={busy} onClick={() => act('notspam', [r.id])}>
+                      スパムではない
+                    </button>
+                    <button type="button" className="row-act" disabled={busy} onClick={() => act('trash', [r.id])}>
+                      ゴミ箱へ
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button
@@ -214,6 +244,9 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
                     >
                       {r.read ? '未読に' : '既読に'}
                     </button>
+                    <button type="button" className="row-act" disabled={busy} onClick={() => act('spam', [r.id])}>
+                      スパムへ
+                    </button>
                     <button type="button" className="row-act" disabled={busy} onClick={() => act('trash', [r.id])}>
                       ゴミ箱へ
                     </button>
@@ -223,6 +256,10 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
             </div>
             {open.has(r.id) && (
               <div className="contact-body">
+                {/* なぜ隔離したかを必ず見せる(判定を監査できる箱にする) */}
+                {r.spam && r.spamReasons.length > 0 && (
+                  <p className="contact-spam-why">隔離の理由: {r.spamReasons.join(' / ')}</p>
+                )}
                 <p>{r.message}</p>
                 <a className="contact-reply" href={`mailto:${r.email}`}>
                   メールで返信 →
@@ -237,9 +274,11 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
               ? '条件に合う問い合わせがありません'
               : filter === 'trash'
                 ? 'ゴミ箱は空です'
-                : filter === 'unread'
-                  ? '未読はありません'
-                  : '問い合わせはまだありません'}
+                : filter === 'spam'
+                  ? '隔離された迷惑メールはありません'
+                  : filter === 'unread'
+                    ? '未読はありません'
+                    : '問い合わせはまだありません'}
           </p>
         )}
       </div>

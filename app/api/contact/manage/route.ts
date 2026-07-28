@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     ids.length === 0 ||
     ids.length > 100 ||
     ids.some((id) => typeof id !== 'string' || !UUID_RE.test(id)) ||
-    !['read', 'unread', 'trash', 'restore', 'purge'].includes(action ?? '')
+    !['read', 'unread', 'trash', 'restore', 'purge', 'spam', 'notspam'].includes(action ?? '')
   ) {
     return NextResponse.json({ error: 'invalid fields' }, { status: 400 })
   }
@@ -41,6 +41,12 @@ export async function POST(request: Request) {
     error = (await table.update({ deleted_at: now }).in('id', ids).is('deleted_at', null)).error
   } else if (action === 'restore') {
     error = (await table.update({ deleted_at: null }).in('id', ids).not('deleted_at', 'is', null)).error
+  } else if (action === 'notspam') {
+    // 誤判定の救出(2026-07-27): 受信箱へ戻す。未読に戻して見落とさないようにする
+    error = (await table.update({ spam: false, read_at: null }).in('id', ids)).error
+  } else if (action === 'spam') {
+    // 手で隔離へ送る(判定をすり抜けた分)
+    error = (await table.update({ spam: true }).in('id', ids)).error
   } else {
     // purge: ゴミ箱内のみ物理削除(他と同じ2段階)
     error = (await table.delete().in('id', ids).not('deleted_at', 'is', null)).error

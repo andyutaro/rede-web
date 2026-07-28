@@ -1470,3 +1470,10 @@
 .bm-date {
   font-variant-numeric: tabular-nums;
 }
+
+/* 隔離の理由(2026-07-27): なぜ弾いたかを本文の上に小さく置く */
+.contact-spam-why {
+  font-size: 11px;
+  color: #8a8a84;
+  margin: 0 0 10px;
+}

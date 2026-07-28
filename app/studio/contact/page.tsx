@@ -21,6 +21,9 @@ export default async function StudioContact() {
     createdAt: m.created_at as string,
     read: Boolean(m.read_at),
     deleted: Boolean(m.deleted_at),
+    // spam列はマイグレーション未実行でもundefined=falseで壊れない
+    spam: Boolean(m.spam),
+    spamReasons: (m.spam_reasons as string[]) ?? [],
   }))
 
   return (
