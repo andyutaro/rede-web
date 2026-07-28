@@ -102,6 +102,9 @@ const nextConfig: NextConfig = {
       // Article棚はNotesへ改名(2026-07-10)。旧URLを永続リダイレクトで受ける
       { source: "/article", destination: "/notes", permanent: true },
       { source: "/article/:id", destination: "/notes/:id", permanent: true },
+      // 旧サイト(STUDIO)の/profileの後継は/about(PROFILE節を含む)。
+      // Googleが旧URLを覚えていて404を報告していた(2026-07-27 Search Console)
+      { source: "/profile", destination: "/about", permanent: true },
     ];
   },
 };
