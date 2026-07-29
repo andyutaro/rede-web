@@ -170,14 +170,20 @@ export default function ScribeArchive({
 
   // 注釈ポップアップの横位置(2026-07-28 Andy指摘): 注釈の左端に出すと文頭に被り、
   // 開いたままスクロールして読めなかった。**右端に寄せて文頭を空ける**。
-  // 右レール(テーマ/MAIL/MENU/PODCASTピル= right:22px・幅88px)の手前で止める。
-  // 広い画面では本文右の余白に完全に収まり、本文に一切被らない
-  // 広い画面(1200px〜)は右レールの手前で止め、本文右の余白に完全に収める。
-  // それより狭い画面はレール確保をやめて右端まで寄せる=文頭を最大限空ける方を優先
-  // (ポップアップはz-41でレールより前面なので、重なっても隠れて困らない)。
-  const railW = window.innerWidth >= 1200 ? 110 : 12
-  const popWidth = Math.min(280, Math.max(200, window.innerWidth - railW - 32))
-  const popLeft = Math.max(12, window.innerWidth - popWidth - railW)
+  // 広い画面(1200px〜)は右レール(テーマ/MAIL/MENU/PODCASTピル)の手前で止め、
+  // 本文右の余白に完全に収める。それより狭い画面はレール確保をやめて右端まで寄せ、
+  // 文頭を最大限空ける方を優先(ポップアップはz-41でレールより前面なので、
+  // 重なっても隠れて困らない)。
+  //
+  // ※**関数にしてある**のが重要: これをコンポーネント本体で計算すると
+  // サーバー描画時にwindowが無くて落ち、React全体がクライアント描画へ
+  // フォールバックしてしまう(2026-07-28に実際に踏んだ)。呼ぶのは
+  // ポップアップを開いた後=クライアントだけを通る経路に限る
+  const popGeometry = () => {
+    const railW = window.innerWidth >= 1200 ? 110 : 12
+    const width = Math.min(280, Math.max(200, window.innerWidth - railW - 32))
+    return { width, left: Math.max(12, window.innerWidth - width - railW) }
+  }
 
   return (
     <>
@@ -190,8 +196,7 @@ export default function ScribeArchive({
           <div
             className="anno-pop"
             style={{
-              left: popLeft,
-              width: popWidth,
+              ...popGeometry(),
               top: Math.min(open.y + 8, window.innerHeight - 160),
             }}
             role="note"
