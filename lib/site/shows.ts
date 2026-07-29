@@ -68,11 +68,13 @@ export type Show = {
   // 識別部の頭に置く。改行はそのまま出す(white-space: pre-line)
   intro?: string
   // 番組から派生して制作されたプロダクト(2026-07-25 Andy指定)。
-  // articles(type=physical)のIDを、この並び順のまま番組ページのPRODUCTS節に出す
+  // articles(type=physical)のIDを、この並び順のまま出す
   products?: string[]
-  // その番組の催し(2026-07-29 Andy)。articles(type=event)のIDを、この並び順のまま
-  // 番組ページのEVENTS節に出す。番組の「今」は番組の家にあるべき、という判断
+  // その番組の催し(2026-07-29 Andy)。articles(type=event)のIDを、この並び順のまま出す。
+  // 番組の「今」は番組の家にあるべき、という判断
   events?: string[]
+  // ※productsとeventsは番組ページの EXPANSION 節に一続きで並ぶ(物→催しの順)。
+  //   「番組から生まれたもの」という一つの事実なので節は分けない(2026-07-29 Andy)
 }
 
 export const SHOWS: Show[] = [

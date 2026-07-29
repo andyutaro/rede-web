@@ -300,7 +300,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
       </section>
 
       {/* セクションの並び(2026-07-25 Andy指定):
-          ORIGINAL = STARTERS → PRODUCTS → ROLE(通常なし)
+          ORIGINAL = STARTERS → EXPANSION → ROLE(通常なし)
           WORKS    = ROLE → STARTERS(制作参加番組は担当の提示が先=ポートフォリオの文法) */}
       {(() => {
         // 入門3選(全番組、2026-07-23にORIGINAL限定を解除): 逆時系列は初見の
@@ -332,21 +332,26 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
           </section>
         )
 
-        // 番組から派生して制作されたプロダクト(2026-07-25 Andy指定):
-        // 「番組から生まれた物が番組ページにあってしかるべし」。通常の4列より
-        // 一段深い2列(トップ写真を大きく)、正方形とラベルの文法はPhysical棚と共通
-        const productsSection = products.length > 0 && (
-          <section className="section" key="products">
+        // 番組から派生して生まれたもの(2026-07-25 → 2026-07-29 Andy指定で改称・統合):
+        // 物(Physical)も催し(Events)も「番組から生まれたもの」という一つの事実なので
+        // 節を分けず一続きに並べる。通常の4列より一段深い2列(トップ写真を大きく)、
+        // 正方形とラベルの文法は各棚と共通。並びはshows.tsの宣言順(物→催し)
+        const expansion = [
+          ...products.map((p) => ({ ...p, shelf: 'physical', label: 'PHYSICAL' })),
+          ...events.map((e) => ({ ...e, shelf: 'events', label: 'EVENTS' })),
+        ]
+        const expansionSection = expansion.length > 0 && (
+          <section className="section" key="expansion">
             <div className="section-head">
-              <h2>PRODUCTS — 番組から生まれたもの</h2>
+              <h2>EXPANSION — 番組から生まれたもの</h2>
             </div>
             <div className="section-body grid2">
-              {products.map((item) => (
+              {expansion.map((item) => (
                 <div key={item.id}>
                   <Link
-                    href={`/physical/${item.id}`}
+                    href={`/${item.shelf}/${item.id}`}
                     className="sq"
-                    aria-label={`PHYSICAL ${item.title} ${dateShort(item.date)}`}
+                    aria-label={`${item.label} ${item.title} ${dateShort(item.date)}`}
                   >
                     {item.thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -362,46 +367,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
                     )}
                   </Link>
                   <div className="ep-cell-label">
-                    <span className="ep-show">PHYSICAL</span>
-                    <span className="ep-title">{item.title}</span>
-                    <span className="ep-date">{dateShort(item.date)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )
-
-        // その番組の催し(2026-07-29 Andy指定): 番組の「今」は番組の家にあるべき。
-        // PRODUCTSと同じ2列・同じラベル文法(棚名+タイトル+日付)。日付は開催日
-        const eventsSection = events.length > 0 && (
-          <section className="section" key="events">
-            <div className="section-head">
-              <h2>EVENTS — これまでの催し</h2>
-            </div>
-            <div className="section-body grid2">
-              {events.map((item) => (
-                <div key={item.id}>
-                  <Link
-                    href={`/events/${item.id}`}
-                    className="sq"
-                    aria-label={`EVENTS ${item.title} ${dateShort(item.date)}`}
-                  >
-                    {item.thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={imgThumb(item.thumb, IMG_W.product)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className={item.assigned ? 'thumb-assigned' : undefined}
-                      />
-                    ) : (
-                      <span className="empty-cell" />
-                    )}
-                  </Link>
-                  <div className="ep-cell-label">
-                    <span className="ep-show">EVENTS</span>
+                    <span className="ep-show">{item.label}</span>
                     <span className="ep-title">{item.title}</span>
                     <span className="ep-date">{dateShort(item.date)}</span>
                   </div>
@@ -424,16 +390,14 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         return isOriginal ? (
           <>
             {starters}
-            {productsSection}
-            {eventsSection}
+            {expansionSection}
             {role}
           </>
         ) : (
           <>
             {role}
             {starters}
-            {productsSection}
-            {eventsSection}
+            {expansionSection}
           </>
         )
       })()}
