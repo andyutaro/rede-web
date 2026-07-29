@@ -168,6 +168,17 @@ export default function ScribeArchive({
   // 画面外にはみ出さないよう寄せる
   const clamp = (x: number, w: number) => Math.max(12, Math.min(x, window.innerWidth - w - 12))
 
+  // 注釈ポップアップの横位置(2026-07-28 Andy指摘): 注釈の左端に出すと文頭に被り、
+  // 開いたままスクロールして読めなかった。**右端に寄せて文頭を空ける**。
+  // 右レール(テーマ/MAIL/MENU/PODCASTピル= right:22px・幅88px)の手前で止める。
+  // 広い画面では本文右の余白に完全に収まり、本文に一切被らない
+  // 広い画面(1200px〜)は右レールの手前で止め、本文右の余白に完全に収める。
+  // それより狭い画面はレール確保をやめて右端まで寄せる=文頭を最大限空ける方を優先
+  // (ポップアップはz-41でレールより前面なので、重なっても隠れて困らない)。
+  const railW = window.innerWidth >= 1200 ? 110 : 12
+  const popWidth = Math.min(280, Math.max(200, window.innerWidth - railW - 32))
+  const popLeft = Math.max(12, window.innerWidth - popWidth - railW)
+
   return (
     <>
       <div className="scribe-html scribe-archive-body" ref={ref} />
@@ -178,7 +189,11 @@ export default function ScribeArchive({
           <div className="anno-veil" onClick={() => setOpen(null)} aria-hidden="true" />
           <div
             className="anno-pop"
-            style={{ left: clamp(open.x, 300), top: Math.min(open.y + 8, window.innerHeight - 160) }}
+            style={{
+              left: popLeft,
+              width: popWidth,
+              top: Math.min(open.y + 8, window.innerHeight - 160),
+            }}
             role="note"
           >
             <p className="anno-pop-body">{open.a.body}</p>
