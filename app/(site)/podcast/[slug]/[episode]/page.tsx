@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { showBySlug } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
-import { createService } from '@/lib/supabase/service'
-import { dateDots, plainExcerpt, scribeTitle } from '@/lib/site/text'
+import { dateDots, plainExcerpt } from '@/lib/site/text'
 import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import Accordion from '../../../about/Accordion'
 import Pager from '../../../Pager'
+import SamePeriod from '../../../SamePeriod'
 import EpisodeNotes from '../../EpisodeNotes'
 import AudioPlayer from '../../AudioPlayer'
 import PlatformLinks from '../../PlatformLinks'
@@ -58,30 +58,13 @@ export async function generateMetadata({
 
 // エピソードページ: タイトル・サムネイル・ネイティブ再生プレイヤー・
 // 各配信先への送客ボタン・概要欄の薄いテンプレート。
-// この回が作られた頃のscribe(ORIGINALのみ、2026-07-20): リリース日の前1週間+当日の
-// 確定日誌を最大3件。scribeは最近始めたので、古い回では自然に空=何も出ない
-async function scribeAround(date: string): Promise<string[]> {
-  const from = new Date(`${date}T00:00:00Z`)
-  from.setUTCDate(from.getUTCDate() - 7)
-  const service = createService()
-  const { data } = await service
-    .from('scribe_days')
-    .select('date')
-    .not('finalized_at', 'is', null)
-    .is('deleted_at', null)
-    .gte('date', from.toISOString().slice(0, 10))
-    .lte('date', date)
-    .order('date', { ascending: false })
-    .limit(3)
-  return (data ?? []).map((d) => d.date as string)
-}
+// 「この頃のscribe」(2026-07-20)は「同じ頃」(SamePeriod)へ一般化した(2026-07-28)。
 
 export default async function EpisodePage({ params }: { params: Promise<Params> }) {
   const data = await loadEpisode(params)
   if (!data) notFound()
   const { show, feed, ep } = data
   const isOriginal = show.group === 'original'
-  const scribeDates = isOriginal ? await scribeAround(ep.date) : []
 
   const thumb = ep.image ?? feed.image
 
@@ -197,20 +180,11 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
             )}
           </div>
         )}
-        {/* この頃のscribe(ORIGINALのみ): 番組(表)と日誌(裏)を両方持つのはこのサイトだけ。
-            エピソードの周辺で書かれていたものへの扉 */}
-        {scribeDates.length > 0 && (
-          <div className="ep-scribe">
-            <div className="listen-caption">この頃のscribe</div>
-            <div className="ep-scribe-rows">
-              {scribeDates.map((d) => (
-                <Link key={d} href={`/scribe/${d}`}>
-                  SCRIBE『{scribeTitle(d)}』
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* 同じ頃(2026-07-28): この回の前後7日に生まれた他の仕事。
+            番組(表)と日誌(裏)を両方持つのはこのサイトだけ、という強みを日付で結ぶ。
+            旧「この頃のscribe」(ORIGINAL限定・scribeのみ)を全種類へ一般化した。
+            同じ番組の前後の回はPagerの担当なので除く */}
+        <SamePeriod date={ep.date} excludePrefix={`/podcast/${show.slug}/`} />
 
         <Pager
           older={pagerLink(olderEp)}

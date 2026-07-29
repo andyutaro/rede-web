@@ -7,6 +7,7 @@ import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import ScribeArchive from '../ScribeArchive'
+import SamePeriod from '../../SamePeriod'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,6 +121,9 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
           ))}
         </p>
         <ScribeArchive html={data.html as string} />
+        {/* 同じ頃(2026-07-28): この日の前後7日に生まれた他の仕事。
+            scribe同士の行き来はPagerの担当なので/scribe/は除く */}
+        <SamePeriod date={date} excludePrefix="/scribe/" />
         <Pager
           older={pagerLink(prevRes.data?.date as string)}
           newer={pagerLink(nextRes.data?.date as string)}

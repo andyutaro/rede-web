@@ -4,6 +4,7 @@ import { dateDots, tokyoYmd } from '@/lib/site/text'
 import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import Pager from './Pager'
 import ScribeArchive from './scribe/ScribeArchive'
+import SamePeriod from './SamePeriod'
 
 // 記事個別ページの共通実装(Notes / Photography / Physicalの3棚で共用)。
 // 本文はscribeと同じSSOT(生HTML)なので、同じサニタイザ・同じ本文スタイルで描画する。
@@ -106,6 +107,9 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
           <p className="article-description">{(a.description as string).trim()}</p>
         )}
         <ScribeArchive html={(a.html as string) ?? ''} />
+        {/* 同じ頃(2026-07-28): 公開日の前後7日に生まれた他の仕事。
+            同じ棚の前後の記事はPagerの担当なので除く。公開日が無ければ出さない */}
+        {date && <SamePeriod date={date} excludePrefix={`/${shelf}/`} />}
         <Pager
           older={pagerLink(prevRes.data)}
           newer={pagerLink(nextRes.data)}

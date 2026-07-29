@@ -3056,3 +3056,9 @@ html[data-theme='dark'] .contact-pill:hover {
     max-width: 100%;
   }
 }
+
+/* 「同じ頃」(2026-07-28): 日付を鍵に他の棚の仕事を出す窓。
+   本文とPagerの間に静かに挟む(見出しは持たせず小さなキャプションのみ) */
+.same-period {
+  margin-top: 64px;
+}
