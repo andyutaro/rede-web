@@ -5,6 +5,8 @@ import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import Pager from './Pager'
 import ScribeArchive from './scribe/ScribeArchive'
 import SamePeriod from './SamePeriod'
+import { loadAnnotations } from '@/lib/site/annotations'
+import { isEditor } from '@/lib/supabase/editor'
 
 // 記事個別ページの共通実装(Notes / Photography / Physicalの3棚で共用)。
 // 本文はscribeと同じSSOT(生HTML)なので、同じサニタイザ・同じ本文スタイルで描画する。
@@ -78,6 +80,12 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
   const pagerLink = (row: { id: string; title: string } | null) =>
     row ? { href: `/${shelf}/${row.id}`, title: (row.title || '').trim() || '無題' } : null
 
+  // 注釈(2026-07-28): 本文とは別レイヤー。ログイン中は公開ページから直接足せる
+  const [annotations, canEdit] = await Promise.all([
+    loadAnnotations({ kind: 'article', key: id }),
+    isEditor(),
+  ])
+
   // パンくず(2026-07-25): 検索結果の階層表示用。語彙はナビ表記(Notes等)に揃える
   const crumbs = breadcrumbJsonLd([
     { name: 'Home', path: '' },
@@ -106,7 +114,12 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
         {a.type !== 'article' && (a.description as string | undefined)?.trim() && (
           <p className="article-description">{(a.description as string).trim()}</p>
         )}
-        <ScribeArchive html={(a.html as string) ?? ''} />
+        <ScribeArchive
+          html={(a.html as string) ?? ''}
+          annotations={annotations}
+          canEdit={canEdit}
+          target={{ kind: 'article', key: id }}
+        />
         {/* 同じ頃(2026-07-28): 公開日の前後7日に生まれた他の仕事。
             同じ棚の前後の記事はPagerの担当なので除く。公開日が無ければ出さない */}
         {date && <SamePeriod date={date} excludePrefix={`/${shelf}/`} />}

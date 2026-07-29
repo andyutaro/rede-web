@@ -15,7 +15,7 @@ export default async function SamePeriod({
   if (rows.length === 0) return null
   return (
     <div className="same-period">
-      <div className="listen-caption">同じ頃</div>
+      <div className="listen-caption">同じ頃の作品</div>
       <UpdateList rows={rows} />
     </div>
   )

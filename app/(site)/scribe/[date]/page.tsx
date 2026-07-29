@@ -8,6 +8,8 @@ import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import ScribeArchive from '../ScribeArchive'
 import SamePeriod from '../../SamePeriod'
+import { loadAnnotations } from '@/lib/site/annotations'
+import { isEditor } from '@/lib/supabase/editor'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,6 +99,13 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
   const pagerLink = (d?: string | null) =>
     d ? { href: `/scribe/${d}`, title: `Scribe Archive ${scribeTitle(d)}` } : null
 
+  // 注釈(2026-07-28): 本文とは別レイヤー。ログイン中なら自分のサイトを普通に
+  // 見ている画面から、ドラッグして直接足せる(書き込みの可否はAPI側で再検証する)
+  const [annotations, canEdit] = await Promise.all([
+    loadAnnotations({ kind: 'scribe', key: date }),
+    isEditor(),
+  ])
+
   return (
     <div className="measure">
       {/* パンくず(2026-07-25): scribeの棚はNotes */}
@@ -120,7 +129,12 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
             <span key={line}>{line}</span>
           ))}
         </p>
-        <ScribeArchive html={data.html as string} />
+        <ScribeArchive
+          html={data.html as string}
+          annotations={annotations}
+          canEdit={canEdit}
+          target={{ kind: 'scribe', key: date }}
+        />
         {/* 同じ頃(2026-07-28): この日の前後7日に生まれた他の仕事。
             scribe同士の行き来はPagerの担当なので/scribe/は除く */}
         <SamePeriod date={date} excludePrefix="/scribe/" />

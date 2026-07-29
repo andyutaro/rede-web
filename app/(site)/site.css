@@ -3062,3 +3062,106 @@ html[data-theme='dark'] .contact-pill:hover {
 .same-period {
   margin-top: 64px;
 }
+
+/* ---- 注釈(2026-07-28 Andy指定): 本文のレイアウトを一切動かさない。
+   引用範囲に細い下線を引くだけ→タップで小さく開く。うるさくならない ---- */
+.anno {
+  border-bottom: 1px solid var(--dot);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.anno:hover {
+  border-color: var(--mut);
+}
+
+/* 開いている間の受け皿(外側をタップで閉じる。暗幕は張らない=静かに開く) */
+.anno-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.anno-pop {
+  position: fixed;
+  z-index: 41;
+  max-width: 300px;
+  background: var(--bg);
+  border: 1px solid var(--dot);
+  padding: 14px 16px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+}
+
+.anno-pop-body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--body);
+  white-space: pre-wrap;
+}
+
+.anno-pop-acts,
+.anno-editor-acts {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.anno-pop-acts button,
+.anno-editor-acts button,
+.anno-add {
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--mut);
+  background: var(--bg);
+  border: 1px solid var(--dot);
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.anno-pop-acts button:hover,
+.anno-editor-acts button:hover,
+.anno-add:hover {
+  color: var(--ink);
+  border-color: var(--mut);
+}
+
+/* 選択直後に出る小さなボタン(ログイン中のみ) */
+.anno-add {
+  position: fixed;
+  z-index: 42;
+}
+
+.anno-editor {
+  position: fixed;
+  z-index: 41;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 32px));
+  background: var(--bg);
+  border: 1px solid var(--dot);
+  padding: 18px;
+  box-shadow: 0 2px 30px rgba(0, 0, 0, 0.08);
+}
+
+.anno-editor-quote {
+  margin: 0 0 12px;
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--faint);
+}
+
+.anno-editor textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--dot);
+  padding: 10px;
+  resize: vertical;
+}
