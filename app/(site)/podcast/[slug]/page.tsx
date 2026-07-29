@@ -51,8 +51,10 @@ export async function generateMetadata({
     title: show.name,
     description,
     alternates: { canonical: `https://andyutaro.com/podcast/${show.slug}` },
-    openGraph: { title: show.name, images: [{ url: img, alt: show.name }] },
-    twitter: { card: 'summary', images: [{ url: img, alt: show.name }] },
+    // /api/og-imageが紙色で額装した1200×630へ解決するので大きいカードで出す
+    // (2026-07-29。正方形アートのままsummary_large_imageにすると上下が切られた)
+    openGraph: { title: show.name, images: [{ url: img, alt: show.name, width: 1200, height: 630 }] },
+    twitter: { card: 'summary_large_image', images: [{ url: img, alt: show.name }] },
   }
 }
 

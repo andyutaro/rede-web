@@ -45,14 +45,15 @@ export async function generateMetadata({
   }
   // エピソード単位のOGP(2026-07-22): シェアカードにその回のアートを出す。
   // 画像はAnchor URLの失効に備えて安定ルート(/api/og-image)経由の絶対URL。
-  // アートは正方形なのでtwitterはsummary(large_imageだと切られる)
+  // アートは正方形だが、og-imageが紙色で額装した1200×630へ解決するので
+  // 切られずに大きいカードで出せる(2026-07-29。それまでsummaryに落としていた)
   if (!(ep.image ?? feed.image)) return base
   const img = `https://andyutaro.com/api/og-image?show=${show.slug}&ep=${ep.id}`
   const alt = `${show.display ?? show.name}『${ep.title}』`
   return {
     ...base,
-    openGraph: { title: alt, images: [{ url: img, alt }] },
-    twitter: { card: 'summary', images: [{ url: img, alt }] },
+    openGraph: { title: alt, images: [{ url: img, alt, width: 1200, height: 630 }] },
+    twitter: { card: 'summary_large_image', images: [{ url: img, alt }] },
   }
 }
 

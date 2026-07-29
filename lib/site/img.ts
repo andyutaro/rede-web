@@ -19,6 +19,17 @@ export const IMG_W = {
   pick: 240, // studioのプール選択グリッド
 } as const
 
+// SNSカード用の1200×630(2026-07-29)。番組カバーは正方形なので、
+// summary_large_imageにそのまま載せると上下が切られる(だからカード種別を
+// summaryに落としていた)。切らずに大きく出すため、紙色(--bg)で左右に余白を
+// 敷いて16:9強に仕立てる=額装。format=jpegはスクレイパー確実性のため
+// (format=autoはAccept次第でAVIFを返し、対応しない収集器がある)。
+const CARD_BG = 'f4f3ee' // globals.cssの--bg(紙色)
+export function imgCard(url: string | null | undefined): string {
+  if (!url || !/^https?:\/\//i.test(url) || url.includes('/cdn-cgi/image/')) return url ?? ''
+  return `${CDN_BASE}/width=1200,height=630,fit=pad,background=%23${CARD_BG},quality=82,format=jpeg/${url}`
+}
+
 export function imgThumb(url: string | null | undefined, width: number): string {
   if (!url) return ''
   // 既に変換済み/データURL/相対パスはそのまま(変換は絶対URLの元画像に対して行う)
