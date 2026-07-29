@@ -104,6 +104,14 @@ export const SHOWS: Show[] = [
     ],
     // MADNESSタイアップルアー(2026-07-25 Andy指定)
     products: ['00d06869-b0b8-40b3-a06b-0dbf8d7ef145'],
+    // 女川で開いてきた催し(2026-07-29、Instagramの投稿から取り込み)。新しい順
+    events: [
+      '984c777d-9fd5-42fa-ab78-cfd6a67330b2', // ニツケカイギ 2026-03-04
+      'a2564cd3-d3ca-46a6-be2d-051632ef9a48', // オナベカイギ 2025-12-17
+      '768b5de1-5447-4429-8993-3efe686b8455', // Inspiring Voice 2025-11-28
+      '4a1d4f91-2f8b-4d5d-9c0e-33cbe6f8942b', // フライカイギ 2025-08-22
+      '2c90bc28-0e01-49f7-8686-9b16449acd26', // オスシカイギ 2025-05-29
+    ],
     platforms: {
       spotify: 'https://open.spotify.com/show/2oyDL4w0U7hRmwIFRC7jDK',
       apple: 'https://podcasts.apple.com/jp/podcast/id1811565002',
