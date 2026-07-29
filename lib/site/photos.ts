@@ -83,7 +83,10 @@ let photoPoolCache: { promise: Promise<PoolEntry[]>; ts: number } | null = null
 
 function photoPool(): Promise<PoolEntry[]> {
   if (photoPoolCache && Date.now() - photoPoolCache.ts < POOL_TTL_MS) return photoPoolCache.promise
-  const promise = cachedJson('photo-pool-2', POOL_TTL_MS / 1000, loadPhotoPool)
+  // 鍵の数字はキャッシュ破棄用(本文の画像URLを外から動かしたら上げる)。
+  // -3: オスシカイギの写真を開催日のフォルダへ移した(2026-07-29)。移動前の
+  // パスを掴んだプールが残ると、Photographyに404の穴が開いたまま30分残る
+  const promise = cachedJson('photo-pool-3', POOL_TTL_MS / 1000, loadPhotoPool)
   photoPoolCache = { promise, ts: Date.now() }
   return promise
 }
