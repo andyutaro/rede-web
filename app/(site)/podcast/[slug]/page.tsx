@@ -153,6 +153,16 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
     ...(feed?.description ? { description: plainExcerpt(feed.description, 200) } : {}),
     webFeed: show.feed,
     ...(isOriginal ? { author: { '@type': 'Person', name: 'Andy', url: 'https://andyutaro.com' } } : {}),
+    // 出演者(2026-07-29)。ページに書いた事実をそのまま検索エンジンにも渡す
+    ...(show.cast?.length
+      ? {
+          actor: show.cast.map((m) => ({
+            '@type': 'Person',
+            name: m.name,
+            ...(m.href?.startsWith('http') ? { sameAs: m.href } : {}),
+          })),
+        }
+      : {}),
   }).replace(/</g, '\\u003c')
 
   // パンくず(2026-07-25): 検索結果の階層表示用
@@ -212,6 +222,39 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             </p>
             {show.place.note && <p className="show-place-note">{show.place.note}</p>}
           </>
+        )}
+        {/* 出演者(2026-07-29 Andy): 番組を探して来た人の最初の問いは「誰の声か」。
+            銘板の下に名前と担当だけを置く(写真は持ち込まない=本人の肖像を
+            番組側で決めない)。アカウントを公開している人は名前がリンクになる */}
+        {show.cast && show.cast.length > 0 && (
+          <div className="show-cast">
+            <p className="show-cast-label">出演</p>
+            <ul className="show-cast-list">
+              {show.cast.map((m) => (
+                <li key={m.name}>
+                  {m.href ? (
+                    m.href.startsWith('/') ? (
+                      <Link className="show-cast-name" href={m.href}>
+                        {m.name}
+                      </Link>
+                    ) : (
+                      <a
+                        className="show-cast-name"
+                        href={m.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {m.name}
+                      </a>
+                    )
+                  ) : (
+                    <span className="show-cast-name">{m.name}</span>
+                  )}
+                  <span className="show-cast-role">{m.role}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         {/* 配信先(番組単位)。設定された分だけ */}
         <PlatformLinks platforms={show.platforms} />

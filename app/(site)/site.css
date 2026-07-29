@@ -1404,6 +1404,77 @@ html[data-theme='dark'] .contact-pill:hover {
   color: var(--faint);
 }
 
+/* 出演者(2026-07-29): 銘板の下に名前と担当だけ。写真は持ち込まない。
+   Aboutの「担当」「舞台」行と同じ、小さなラベル+中身の文法 */
+.show-cast {
+  margin-top: 30px;
+}
+
+.show-cast-label {
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  color: var(--faint);
+}
+
+.show-cast-list {
+  margin-top: 14px;
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px 34px;
+}
+
+/* 担当の長さは人によって違う(制作側は長く、出演だけの人は短い)。
+   列幅を揃えて長い担当は折り返す=名前が一直線に並ぶ */
+.show-cast-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 150px;
+}
+
+.show-cast-name {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* アカウントを公開している人だけ罫が付く(=リンクの有無が見て分かる) */
+a.show-cast-name {
+  border-bottom: 1px solid var(--ghost);
+  padding-bottom: 3px;
+}
+
+a.show-cast-name:hover {
+  border-bottom-color: var(--body);
+}
+
+.show-cast-role {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  line-height: 2;
+  text-align: center;
+  color: var(--faint);
+  /* 「ディレクショ/ン」のような語中改行を防ぐ(折り返しは中黒で起きる) */
+  word-break: keep-all;
+}
+
+/* スマホ: 縦積みにすると出演者だけで画面が埋まり、配信先(主要動線)が
+   遠くなる。列を細くして横並びのまま収める */
+@media (max-width: 560px) {
+  .show-cast-list {
+    gap: 18px 12px;
+  }
+
+  .show-cast-list li {
+    width: 96px;
+  }
+}
+
 /* エピソードヘッド右側の所属バッジ(ORIGINAL / WORKS — 制作参加) */
 .head-affiliation {
   font-size: 9px;

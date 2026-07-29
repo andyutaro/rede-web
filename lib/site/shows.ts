@@ -21,6 +21,16 @@ export type ShowPlace = {
   note?: string // BrandShift: ビデオ通話で繋いで収録
 }
 
+// 番組の出演者(2026-07-29 Andy)。番組名で検索して来た人の最初の問いは
+// 「誰の声か」なのに、ページに人が一人も出ていなかった。識別部の銘板の下に
+// 名前と担当だけを置く。写真は持ち込まない(本人の肖像を番組側で決めない)。
+// hrefは本人が公開しているアカウント等。無ければ名前は素のまま出る
+export type ShowCastMember = {
+  name: string
+  role: string // アングラー / 漁師 / プロデュース・ディレクション・編集・出演
+  href?: string
+}
+
 export type Show = {
   slug: string
   name: string
@@ -51,6 +61,8 @@ export type Show = {
   heroVideo?: string
   // 番組の舞台(番組ページの識別部とAboutのPLACES節に出す)
   place?: ShowPlace
+  // 出演者(番組ページの識別部。並び順のまま出す)
+  cast?: ShowCastMember[]
   // 番組から派生して制作されたプロダクト(2026-07-25 Andy指定)。
   // articles(type=physical)のIDを、この並び順のまま番組ページのPRODUCTS節に出す
   products?: string[]
@@ -64,7 +76,18 @@ export const SHOWS: Show[] = [
     group: 'original',
     feed: 'https://anchor.fm/s/1039cb824/podcast/rss',
     heroVideo: '/bg/sakanakaigi-school',
-    place: { ja: '宮城県女川町', coords: '38°27′N 141°27′E' },
+    place: {
+      ja: '宮城県女川町',
+      coords: '38°27′N 141°27′E',
+      // 制作の実態(2026-07-29 Andy)。舞台が遠いことは番組の性質そのもの
+      note: '毎月、北海道から通って収録',
+    },
+    // 出演者(2026-07-29 Andy)。ユウスケ・リュウタの個人アカウントURLは未取得
+    cast: [
+      { name: 'Andy', role: 'プロデュース・ディレクション・編集・出演', href: '/about' },
+      { name: 'ユウスケ', role: 'アングラー・出演' },
+      { name: 'リュウタ', role: '漁師・出演' },
+    ],
     // MADNESSタイアップルアー(2026-07-25 Andy指定)
     products: ['00d06869-b0b8-40b3-a06b-0dbf8d7ef145'],
     platforms: {
