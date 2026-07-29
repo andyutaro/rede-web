@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { sanitizeNodes } from '@/lib/scribe/liveClient'
-import { applyAnnotations, anchorFromSelection } from '@/lib/site/annotate'
+import { applyAnnotations, anchorFromSelection, type Anchor } from '@/lib/site/annotate'
 import { upgradeEmbeds } from '@/lib/site/upgradeEmbeds'
 import Linkified from '../Linkified'
 import type { Annotation, AnnotationTarget } from '@/lib/site/annotations'
@@ -43,7 +43,11 @@ export default function ScribeArchive({
     x: number
     y: number
   } | null>(null)
-  const [pick, setPick] = useState<{ x: number; y: number } | null>(null)
+  // 選択した瞬間にアンカーを確保しておく(2026-07-29 Andy報告の修正)。
+  // クリック時に選択範囲を読み直す設計だと、選択が消えた後にボタンだけ残り
+  // 「範囲を選択してください」になる(タップで選択が解除される・再描画で
+  // 選択の土台ごと差し替わる等、選択が消える経路はいくつもある)。
+  const [pick, setPick] = useState<{ x: number; y: number; anchor: Anchor } | null>(null)
   const [busy, setBusy] = useState(false)
 
   // 本文の注入(+注釈の適用)。annotationsが変わったら貼り直す
@@ -94,8 +98,12 @@ export default function ScribeArchive({
         const sel = window.getSelection()
         if (!sel || sel.isCollapsed || sel.rangeCount === 0) return setPick(null)
         if (!root.contains(sel.getRangeAt(0).commonAncestorContainer)) return setPick(null)
+        // ここでアンカーを確保する。取れない選択(本文外・既存注釈との重なり)には
+        // そもそもボタンを出さない=押してから断るより静か
+        const res = anchorFromSelection(root)
+        if ('error' in res) return setPick(null)
         const r = sel.getRangeAt(0).getBoundingClientRect()
-        setPick({ x: r.left, y: r.bottom })
+        setPick({ x: r.left, y: r.bottom, anchor: res.anchor })
       }, 10)
     }
     document.addEventListener('mouseup', onUp)
@@ -106,18 +114,12 @@ export default function ScribeArchive({
     }
   }, [canEdit])
 
-  const startDraft = useCallback(() => {
-    const root = ref.current
-    if (!root) return
-    const res = anchorFromSelection(root)
-    if ('error' in res) {
-      window.alert(res.error)
-      return
-    }
+  // 選択時に確保したアンカーを使う(クリック時に選択を読み直さない)
+  const startDraft = useCallback((anchor: Anchor) => {
     setPick(null)
     setOpen(null)
     setDraft({
-      ...res.anchor,
+      ...anchor,
       body: '',
       x: window.innerWidth / 2 - 150,
       y: window.innerHeight / 2 - 80,
@@ -265,7 +267,7 @@ export default function ScribeArchive({
           className="anno-add"
           style={{ left: clamp(pick.x, 76), top: Math.min(pick.y + 8, window.innerHeight - 48) }}
           onMouseDown={(e) => e.preventDefault()}
-          onClick={startDraft}
+          onClick={() => startDraft(pick.anchor)}
         >
           注釈
         </button>

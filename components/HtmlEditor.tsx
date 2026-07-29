@@ -150,14 +150,18 @@ export default function HtmlEditor({
       if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file
       try {
         const bmp = await createImageBitmap(file)
-        const MAX = 2000
+        // 保存する上限辺(2026-07-29に2000→1600へ)。表示側の最大はIMG_W.photo=1280
+        // (本文幅640のRetina想定)なので1600で十分な余裕がある。Storage無料枠1GBの
+        // 消費ペースを落とすための縮小(既存ファイルは変えない=新規アップロードから効く)
+        const MAX = 1600
         const scale = Math.min(1, MAX / Math.max(bmp.width, bmp.height))
-        if (scale >= 1 && file.size < 1.5 * 1024 * 1024) return file
+        // 素通しの閾値も下げる(1.5MB→500KB)=大きい画像はほぼ必ず再圧縮を通す
+        if (scale >= 1 && file.size < 500 * 1024) return file
         const canvas = document.createElement('canvas')
         canvas.width = Math.round(bmp.width * scale)
         canvas.height = Math.round(bmp.height * scale)
         canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height)
-        const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.85))
+        const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.82))
         return blob && blob.size < file.size ? blob : file
       } catch {
         return file
