@@ -1747,20 +1747,28 @@ a.show-cast-name:hover {
 }
 
 /* この回への便り(ORIGINALのみ、2026-07-20)。無彩色下線リンクの文法 */
+/* おたより(番組ページ「番組へのおたよりを送る」/ エピソードページ「この回への便り」)。
+   2026-07-29 Andy指摘: 細い下線+--mutの文字では初見の人に見えず、
+   ミニマルではなく埋没だった。サイトが既に持っている「押せるもの」の文法=
+   細枠ピル(.show-playall / membership-cta)に揃える。すぐ上に並ぶ連続再生と
+   兄弟に見えるのは正しい——どちらも番組への入口だから。 */
 .ep-letter {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 34px;
+  border: 1px solid var(--ghost);
+  border-radius: 999px;
+  padding: 10px 22px;
   font-size: 11px;
   letter-spacing: 0.14em;
-  color: var(--mut);
-  border-bottom: 1px solid var(--dot);
-  padding-bottom: 3px;
-  transition: color 0.2s, border-color 0.2s;
+  color: var(--body);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
 .ep-letter:hover {
+  border-color: var(--ink);
   color: var(--ink);
-  border-color: var(--mut);
 }
 
 /* この頃のscribe(ORIGINALのみ): 制作の裏面への扉 */
@@ -1803,6 +1811,46 @@ a.show-cast-name:hover {
 .podcast-fold .show-role {
   margin-top: 0;
   text-align: left;
+}
+
+/* SHOW NOTES / ROLE の開閉(2026-07-29 Andy指摘)。
+   ラベルが--mut・記号が--faint・罫が--dotで、初見の人には「開けるもの」だと
+   分からなかった。番組ページとエピソードページに限って一段持ち上げる
+   (About/Contactのアコーディオンは文脈が違うので触らない=.podcast-foldで限定)。
+   足すのは色ではなく輪郭: 記号を丸で囲んでボタンだと分かる形にし、
+   ラベルと罫を一段濃くする。 */
+.podcast-fold .accordion,
+.podcast-fold .accordion:first-child {
+  border-color: var(--ghost);
+}
+
+.podcast-fold .accordion-head {
+  color: var(--body);
+  padding: 22px 2px;
+}
+
+.podcast-fold .accordion-label {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+}
+
+.podcast-fold .accordion-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ghost);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--body);
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.podcast-fold .accordion-head:hover .accordion-mark {
+  border-color: var(--ink);
+  color: var(--ink);
 }
 
 .episode-notes > div {
