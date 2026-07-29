@@ -3065,14 +3065,19 @@ html[data-theme='dark'] .contact-pill:hover {
 
 /* ---- 注釈(2026-07-28 Andy指定): 本文のレイアウトを一切動かさない。
    引用範囲に細い下線を引くだけ→タップで小さく開く。うるさくならない ---- */
+/* 注釈が引かれた箇所(2026-07-28 Andy指定): 青+下線。
+   「彩色はLIVE赤のみ」の2つ目の例外だが、赤(=いま生きている)と用途が
+   混ざらない色を選んでいる。段落をまたぐ注釈はspanが複数に分かれるが、
+   同じdata-anno-idを持つので見た目も挙動も一つに揃う */
 .anno {
-  border-bottom: 1px solid var(--dot);
+  color: var(--anno);
+  border-bottom: 1px solid var(--anno);
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: opacity 0.2s;
 }
 
 .anno:hover {
-  border-color: var(--mut);
+  opacity: 0.7;
 }
 
 /* 開いている間の受け皿(外側をタップで閉じる。暗幕は張らない=静かに開く) */

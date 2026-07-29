@@ -102,14 +102,19 @@ export default function ScribeArchive({
   const startDraft = useCallback(() => {
     const root = ref.current
     if (!root) return
-    const anchor = anchorFromSelection(root)
-    if (!anchor) {
-      window.alert('注釈は一つの段落の中で選んでください')
+    const res = anchorFromSelection(root)
+    if ('error' in res) {
+      window.alert(res.error)
       return
     }
     setPick(null)
     setOpen(null)
-    setDraft({ ...anchor, body: '', x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 80 })
+    setDraft({
+      ...res.anchor,
+      body: '',
+      x: window.innerWidth / 2 - 150,
+      y: window.innerHeight / 2 - 80,
+    })
   }, [])
 
   async function save() {
