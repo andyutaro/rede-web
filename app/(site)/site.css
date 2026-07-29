@@ -3108,6 +3108,19 @@ html[data-theme='dark'] .contact-pill:hover {
   line-height: 2;
   color: var(--body);
   white-space: pre-wrap;
+  /* 長いURLが枠から飛び出していた(2026-07-28 Andy指摘)。どこでも折り返す */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* 注釈の中のリンク(本文のリンクと同じ無彩色下線の作法) */
+.anno-pop-body a {
+  color: var(--body);
+  border-bottom: 1px solid var(--dot);
+}
+
+.anno-pop-body a:hover {
+  border-color: var(--mut);
 }
 
 .anno-pop-acts,

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { sanitizeNodes } from '@/lib/scribe/liveClient'
 import { applyAnnotations, anchorFromSelection } from '@/lib/site/annotate'
+import { upgradeEmbeds } from '@/lib/site/upgradeEmbeds'
+import Linkified from '../Linkified'
 import type { Annotation, AnnotationTarget } from '@/lib/site/annotations'
 import { dateTimeParts } from '@/lib/site/text'
 
@@ -48,6 +50,9 @@ export default function ScribeArchive({
     const root = ref.current
     if (!root) return
     root.replaceChildren(...sanitizeNodes(html))
+    // 単独で貼られた埋め込み可能URLを再生カードへ(スマホ経由で素のリンクのまま
+    // 入った分の救済。注釈の適用より先に行い、注釈がiframeを包まないようにする)
+    upgradeEmbeds(root)
     if (annotations.length > 0) applyAnnotations(root, annotations)
 
     const m = window.location.hash.match(/^#p=(.+)$/)
@@ -201,7 +206,11 @@ export default function ScribeArchive({
             }}
             role="note"
           >
-            <p className="anno-pop-body">{open.a.body}</p>
+            {/* 注釈の中のURLはリンクとして機能させる(2026-07-28 Andy指摘)。
+                長いURLは枠から溢れていたのでCSS側で折り返す */}
+            <p className="anno-pop-body">
+              <Linkified text={open.a.body} />
+            </p>
             {/* いつ書き込んだか(2026-07-28 Andy指定)。注釈は「後から重ねた層」なので、
                 いつの追記かが分かることに意味がある */}
             {(() => {
