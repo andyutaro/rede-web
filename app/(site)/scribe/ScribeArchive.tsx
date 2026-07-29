@@ -8,6 +8,7 @@ import { upgradeEmbeds } from '@/lib/site/upgradeEmbeds'
 import Linkified from '../Linkified'
 import type { Annotation, AnnotationTarget } from '@/lib/site/annotations'
 import { dateTimeParts } from '@/lib/site/text'
+import { serverBodyHtml } from '@/lib/site/serverBody'
 
 // 確定アーカイブの本文表示。ライブと同じホワイトリスト・サニタイザを通す
 // (アーカイブは確定テキストなのでキャレット・差分適用は不要)。
@@ -192,7 +193,15 @@ export default function ScribeArchive({
 
   return (
     <>
-      <div className="scribe-html scribe-archive-body" ref={ref} />
+      {/* サーバー描画にも本文のテキストを出す(2026-07-29)。JSを実行しない読み手
+          (AIクローラー・テキスト抽出・エージェント)に空ページとして見えていたため。
+          マウント後にリッチ版へ差し替わるので、人が見る画面は変わらない。
+          serverBodyHtmlは属性を出さず全てエスケープする=XSSの余地がない */}
+      <div
+        className="scribe-html scribe-archive-body"
+        ref={ref}
+        dangerouslySetInnerHTML={{ __html: serverBodyHtml(html) }}
+      />
 
       {/* 注釈の中身(humbleなポップアップ) */}
       {open && (

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import LiveFull from './LiveFull'
+import { isRecentlyWritten } from '@/lib/site/serverBody'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,14 +15,17 @@ export default async function LivePage() {
   const service = createService()
   const { data } = await service
     .from('scribe_days')
-    .select('html')
+    .select('html, updated_at')
     .eq('date', today)
     .maybeSingle()
+
+  const recentlyWritten = isRecentlyWritten(data?.updated_at as string | null)
 
   return (
     <div className="measure">
       <LiveFull
         relay={process.env.SCRIBE_RELAY_URL ?? null}
+        recentlyWritten={recentlyWritten}
         today={today}
         initialHtml={data?.html || null}
       />

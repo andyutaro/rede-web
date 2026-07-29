@@ -3,24 +3,28 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { connectLive, patchInto, sanitizeNodes } from '@/lib/scribe/liveClient'
+import { serverBodyHtml, bodyCharCount } from '@/lib/site/serverBody'
 
 type Props = {
   relay: string | null
   today: string // YYYY-MM-DD (東京)
   // DB上の当日行のHTML。null=当日未執筆(idle起点)。
   initialHtml: string | null
+  // サーバー側で分かる「直近に書かれたか」(2026-07-29)。接続後は中継の値が上書きする
+  recentlyWritten?: boolean
 }
 
 type Mode = 'live' | 'away' | 'idle'
 
 // Homeの「窓」(handoff-notes §3): 全文ではなく執筆点だけを映す。
 // 高さ390px固定・下端追従・上端130pxフェード。ページ全体の高さは執筆量に関わらず不変。
-export default function LiveWindow({ relay, today, initialHtml }: Props) {
+export default function LiveWindow({ relay, today, initialHtml, recentlyWritten = false }: Props) {
   const viewRef = useRef<HTMLDivElement>(null)
   const caretRef = useRef<HTMLElement | null>(null)
-  const [presence, setPresence] = useState<'live' | 'away'>('away')
+  const [presence, setPresence] = useState<'live' | 'away'>(recentlyWritten ? 'live' : 'away')
   const [hasContent, setHasContent] = useState(Boolean(initialHtml))
-  const [charCount, setCharCount] = useState(0)
+  // 字数はサーバー描画でも実数を出す(0字に見えていた)
+  const [charCount, setCharCount] = useState(() => bodyCharCount(initialHtml))
 
   useEffect(() => {
     const view = viewRef.current
@@ -85,7 +89,12 @@ export default function LiveWindow({ relay, today, initialHtml }: Props) {
       <div className="section-body">
         <div className={`scribe-window ${mode}`}>
           {mode === 'idle' && <div className="scribe-idle-date">{dateLabel}</div>}
-          <div className="scribe-window-inner scribe-html" ref={viewRef} />
+          {/* サーバー描画にも本文を出す(2026-07-29)。マウント後にリッチ版へ差し替わる */}
+          <div
+            className="scribe-window-inner scribe-html"
+            ref={viewRef}
+            dangerouslySetInnerHTML={{ __html: serverBodyHtml(initialHtml) }}
+          />
         </div>
         {mode !== 'idle' && (
           <div className="scribe-window-foot">

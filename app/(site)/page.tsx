@@ -3,6 +3,7 @@ import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { recentUpdates } from '@/lib/site/updates'
 import { randomPhotoWithHref } from '@/lib/site/photos'
+import { isRecentlyWritten } from '@/lib/site/serverBody'
 import { SHOWS } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import CoverGrid from './CoverGrid'
@@ -49,7 +50,7 @@ export default async function Home() {
   const service = createService()
 
   const [todayRes, updates, photo, covers] = await Promise.all([
-    service.from('scribe_days').select('html').eq('date', today).maybeSingle(),
+    service.from('scribe_days').select('html, updated_at').eq('date', today).maybeSingle(),
     recentUpdates(10, true, true), // Home: ミニマル表記+scribeは当日分のみ(2026-07-20)
     // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
     randomPhotoWithHref(),
@@ -63,6 +64,7 @@ export default async function Home() {
   ])
 
   const initialHtml = todayRes.data?.html || null
+  const recentlyWritten = isRecentlyWritten(todayRes.data?.updated_at as string | null)
 
   // 背景波形+ランダム再生はlayoutへ移設(全ページ共通、2026-07-13)。Homeは通常のmeasure構成に戻す
   // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
@@ -98,6 +100,7 @@ export default async function Home() {
         relay={process.env.SCRIBE_RELAY_URL ?? null}
         today={today}
         initialHtml={initialHtml}
+        recentlyWritten={recentlyWritten}
       />
 
       {/* 見出しはPhotographyのまま存続(§11: Homeの統一感を優先する司令塔決定)。

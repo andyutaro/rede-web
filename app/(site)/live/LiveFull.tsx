@@ -2,18 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { connectLive, patchInto, sanitizeNodes } from '@/lib/scribe/liveClient'
+import { serverBodyHtml } from '@/lib/site/serverBody'
 
 type Props = {
   relay: string | null
   today: string
   initialHtml: string | null
+  // サーバー側で分かる「直近に書かれたか」(2026-07-29)。中継に繋がる前と、
+  // JSを実行しない読み手にとっての初期表示に使う。接続後は中継の値が上書きする
+  recentlyWritten?: boolean
 }
 
 // 当日ライブ全文ページ(/watch後継)の本文。ページ全体がスクロールし、
 // 追従中は執筆点(最下部)に張り付く。読み返し中に打鍵が来たらチップで知らせる。
-export default function LiveFull({ relay, today, initialHtml }: Props) {
+export default function LiveFull({ relay, today, initialHtml, recentlyWritten = false }: Props) {
   const viewRef = useRef<HTMLDivElement>(null)
-  const [presence, setPresence] = useState<'live' | 'away'>('away')
+  const [presence, setPresence] = useState<'live' | 'away'>(recentlyWritten ? 'live' : 'away')
   const [hasContent, setHasContent] = useState(Boolean(initialHtml))
   const [chipVisible, setChipVisible] = useState(false)
   const [chipPulse, setChipPulse] = useState(0)
@@ -106,7 +110,13 @@ export default function LiveFull({ relay, today, initialHtml }: Props) {
       </div>
       <div className="section-body">
         {mode === 'idle' && <div className="live-full-idle">{dateLabel}</div>}
-        <div className={`scribe-html live-full-body ${mode}`} ref={viewRef} />
+        {/* サーバー描画にも本文を出す(2026-07-29)。JSを実行しない読み手に
+            空ページとして見えていたため。マウント後にリッチ版へ差し替わる */}
+        <div
+          className={`scribe-html live-full-body ${mode}`}
+          ref={viewRef}
+          dangerouslySetInnerHTML={{ __html: serverBodyHtml(initialHtml) }}
+        />
       </div>
       <button
         type="button"
