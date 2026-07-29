@@ -3171,11 +3171,20 @@ html[data-theme='dark'] .contact-pill:hover {
   resize: vertical;
 }
 
-/* 注釈を書いた日時(2026-07-28 Andy指定)。本文より一段沈めて添える */
+/* 注釈を書いた日時(2026-07-28 Andy指定)。本文より一段沈めて右下に添える。
+   日付と時刻は間隔を明確に開ける(「…28 21:34」と続けると一連の数字に見えるため) */
 .anno-pop-date {
-  margin: 10px 0 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.2em;
+  margin: 12px 0 0;
   font-size: 9px;
   letter-spacing: 0.14em;
   color: var(--faint);
   font-variant-numeric: tabular-nums;
+}
+
+/* 時刻は字間を詰めて「時刻の塊」として読ませる(日付と組みを変えて見分ける) */
+.anno-pop-time {
+  letter-spacing: 0.04em;
 }

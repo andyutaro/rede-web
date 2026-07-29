@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { sanitizeNodes } from '@/lib/scribe/liveClient'
 import { applyAnnotations, anchorFromSelection } from '@/lib/site/annotate'
 import type { Annotation, AnnotationTarget } from '@/lib/site/annotations'
-import { dateTimeDots } from '@/lib/site/text'
+import { dateTimeParts } from '@/lib/site/text'
 
 // 確定アーカイブの本文表示。ライブと同じホワイトリスト・サニタイザを通す
 // (アーカイブは確定テキストなのでキャレット・差分適用は不要)。
@@ -184,9 +184,15 @@ export default function ScribeArchive({
             <p className="anno-pop-body">{open.a.body}</p>
             {/* いつ書き込んだか(2026-07-28 Andy指定)。注釈は「後から重ねた層」なので、
                 いつの追記かが分かることに意味がある */}
-            {open.a.createdAt && (
-              <p className="anno-pop-date">{dateTimeDots(open.a.createdAt)}</p>
-            )}
+            {(() => {
+              const dt = dateTimeParts(open.a.createdAt)
+              return dt ? (
+                <p className="anno-pop-date">
+                  <span>{dt.date}</span>
+                  <span className="anno-pop-time">{dt.time}</span>
+                </p>
+              ) : null
+            })()}
             {canEdit && (
               <div className="anno-pop-acts">
                 <button

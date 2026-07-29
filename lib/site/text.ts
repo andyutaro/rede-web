@@ -57,14 +57,17 @@ const TOKYO_DT = new Intl.DateTimeFormat('ja-JP', {
   minute: '2-digit',
   hour12: false,
 })
-export function dateTimeDots(iso: string): string {
+// 日付と時刻を分けて返す。並べ方(間隔・右寄せ)は表示側のCSSが決める
+// ——「2026.07.28 21:34」と続けて書くと日と時が一連の数字に見えるため(Andy指摘)
+export function dateTimeParts(iso: string): { date: string; time: string } | null {
   try {
     const p = Object.fromEntries(
       TOKYO_DT.formatToParts(new Date(iso)).map((x) => [x.type, x.value])
     )
-    return `${p.year}.${p.month}.${p.day} ${p.hour}:${p.minute}`
+    if (!p.year) return null
+    return { date: `${p.year}.${p.month}.${p.day}`, time: `${p.hour}:${p.minute}` }
   } catch {
-    return ''
+    return null
   }
 }
 
