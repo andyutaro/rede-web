@@ -3057,10 +3057,15 @@ html[data-theme='dark'] .contact-pill:hover {
   }
 }
 
-/* 「同じ頃」(2026-07-28): 日付を鍵に他の棚の仕事を出す窓。
-   本文とPagerの間に静かに挟む(見出しは持たせず小さなキャプションのみ) */
+/* 「同じ頃の作品」(2026-07-28): 日付を鍵に他の棚の仕事を出す窓。
+   Photography一覧と同じ正方形グリッド(.grid4 + .ep-cell-label)を使う。
+   本文とPagerの間に挟むので、棚ページの節間(150px)より詰める */
 .same-period {
-  margin-top: 64px;
+  margin-top: 90px;
+}
+
+.same-period .section-body {
+  margin-top: 40px;
 }
 
 /* ---- 注釈(2026-07-28 Andy指定): 本文のレイアウトを一切動かさない。
