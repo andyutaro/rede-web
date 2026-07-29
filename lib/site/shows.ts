@@ -63,6 +63,10 @@ export type Show = {
   place?: ShowPlace
   // 出演者(番組ページの識別部。並び順のまま出す)
   cast?: ShowCastMember[]
+  // 番組の言葉(2026-07-29 Andy)。RSSのchannel説明はアコーディオンに畳まれていて
+  // 番組が何であるかが最初に出てこない。Andy自身の過去の文章を短く畳んだ紹介を
+  // 識別部の頭に置く。改行はそのまま出す(white-space: pre-line)
+  intro?: string
   // 番組から派生して制作されたプロダクト(2026-07-25 Andy指定)。
   // articles(type=physical)のIDを、この並び順のまま番組ページのPRODUCTS節に出す
   products?: string[]
@@ -80,13 +84,18 @@ export const SHOWS: Show[] = [
       ja: '宮城県女川町',
       coords: '38°27′N 141°27′E',
       // 制作の実態(2026-07-29 Andy)。舞台が遠いことは番組の性質そのもの
-      note: '毎月、北海道から通って収録',
+      note: '1〜1.5ヶ月に一度、北海道から通って収録',
     },
-    // 出演者(2026-07-29 Andy)。ユウスケ・リュウタの個人アカウントURLは未取得
+    // 番組の言葉(2026-07-29): Andyの過去の投稿を本人の語のまま短く畳んだもの
+    intro:
+      'アングラーのユウスケ、漁師のリュウタ、Andyの3人によるサカナのクロストーク。\n' +
+      '「何について喋ろう」だけ決めて、あとはほぼ即興で録る。自主制作。',
+    // 出演者(2026-07-29 Andy)。担当は肩書き一語に揃える(制作側の列挙は
+    // 押し付けがましくなる、というAndyの指摘)
     cast: [
-      { name: 'Andy', role: 'プロデュース・ディレクション・編集・出演', href: '/about' },
-      { name: 'ユウスケ', role: 'アングラー・出演' },
-      { name: 'リュウタ', role: '漁師・出演' },
+      { name: 'Andy', role: 'ポッドキャスター', href: 'https://www.instagram.com/andyutaro/' },
+      { name: 'ユウスケ', role: 'アングラー', href: 'https://www.instagram.com/yusuke_shore.ltd/' },
+      { name: 'リュウタ', role: '漁師', href: 'https://www.instagram.com/suzuryu0721/' },
     ],
     // MADNESSタイアップルアー(2026-07-25 Andy指定)
     products: ['00d06869-b0b8-40b3-a06b-0dbf8d7ef145'],

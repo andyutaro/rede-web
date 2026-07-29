@@ -214,6 +214,9 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             ユニークネスを、座標付きの銘板一行で記す(地図・彩色は使わない)。
             水を持つ番組でも水の外=紙の上に置く(マスクのフェード上では明色文字が
             沈むため。図版の下のマットに打たれた銘板の位置) */}
+        {/* 番組の言葉(2026-07-29 Andy): 何の番組かが最初に出てこなかった
+            (SHOW NOTESは畳まれている)。水の外=紙の上に置く */}
+        {show.intro && <p className="show-intro">{show.intro}</p>}
         {show.place && (
           <>
             <p className="show-place">

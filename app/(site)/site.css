@@ -1374,6 +1374,23 @@ html[data-theme='dark'] .contact-pill:hover {
   color: var(--faint);
 }
 
+/* 番組の言葉(2026-07-29): 識別部の頭に置く番組そのものの紹介。
+   SHOW NOTES(RSSのchannel説明)より短く、本文より一段静かに。
+   改行はAndyの指定どおり保つ */
+.show-intro {
+  margin: 30px auto 0;
+  /* 1文が1行に収まる幅(狭い画面では素直に折り返す) */
+  max-width: 40em;
+  font-size: 13px;
+  line-height: 2.3;
+  letter-spacing: 0.06em;
+  color: var(--body);
+  white-space: pre-line;
+  text-align: center;
+  /* 行末に1文字だけ残るのを避ける */
+  text-wrap: pretty;
+}
+
 /* 番組の舞台(2026-07-25): 識別部の最後に場所と座標の銘板一行。
    各地に根ざした制作というユニークネスを、地図・彩色なしの活字だけで立てる。
    水を持つ番組でも水の外=紙の上(フェード上では明色文字が沈むため) */
