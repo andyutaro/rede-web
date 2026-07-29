@@ -17,6 +17,7 @@ const TABS = [
   { key: 'article', label: 'ARTICLE' },
   { key: 'scribe', label: 'SCRIBE' },
   { key: 'physical', label: 'PHYSICAL' },
+  { key: 'event', label: 'EVENTS' },
   { key: 'pages', label: 'PAGES' },
   { key: 'thumbnails', label: 'THUMBNAILS' },
   { key: 'trash', label: 'TRASH' },
@@ -45,9 +46,10 @@ export default async function StudioNotes({
 
   let body: React.ReactNode = null
 
-  if (tab === 'article' || tab === 'physical') {
-    const type = tab === 'article' ? 'article' : 'physical'
-    const editorBase = tab === 'article' ? '/studio/notes' : '/studio/physical'
+  if (tab === 'article' || tab === 'physical' || tab === 'event') {
+    const type = tab
+    const editorBase =
+      tab === 'article' ? '/studio/notes' : tab === 'physical' ? '/studio/physical' : '/studio/events'
     const [{ data: articles }, pool] = await Promise.all([
       supabase
         .from('articles')
@@ -66,7 +68,13 @@ export default async function StudioNotes({
           rows={articleRows(articles ?? [], editorBase, pool)}
           mode="active"
           endpoint="/api/article/delete"
-          emptyText={tab === 'article' ? '記事がまだありません' : '作品がまだありません'}
+          emptyText={
+            tab === 'article'
+              ? '記事がまだありません'
+              : tab === 'event'
+                ? '催しがまだありません'
+                : '作品がまだありません'
+          }
         />
       </>
     )

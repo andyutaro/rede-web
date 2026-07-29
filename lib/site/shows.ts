@@ -70,6 +70,9 @@ export type Show = {
   // 番組から派生して制作されたプロダクト(2026-07-25 Andy指定)。
   // articles(type=physical)のIDを、この並び順のまま番組ページのPRODUCTS節に出す
   products?: string[]
+  // その番組の催し(2026-07-29 Andy)。articles(type=event)のIDを、この並び順のまま
+  // 番組ページのEVENTS節に出す。番組の「今」は番組の家にあるべき、という判断
+  events?: string[]
 }
 
 export const SHOWS: Show[] = [

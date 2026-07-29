@@ -909,6 +909,31 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* 催しの開催日(2026-07-29)。EVENTS室だけに出る */
+.studio-event-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #7c7870;
+}
+
+.studio-event-date input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d8d4cc;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 2px;
+}
+
+.studio-event-date input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
 /* 写真の小さな説明の入力 */
 .studio-description {
   width: 100%;

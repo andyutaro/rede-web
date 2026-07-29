@@ -49,9 +49,12 @@ function publicUrl(path: string): string {
 
 // 記事typeから公開棚のパスを導く「唯一の対応表」。
 // 新しいtype(棚)を足すときはここだけ直せばHomeのリンクも自動で追従する。
-// article→/notes、それ以外はtype名がそのまま棚(/photography /physical …)。
+// article→/notes、event→/events(棚だけ複数形)、
+// それ以外はtype名がそのまま棚(/photography /physical …)。
 export function shelfPathForType(type: string): string {
-  return type === 'article' ? '/notes' : `/${type}`
+  if (type === 'article') return '/notes'
+  if (type === 'event') return '/events'
+  return `/${type}`
 }
 
 // 本文HTMLから、scribe-mediaの画像URLを列挙する(<img src>のみ。動画・PDFは除く)。

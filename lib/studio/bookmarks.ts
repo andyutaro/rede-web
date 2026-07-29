@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { htmlToPlainText } from '@/lib/site/text'
+import { shelfPathForType } from '@/lib/site/photos'
 
 // ブックマーク室の心臓部(2026-07-27)。
 // - scanBookmarks: scribe/記事の本文を走査し、外部リンクをbookmarksテーブルへ同期する。
@@ -13,7 +14,7 @@ const OWN_HOST_RE =
   /(^|\.)andyutaro\.com$|(^|\.)workers\.dev$|supabase\.co$|rede-relay\.onrender\.com$|^localhost$/i
 
 export type BookmarkSource = {
-  kind: 'scribe' | 'article' | 'photography' | 'physical'
+  kind: 'scribe' | 'article' | 'photography' | 'physical' | 'event'
   label: string
   href: string
   date: string // YYYY-MM-DD
@@ -117,18 +118,25 @@ export async function scanBookmarks(service: SupabaseClient): Promise<{
     article: 'article',
     photography: 'photography',
     physical: 'physical',
+    event: 'event',
+  }
+  // 下書き時の編集画面(部屋)。公開側の棚パスはshelfPathForTypeが唯一の出所
+  const STUDIO_ROOM: Record<string, string> = {
+    photography: '/studio/photography',
+    physical: '/studio/physical',
+    event: '/studio/events',
   }
   for (const a of arts ?? []) {
     if (a.deleted_at || !a.html) continue
     const kind = SHELF[a.type as string] ?? 'article'
     const date = String(a.published_at ?? a.created_at ?? '').slice(0, 10)
     const published = Boolean(a.published_at)
-    const shelf = a.type === 'article' ? 'notes' : (a.type as string)
+    const room = STUDIO_ROOM[a.type as string] ?? '/studio/notes'
     collect(a.html as string, {
       kind,
       label: ((a.title as string) || '').trim() || '(無題)',
       // 公開済みは公開ページへ、下書きはstudioの編集画面へ
-      href: published ? `/${shelf}/${a.id}` : `/studio/notes/${a.id}`,
+      href: published ? `${shelfPathForType(a.type as string)}/${a.id}` : `${room}/${a.id}`,
       date: date || '1970-01-01',
     })
   }

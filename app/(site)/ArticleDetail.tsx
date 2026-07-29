@@ -12,13 +12,22 @@ import { isEditor } from '@/lib/supabase/editor'
 // 本文はscribeと同じSSOT(生HTML)なので、同じサニタイザ・同じ本文スタイルで描画する。
 // 戻る・進むは同じ棚の中だけを渡り歩く。
 
-type Shelf = 'notes' | 'photography' | 'physical'
+type Shelf = 'notes' | 'photography' | 'physical' | 'events'
 
-// 棚⇔type対応(typeがarticle以外はtype名=棚名)
+// 棚⇔type対応(typeがarticle以外はtype名=棚名。eventsだけは棚が複数形)
 const SHELF_LABEL: Record<Shelf, string> = {
   notes: 'NOTES',
   photography: 'PHOTOGRAPHY',
   physical: 'PHYSICAL',
+  events: 'EVENTS',
+}
+
+// 棚名からDBのtypeへ(notes=article、events=event、他は同名)
+const SHELF_TYPE: Record<Shelf, string> = {
+  notes: 'article',
+  photography: 'photography',
+  physical: 'physical',
+  events: 'event',
 }
 
 // UUID以外はDBに問い合わせない(不正パスの早期404)
@@ -41,6 +50,7 @@ export async function loadPublishedArticle(id: string) {
 function shelfOf(type: string): Shelf {
   if (type === 'photography') return 'photography'
   if (type === 'physical') return 'physical'
+  if (type === 'event') return 'events'
   return 'notes'
 }
 
@@ -58,8 +68,8 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
   const service = createService()
   const shelfQuery = () => {
     const q = service.from('articles').select('id, title').eq('status', 'published')
-    // notes棚=type article。photography/physicalはtype名がそのまま棚
-    return shelf === 'notes' ? q.eq('type', 'article') : q.eq('type', shelf)
+    // 棚名とDBのtypeは一致しないものがある(notes=article、events=event)
+    return q.eq('type', SHELF_TYPE[shelf])
   }
   const [prevRes, nextRes] = await Promise.all([
     a.published_at
@@ -105,7 +115,9 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
               ? ((a.photo_kind as string | null) ?? 'photolog').toUpperCase()
               : a.type === 'physical'
                 ? 'PHYSICAL'
-                : 'ARTICLE'}
+                : a.type === 'event'
+                  ? 'EVENT'
+                  : 'ARTICLE'}
           </h2>
           {date && <span className="article-date">{dateDots(date)}</span>}
         </div>

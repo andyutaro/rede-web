@@ -23,6 +23,7 @@ const STATIC_PATHS = [
   '/notes',
   '/photography',
   '/physical',
+  '/events',
   '/membership',
   '/contact',
   '/privacy',
@@ -84,6 +85,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     article: '/notes',
     photography: '/photography',
     physical: '/physical',
+    event: '/events',
   }
   for (const a of articleRes.data ?? []) {
     if (a.status !== 'published' || !a.published_at || a.deleted_at) continue

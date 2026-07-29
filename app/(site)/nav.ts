@@ -13,6 +13,9 @@ export const NAV = [
   { label: 'Photography', href: '/photography' },
   // Physical=物理的な作品のアーカイブ棚(2026-07-12)
   { label: 'Physical', href: '/physical' },
+  // Events=これまでに開いた催しの記録(2026-07-29 Andy指定)。
+  // 棚のかたまり(Updates〜Physical)の最後に置き、場所→棚→関係の並びを保つ
+  { label: 'Events', href: '/events' },
   // Membership=rooomの援護導線(2026-07-13、旧andyutaro.comから移植)
   { label: 'Membership', href: '/membership' },
   // Contact=旧andyutaro.comの受注装置を移植(2026-07-12)

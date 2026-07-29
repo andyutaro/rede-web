@@ -9,7 +9,7 @@ import { fetchShowFeed } from './podcastFeed'
 // Article/Photographyはラベルのみ。labelが無ければkindを大文字表示。
 export type UpdateRow = {
   date: string // YYYY-MM-DD
-  kind: 'scribe' | 'Article' | 'Photography' | 'Physical' | 'Podcast' | 'News'
+  kind: 'scribe' | 'Article' | 'Photography' | 'Physical' | 'Event' | 'Podcast' | 'News'
   label?: string // ラベル列の表示を上書き(Podcast=番組名など)
   excerpt?: string // タイトル列
   href: string // 空文字=リンクなし(手動投稿でリンク先を持たない行)
@@ -110,7 +110,9 @@ export async function recentUpdates(
           ? { kind: 'Photography' as const, label: 'PHOTOGRAPHY', excerpt: `『${clipped}』`, href: `/photography/${a.id}` }
           : type === 'physical'
             ? { kind: 'Physical' as const, label: 'PHYSICAL', excerpt: `『${clipped}』`, href: `/physical/${a.id}` }
-            : { kind: 'Article' as const, label: 'NOTES', excerpt: `ARTICLE『${clipped}』`, href: `/notes/${a.id}` }
+            : type === 'event'
+              ? { kind: 'Event' as const, label: 'EVENTS', excerpt: `『${clipped}』`, href: `/events/${a.id}` }
+              : { kind: 'Article' as const, label: 'NOTES', excerpt: `ARTICLE『${clipped}』`, href: `/notes/${a.id}` }
       rows.push({
         date: tokyoYmd(a.published_at as string),
         ...row,

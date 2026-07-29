@@ -16,9 +16,10 @@ type Props = {
     updatedAt: string | null
     photoKind?: 'artwork' | 'photolog' // photographyの下位区分
     description?: string // 写真の小さな説明
+    eventDate?: string // 催しの開催日(YYYY-MM-DD、eventのみ)
   }
-  // typeは部屋で決まる(編集画面での選択は廃止。部屋=Articles/Photography/Physical)
-  fixedType: 'article' | 'photography' | 'physical'
+  // typeは部屋で決まる(編集画面での選択は廃止。部屋=Articles/Photography/Physical/Events)
+  fixedType: 'article' | 'photography' | 'physical' | 'event'
   // 部屋のベースパス(/studio/articles | /studio/photography)。URL書き換えとゴミ箱後の戻り先
   basePath: string
   // 既存タグの語彙(頻度降順)。TagPickerのサジェスト源
@@ -36,6 +37,9 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
   // photographyの区分と小さな説明(NotesのARTICLE/SCRIBE同様の下位区分、2026-07-11)
   const [photoKind, setPhotoKind] = useState<'artwork' | 'photolog'>(article.photoKind ?? 'photolog')
   const [description, setDescription] = useState(article.description ?? '')
+  // 催しの開催日(2026-07-29)。催しは記録した日ではなく開催した日に属するので、
+  // eventだけは日付を書き手が決める(空なら保存時の現在時刻=従来どおり)
+  const [eventDate, setEventDate] = useState(article.eventDate ?? '')
   const [message, setMessage] = useState('')
 
   // 保存パイプはrefで持つ(打鍵ごとのstate更新でエディタを再レンダーしない)
@@ -46,9 +50,9 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
   const savingRef = useRef(false)
   // フィールドの現在値をrefにも写す(タイマー発火時に古いclosureを掴まないため)。
   // 入力中の未確定タグ(tagDraftRef)も保存に含める(確定し忘れて閉じても失わない)
-  const fieldsRef = useRef({ title, status, tags, photoKind, description })
+  const fieldsRef = useRef({ title, status, tags, photoKind, description, eventDate })
   useEffect(() => {
-    fieldsRef.current = { title, status, tags, photoKind, description }
+    fieldsRef.current = { title, status, tags, photoKind, description, eventDate }
   })
 
   async function doSave(rebased = false) {
@@ -71,6 +75,7 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
           tags,
           photoKind: fixedType === 'photography' ? f.photoKind : null,
           description: fixedType !== 'article' ? f.description : '',
+          eventDate: fixedType === 'event' && f.eventDate ? f.eventDate : null,
           baseUpdatedAt: baseUpdatedAtRef.current,
         }),
       })
@@ -127,7 +132,7 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
     }
     schedule()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, status, tags, photoKind, description])
+  }, [title, status, tags, photoKind, description, eventDate])
 
   useEffect(() => {
     return () => {
@@ -163,6 +168,19 @@ export default function ArticleForm({ article, fixedType, basePath, tagVocabular
         aria-label="タイトル"
       />
       <div className="studio-meta">
+        {/* 催しの開催日(2026-07-29): 過去の催しを後から記録するので、
+            公開日ではなく開催日を書き手が入れる。空なら従来どおり公開時刻 */}
+        {fixedType === 'event' && (
+          <label className="studio-event-date">
+            開催日
+            <input
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              aria-label="開催日"
+            />
+          </label>
+        )}
         {fixedType === 'photography' && (
           <div className="studio-kind-switch" role="radiogroup" aria-label="区分">
             {(['artwork', 'photolog'] as const).map((k) => (

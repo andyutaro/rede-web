@@ -76,7 +76,8 @@ async function starterIds(slug: string): Promise<Set<string>> {
 
 // 番組から派生したプロダクト(2026-07-25 Andy指定): shows.tsのproducts
 // (physical記事ID)を、指定の並び順のまま引く。サムネイル解決は
-// Physical棚と同一(manual > 本文の最初の画像 > 充当=グレースケール)
+// Physical棚と同一(manual > 本文の最初の画像 > 充当=グレースケール)。
+// 催し(type=event)の紐づけも同じ形なのでこの関数を共有する(2026-07-29)
 type ProductCell = { id: string; title: string; date: string; thumb: string | null; assigned: boolean }
 
 async function productCells(ids?: string[]): Promise<ProductCell[]> {
@@ -113,10 +114,11 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
   if (!show || !show.feed) notFound()
 
   const isOriginal = show.group === 'original'
-  const [feed, starters, products] = await Promise.all([
+  const [feed, starters, products, events] = await Promise.all([
     fetchShowFeed(show.feed, show.since),
     starterIds(slug),
     productCells(show.products),
+    productCells(show.events),
   ])
 
   const episodes = feed?.episodes ?? []
@@ -370,6 +372,45 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
           </section>
         )
 
+        // その番組の催し(2026-07-29 Andy指定): 番組の「今」は番組の家にあるべき。
+        // PRODUCTSと同じ2列・同じラベル文法(棚名+タイトル+日付)。日付は開催日
+        const eventsSection = events.length > 0 && (
+          <section className="section" key="events">
+            <div className="section-head">
+              <h2>EVENTS — これまでの催し</h2>
+            </div>
+            <div className="section-body grid2">
+              {events.map((item) => (
+                <div key={item.id}>
+                  <Link
+                    href={`/events/${item.id}`}
+                    className="sq"
+                    aria-label={`EVENTS ${item.title} ${dateShort(item.date)}`}
+                  >
+                    {item.thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imgThumb(item.thumb, IMG_W.product)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className={item.assigned ? 'thumb-assigned' : undefined}
+                      />
+                    ) : (
+                      <span className="empty-cell" />
+                    )}
+                  </Link>
+                  <div className="ep-cell-label">
+                    <span className="ep-show">EVENTS</span>
+                    <span className="ep-title">{item.title}</span>
+                    <span className="ep-date">{dateShort(item.date)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+
         // ROLE: 番組カタログがポートフォリオを兼ねる(旧サイト移植)。文言未設定なら出さない
         const role = show.role && (
           <section className="section" key="role">
@@ -384,6 +425,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
           <>
             {starters}
             {productsSection}
+            {eventsSection}
             {role}
           </>
         ) : (
@@ -391,6 +433,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             {role}
             {starters}
             {productsSection}
+            {eventsSection}
           </>
         )
       })()}

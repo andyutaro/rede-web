@@ -8,6 +8,10 @@ import { createClient } from '@/lib/supabase/server'
 //
 // published_atは「最初にpublishedになった時刻」で固定し、以後の編集・再公開では
 // 動かさない。Updatesの「新しく生まれたものだけが1回だけ流れる」原則がこれで守られる。
+//
+// 例外はtype=eventだけ(2026-07-29): 催しは「記録した日」ではなく「開催した日」に
+// 属する。過去の催しを後から記録するので、eventに限りeventDate(YYYY-MM-DD)で
+// published_atを指定できる。棚の並び・「同じ頃」・パンくずがすべて開催日で揃う。
 export async function POST(request: Request) {
   const supabase = await createClient()
   const {
@@ -24,6 +28,7 @@ export async function POST(request: Request) {
     tags?: string[]
     photoKind?: string | null // photographyの下位区分(artwork/photolog)
     description?: string // 写真の小さな説明(photographyで使用)
+    eventDate?: string | null // 催しの開催日(YYYY-MM-DD、eventでのみ有効)
     baseUpdatedAt?: string | null
   }
   try {
@@ -36,7 +41,8 @@ export async function POST(request: Request) {
   if (
     typeof body.title !== 'string' ||
     typeof body.html !== 'string' ||
-    !['article', 'photography', 'physical'].includes(body.type ?? '') ||
+    !['article', 'photography', 'physical', 'event'].includes(body.type ?? '') ||
+    (body.eventDate != null && !/^\d{4}-\d{2}-\d{2}$/.test(body.eventDate)) ||
     !['draft', 'published'].includes(body.status ?? '') ||
     !Array.isArray(body.tags) ||
     body.tags.some((t) => typeof t !== 'string') ||
@@ -48,6 +54,9 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString()
+  // 催しの開催日。日付だけ渡ってくるので東京の正午に置く(日付境界でずれないため)
+  const eventAt =
+    body.type === 'event' && body.eventDate ? `${body.eventDate}T12:00:00+09:00` : null
   const fields = {
     title: body.title,
     html: body.html,
@@ -64,7 +73,10 @@ export async function POST(request: Request) {
   if (!id) {
     const { data, error } = await supabase
       .from('articles')
-      .insert({ ...fields, published_at: body.status === 'published' ? now : null })
+      .insert({
+        ...fields,
+        published_at: body.status === 'published' ? (eventAt ?? now) : null,
+      })
       .select('id, updated_at')
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -82,7 +94,13 @@ export async function POST(request: Request) {
 
   const patch = {
     ...fields,
-    ...(body.status === 'published' && !current.published_at ? { published_at: now } : {}),
+    // eventだけは開催日を後から直せる(告知の日付を間違えたまま固定されると困る)。
+    // それ以外は従来どおり「最初にpublishedになった時刻」で固定
+    ...(eventAt
+      ? { published_at: eventAt }
+      : body.status === 'published' && !current.published_at
+        ? { published_at: now }
+        : {}),
   }
 
   const { data, error } = await supabase

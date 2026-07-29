@@ -1,6 +1,6 @@
 import { createService } from '@/lib/supabase/service'
 import { cachedJson } from '@/lib/site/edgeCache'
-import { assignedOf, listAllImages } from '@/lib/site/photos'
+import { assignedOf, listAllImages, shelfPathForType } from '@/lib/site/photos'
 import { SHOWS } from './shows'
 import { fetchShowFeed } from './podcastFeed'
 import { firstImageSrc, scribeTitle, tokyoYmd } from './text'
@@ -95,10 +95,17 @@ async function buildIndex(): Promise<SamePeriodItem[]> {
     const type = a.type as string
     const date = tokyoYmd(a.published_at as string)
     const { thumb, assigned } = resolveThumb(a, pool, a.id as string)
-    const shelf = type === 'photography' ? 'photography' : type === 'physical' ? 'physical' : 'notes'
+    // 棚の対応表はphotos.tsのshelfPathForTypeが唯一の出所(2026-07-29)
+    const shelf = shelfPathForType(type)
     const label =
-      type === 'photography' ? 'PHOTOGRAPHY' : type === 'physical' ? 'PHYSICAL' : 'NOTES'
-    items.push({ date, label, title, href: `/${shelf}/${a.id}`, thumb, assigned })
+      type === 'photography'
+        ? 'PHOTOGRAPHY'
+        : type === 'physical'
+          ? 'PHYSICAL'
+          : type === 'event'
+            ? 'EVENTS'
+            : 'NOTES'
+    items.push({ date, label, title, href: `${shelf}/${a.id}`, thumb, assigned })
   }
 
   for (const m of manual ?? []) {

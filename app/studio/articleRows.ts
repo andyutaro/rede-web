@@ -7,6 +7,7 @@ import { assignedOf } from '@/lib/site/photos'
 export function studioShelfPath(type: string): string {
   if (type === 'photography') return '/studio/photography'
   if (type === 'physical') return '/studio/physical'
+  if (type === 'event') return '/studio/events'
   return '/studio/notes'
 }
 
