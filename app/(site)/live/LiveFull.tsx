@@ -22,6 +22,8 @@ export default function LiveFull({ relay, today, initialHtml, recentlyWritten = 
   const [chipVisible, setChipVisible] = useState(false)
   const [chipPulse, setChipPulse] = useState(0)
   const followingRef = useRef(true)
+  // サーバー描画用の本文は消さずに隠す(同じ器にinnerHTMLを残すと再描画で潰れる)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const view = viewRef.current
@@ -51,6 +53,7 @@ export default function LiveFull({ relay, today, initialHtml, recentlyWritten = 
 
     function apply(html: string, scroll: boolean) {
       patchInto(view!, sanitizeNodes(html), caret)
+      setReady(true)
       setHasContent(true)
       if (scroll && followingRef.current) scrollToLatest()
     }
@@ -110,13 +113,14 @@ export default function LiveFull({ relay, today, initialHtml, recentlyWritten = 
       </div>
       <div className="section-body">
         {mode === 'idle' && <div className="live-full-idle">{dateLabel}</div>}
-        {/* サーバー描画にも本文を出す(2026-07-29)。JSを実行しない読み手に
-            空ページとして見えていたため。マウント後にリッチ版へ差し替わる */}
+        {/* ①サーバー描画用(JSを実行しない読み手向け)。JSが描いたら隠す */}
         <div
-          className={`scribe-html live-full-body ${mode}`}
-          ref={viewRef}
+          className={`scribe-html live-full-body ${mode}${ready ? ' is-ssr-hidden' : ''}`}
+          aria-hidden={ready || undefined}
           dangerouslySetInnerHTML={{ __html: serverBodyHtml(initialHtml) }}
         />
+        {/* ②クライアントが書く器(innerHTMLを持たせない) */}
+        <div className={`scribe-html live-full-body ${mode}`} ref={viewRef} />
       </div>
       <button
         type="button"

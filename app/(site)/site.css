@@ -3206,3 +3206,11 @@ html[data-theme='dark'] .contact-pill:hover {
 .anno-pop-time {
   letter-spacing: 0.04em;
 }
+
+/* サーバー描画用の本文(2026-07-29): JSが本文を描いたら隠す。
+   **消さずに隠す**のが要点——同じ器にdangerouslySetInnerHTMLを残すと、
+   再描画のたびにReactがそれを貼り直してリッチ版(空行・注釈・画像)を潰す。
+   器を2つに分け、クライアントが書く器にはinnerHTMLを一切持たせない */
+.is-ssr-hidden {
+  display: none;
+}

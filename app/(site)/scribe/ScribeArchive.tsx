@@ -49,12 +49,18 @@ export default function ScribeArchive({
   // 選択の土台ごと差し替わる等、選択が消える経路はいくつもある)。
   const [pick, setPick] = useState<{ x: number; y: number; anchor: Anchor } | null>(null)
   const [busy, setBusy] = useState(false)
+  // JSが本文を描き終えたか(2026-07-29)。サーバー描画用の本文は「消さずに隠す」。
+  // 同じ要素にdangerouslySetInnerHTMLを付けたままにすると、再描画のたびにReactが
+  // それを貼り直してリッチ版(空行・注釈・画像)を潰す(Andy報告のバグ)。
+  // 器を2つに分け、クライアントが書く器にはinnerHTMLを一切持たせない
+  const [ready, setReady] = useState(false)
 
   // 本文の注入(+注釈の適用)。annotationsが変わったら貼り直す
   useEffect(() => {
     const root = ref.current
     if (!root) return
     root.replaceChildren(...sanitizeNodes(html))
+    setReady(true)
     // 単独で貼られた埋め込み可能URLを再生カードへ(スマホ経由で素のリンクのまま
     // 入った分の救済。注釈の適用より先に行い、注釈がiframeを包まないようにする)
     upgradeEmbeds(root)
@@ -195,15 +201,17 @@ export default function ScribeArchive({
 
   return (
     <>
-      {/* サーバー描画にも本文のテキストを出す(2026-07-29)。JSを実行しない読み手
-          (AIクローラー・テキスト抽出・エージェント)に空ページとして見えていたため。
-          マウント後にリッチ版へ差し替わるので、人が見る画面は変わらない。
-          serverBodyHtmlは属性を出さず全てエスケープする=XSSの余地がない */}
+      {/* ①サーバー描画用の本文(2026-07-29)。JSを実行しない読み手(AIクローラー・
+          テキスト抽出・エージェント)に空ページとして見えていたため。
+          serverBodyHtmlは属性を出さず全てエスケープする=XSSの余地がない。
+          JSが本文を描いたら**消さずに隠す**(Reactがここを貼り直しても実害がない) */}
       <div
-        className="scribe-html scribe-archive-body"
-        ref={ref}
+        className={`scribe-html scribe-archive-body${ready ? ' is-ssr-hidden' : ''}`}
+        aria-hidden={ready || undefined}
         dangerouslySetInnerHTML={{ __html: serverBodyHtml(html) }}
       />
+      {/* ②クライアントが書く器。innerHTMLを一切持たせない=Reactが中身に触れない */}
+      <div className="scribe-html scribe-archive-body" ref={ref} />
 
       {/* 注釈の中身(humbleなポップアップ) */}
       {open && (

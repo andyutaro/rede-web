@@ -25,6 +25,8 @@ export default function LiveWindow({ relay, today, initialHtml, recentlyWritten 
   const [hasContent, setHasContent] = useState(Boolean(initialHtml))
   // 字数はサーバー描画でも実数を出す(0字に見えていた)
   const [charCount, setCharCount] = useState(() => bodyCharCount(initialHtml))
+  // サーバー描画用の本文は消さずに隠す(同じ器にinnerHTMLを残すと再描画で潰れる)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const view = viewRef.current
@@ -38,6 +40,7 @@ export default function LiveWindow({ relay, today, initialHtml, recentlyWritten 
     // 内容が更新されるたびに文字数を数え直す(空白・改行は数えない)
     function apply(html: string) {
       patchInto(view!, sanitizeNodes(html), caret)
+      setReady(true)
       setCharCount((view!.textContent ?? '').replace(/\s+/g, '').length)
       setHasContent(true)
     }
@@ -89,12 +92,14 @@ export default function LiveWindow({ relay, today, initialHtml, recentlyWritten 
       <div className="section-body">
         <div className={`scribe-window ${mode}`}>
           {mode === 'idle' && <div className="scribe-idle-date">{dateLabel}</div>}
-          {/* サーバー描画にも本文を出す(2026-07-29)。マウント後にリッチ版へ差し替わる */}
+          {/* ①サーバー描画用(JSを実行しない読み手向け)。JSが描いたら隠す */}
           <div
-            className="scribe-window-inner scribe-html"
-            ref={viewRef}
+            className={`scribe-window-inner scribe-html${ready ? ' is-ssr-hidden' : ''}`}
+            aria-hidden={ready || undefined}
             dangerouslySetInnerHTML={{ __html: serverBodyHtml(initialHtml) }}
           />
+          {/* ②クライアントが書く器(innerHTMLを持たせない) */}
+          <div className="scribe-window-inner scribe-html" ref={viewRef} />
         </div>
         {mode !== 'idle' && (
           <div className="scribe-window-foot">
