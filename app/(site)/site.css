@@ -3170,3 +3170,12 @@ html[data-theme='dark'] .contact-pill:hover {
   padding: 10px;
   resize: vertical;
 }
+
+/* 注釈を書いた日時(2026-07-28 Andy指定)。本文より一段沈めて添える */
+.anno-pop-date {
+  margin: 10px 0 0;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}

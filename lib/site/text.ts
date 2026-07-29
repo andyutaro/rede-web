@@ -46,6 +46,28 @@ export function dateDots(isoDate: string): string {
   return isoDate.replaceAll('-', '.')
 }
 
+// 注釈に添える日時(2026-07-28): 「2026.07.28 21:34」。東京基準。
+// 注釈は「後から書き込んだもの」なので、いつの追記かが分かることに意味がある
+const TOKYO_DT = new Intl.DateTimeFormat('ja-JP', {
+  timeZone: 'Asia/Tokyo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+export function dateTimeDots(iso: string): string {
+  try {
+    const p = Object.fromEntries(
+      TOKYO_DT.formatToParts(new Date(iso)).map((x) => [x.type, x.value])
+    )
+    return `${p.year}.${p.month}.${p.day} ${p.hour}:${p.minute}`
+  } catch {
+    return ''
+  }
+}
+
 // scribeにはタイトルが無いため、当日の日付から一意なタイトルを自動導出する。
 // 「2026-07-06」→「20260706」。scribeのタイトルはサイト全体でこのパターン。
 export function scribeTitle(isoDate: string): string {

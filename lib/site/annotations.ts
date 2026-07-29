@@ -9,6 +9,7 @@ export type Annotation = {
   startOffset: number
   quote: string
   body: string
+  createdAt: string
 }
 
 export type AnnotationTarget = { kind: 'scribe' | 'article'; key: string }
@@ -19,7 +20,7 @@ export async function loadAnnotations(target: AnnotationTarget): Promise<Annotat
     const service = createService()
     const { data, error } = await service
       .from('annotations')
-      .select('id, block_id, start_offset, quote, body, deleted_at')
+      .select('id, block_id, start_offset, quote, body, created_at, deleted_at')
       .eq('target_kind', target.kind)
       .eq('target_key', target.key)
       .order('created_at', { ascending: true })
@@ -32,6 +33,7 @@ export async function loadAnnotations(target: AnnotationTarget): Promise<Annotat
         startOffset: (a.start_offset as number) ?? 0,
         quote: (a.quote as string) ?? '',
         body: (a.body as string) ?? '',
+        createdAt: (a.created_at as string) ?? '',
       }))
   } catch {
     return []
