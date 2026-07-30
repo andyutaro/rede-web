@@ -40,7 +40,9 @@ export default function PlaceMap({
   if (points.length === 0) return null
   const m = view === 'world' ? WORLD : JAPAN
   const path = view === 'world' ? WORLD_PATH : JAPAN_PATH
-  const w = width ?? (view === 'world' ? 560 : 168)
+  // 番組ページの既定幅。縦横比を正しくした結果、地図が短くなって余裕が出たので
+  // 168→200へ(2026-07-30)。赤い点が小さすぎて目に入らなかった
+  const w = width ?? (view === 'world' ? 560 : 200)
   const h = Math.round((w * m.h) / m.w)
   // 点の大きさは図の大きさに従わせる(世界地図では小さく、日本地図では大きく)
   const r = view === 'world' ? 3.4 : 4.6
