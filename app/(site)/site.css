@@ -1724,9 +1724,14 @@ a.show-cast-name:hover {
   gap: 10px;
 }
 
+/* ボタンの形は1種類に絞る(2026-07-29 Andy「レイアウトが散らかってきている」)。
+   同じ画面に角の四角(配信先)と丸のピル(連続再生・おたより)が混ざっていて、
+   押せるものの語彙が2つあった。全て細枠ピルに統一し、階層は**大きさ**で付ける
+   (配信先=10px・小、番組への行動=11px・大)。形が1つなら並んでも散らからない */
 .platform-btn {
   display: inline-block;
   border: 1px solid var(--dot);
+  border-radius: 999px;
   padding: 9px 18px;
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -1752,6 +1757,25 @@ a.show-cast-name:hover {
    ミニマルではなく埋没だった。サイトが既に持っている「押せるもの」の文法=
    細枠ピル(.show-playall / membership-cta)に揃える。すぐ上に並ぶ連続再生と
    兄弟に見えるのは正しい——どちらも番組への入口だから。 */
+/* 番組への行動(連続再生・おたより)は1行にまとめる(2026-07-29)。
+   縦に積むと幅の違うピルが段違いに並んで中央列がギザギザになっていた。
+   横に並べれば1つの群として読める。狭い画面では素直に折り返す */
+.show-actions {
+  margin-top: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 群の中では個々の余白を持たない(親が余白を決める) */
+.show-actions > .show-playall,
+.show-actions > .ep-letter,
+.show-actions > * > .ep-letter {
+  margin-top: 0;
+}
+
 .ep-letter {
   display: inline-flex;
   align-items: center;

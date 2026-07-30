@@ -144,26 +144,31 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
           {/* この回への便り(継続中のORIGINALのみ、2026-07-20): コメント欄は置かない(ソロ運営)。
               contactフォームに回のタイトルを焼き込んだ最小の私信の口。
               終了番組(ミモリラジオ等)は宛先が無いため出さない */}
-          {isOriginal && !show.ended && (
-            <Link
-              className="ep-letter"
-              href={`/contact?show=${show.slug}&ep=${encodeURIComponent(`${show.display ?? show.name}『${ep.title}』`)}`}
-            >
-              この回への便りを送る →
-            </Link>
-          )}
-          {/* 番組専用の外部おたよりフォームを持つ番組(ON-AIRDO等、2026-07-20):
-              サイト内フォームではなく番組自身のフォームへ送る */}
-          {show.otayoriUrl && (
-            <a
-              className="ep-letter"
-              href={show.otayoriUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              番組へのおたよりを送る →
-            </a>
-          )}
+          {/* 番組ページと同じ「行動の群」に入れる(2026-07-29 統一)。
+              エピソードページの行動は便り1つだが、器を共有すると
+              番組ページと同じ位置・同じ余白に着地する */}
+          <div className="show-actions">
+            {isOriginal && !show.ended && (
+              <Link
+                className="ep-letter"
+                href={`/contact?show=${show.slug}&ep=${encodeURIComponent(`${show.display ?? show.name}『${ep.title}』`)}`}
+              >
+                この回への便りを送る →
+              </Link>
+            )}
+            {/* 番組専用の外部おたよりフォームを持つ番組(ON-AIRDO等、2026-07-20):
+                サイト内フォームではなく番組自身のフォームへ送る */}
+            {show.otayoriUrl && (
+              <a
+                className="ep-letter"
+                href={show.otayoriUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                番組へのおたよりを送る →
+              </a>
+            )}
+          </div>
         </div>
         {/* ショーノートとROLEはアコーディオン格納(2026-07-10、デフォルト閉)。
             タイトル・プレイヤー・配信先は畳まない(格納するのは長文だけ) */}

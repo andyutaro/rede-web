@@ -261,30 +261,32 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             </ul>
           </div>
         )}
-        {/* 配信先(番組単位)。設定された分だけ */}
-        <PlatformLinks platforms={show.platforms} />
-        {/* この番組だけの連続再生(全番組共通)。選ばずに聴き始められる入口 */}
-        <ShowPlayAll episodes={playable} />
-        {/* 番組へのおたより(2026-07-25 Andy指定): 継続中のORIGINALはサイト内の
-            おたよりフォームへ(エピソードページ「この回への便り」の番組版)。
-            専用フォームを持つ番組は下の外部ボタンが担うため出さない */}
-        {isOriginal && !show.ended && !show.otayoriUrl && (
-          <div>
+        {/* 配信先(番組単位)。設定された分だけ。
+            小さなラベルで括るのはエピソードページと同じ文法(2026-07-29 統一) */}
+        {show.platforms && (
+          <div className="episode-listen">
+            <div className="listen-caption">配信先で聴く</div>
+            <PlatformLinks platforms={show.platforms} />
+          </div>
+        )}
+        {/* 番組への行動は1行に(2026-07-29): 連続再生とおたよりは「この番組に
+            関わる」同じ性質なので、縦に積まず1つの群として横に並べる。
+            ・連続再生 = 選ばずに聴き始められる入口(全番組共通)
+            ・おたより = 継続中のORIGINALはサイト内フォーム、専用フォームを
+              持つ番組(ON-AIRDO等)は番組自身のフォームへ */}
+        <div className="show-actions">
+          <ShowPlayAll episodes={playable} />
+          {isOriginal && !show.ended && !show.otayoriUrl && (
             <Link className="ep-letter" href={`/contact?show=${show.slug}`}>
               番組へのおたよりを送る →
             </Link>
-          </div>
-        )}
-        {/* 番組専用の外部おたよりフォームを持つ番組(ON-AIRDO等、2026-07-20):
-            番組ページからも番組自身のフォームへ遷移できる。
-            連続再生ボタンと同じ行に並ばないようブロックで独立させる */}
-        {show.otayoriUrl && (
-          <div>
+          )}
+          {show.otayoriUrl && (
             <a className="ep-letter" href={show.otayoriUrl} target="_blank" rel="noopener noreferrer">
               番組へのおたよりを送る →
             </a>
-          </div>
-        )}
+          )}
+        </div>
         {/* ショーノート(channel説明)は長いのでアコーディオン格納(2026-07-10、デフォルト閉)。
             プレーンテキスト(改行保持)。外部由来なのでテキストとして描画し、
             中のURL・ドメイン表記だけLinkifiedでリンク化(2026-07-20、素のままだと全リンクが死ぬ) */}
