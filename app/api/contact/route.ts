@@ -35,7 +35,25 @@ function rateLimited(ip: string): boolean {
   return recent.length > RL_MAX
 }
 
+// 受け付ける本文の上限(2026-07-30 セキュリティ点検)。
+// name100 + email200 + message5000 + 宛先 で余裕を見ても16KBに収まる。
+// 長さ検証は本文を全部読んだ後なので、巨大なPOSTは読むだけでCPUを食う
+// (無料プランは10ms/リクエスト。ここが1102の入口になり得た)。
+// Content-Lengthで先に断り、詐称された場合も実測長で断る。
+const MAX_BODY = 16 * 1024
+
 export async function POST(request: Request) {
+  const declared = Number(request.headers.get('content-length') ?? '0')
+  if (declared > MAX_BODY) {
+    return NextResponse.json({ error: 'too large' }, { status: 413 })
+  }
+  // 他サイトのフォームからの誘発を防ぐ(2026-07-30)。ブラウザが必ず付ける
+  // OriginがGETの同一生成元と一致することを要求する。SameSite=Laxに
+  // 頼るだけでなく、土台をもう一枚置く
+  const origin = request.headers.get('origin')
+  if (origin && new URL(request.url).origin !== origin) {
+    return NextResponse.json({ error: 'bad origin' }, { status: 403 })
+  }
   const ip = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown'
   if (rateLimited(ip)) {
     return NextResponse.json(
@@ -46,7 +64,12 @@ export async function POST(request: Request) {
 
   let body: { name?: string; email?: string; topics?: string[]; message?: string; website?: string }
   try {
-    body = JSON.parse(await request.text())
+    const raw = await request.text()
+    // Content-Lengthは詐称できるので実測でも断る
+    if (raw.length > MAX_BODY) {
+      return NextResponse.json({ error: 'too large' }, { status: 413 })
+    }
+    body = JSON.parse(raw)
   } catch {
     return NextResponse.json({ error: 'invalid body' }, { status: 400 })
   }

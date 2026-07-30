@@ -21,10 +21,20 @@ const origin = (raw: string, wsOnly = false): string => {
 // 2026-07-25の初回CIビルドで欠落しライブ配信が全停止した事故の恒久対策。
 const relayUrl = process.env.SCRIBE_RELAY_URL ?? "wss://rede-relay.onrender.com";
 
+// Supabaseの公開オリジン。中継と同じ理由で既定値を持つ(2026-07-30):
+// ビルド環境にenvが無いとCSPからSupabaseが欠け、REST・画像が全部ブロックされる。
+// この値は全レスポンスのCSPヘッダとクライアントJSに載る公開値=秘密ではない。
+const SUPABASE_ORIGIN =
+  (supabaseUrl && origin(supabaseUrl)) || "https://amrjiefatrafawhygrvm.supabase.co";
+
+// 公開サイトのオリジン。lib/site/img.tsのCDN_BASEと必ず同じ値にする
+// (画像の変換URLがこのドメイン固定で作られるため)
+const SITE_ORIGIN = "https://andyutaro.com";
+
 const connectSrc = [
   "'self'",
-  supabaseUrl && origin(supabaseUrl), // https://xxx.supabase.co (REST/Auth)
-  supabaseUrl && origin(supabaseUrl, true), // wss://xxx.supabase.co (Realtime)
+  SUPABASE_ORIGIN, // https://xxx.supabase.co (REST/Auth)
+  SUPABASE_ORIGIN.replace(/^https:/, "wss:"), // wss://xxx.supabase.co (Realtime)
   relayUrl && origin(relayUrl), // scribe中継(https)
   relayUrl && origin(relayUrl, true), // scribe中継(wss=/ws/sub)
   "https://cloudflareinsights.com", // Web Analyticsビーコン送信先(2026-07-21)
@@ -55,8 +65,20 @@ const csp = [
   "default-src 'self'",
   `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline'", // next/font・インラインstyle属性
-  "img-src 'self' data: blob: https:", // RSS各CDN・Supabase Storage・lightbox(blob)
-  "media-src 'self' blob: https:", // podcast音源(各CDN)・Supabaseの動画
+  // img/mediaの`https:`(=どこへでも)を実際に使うホストだけに絞る(2026-07-30 点検)。
+  // script-srcの'unsafe-inline'はNextのnonce方式が全ページの動的レンダリングを
+  // 要求する(=ISRを捨ててCPUが増える。1102の再来)ため今回は外せない。
+  // そこで「万一スクリプトが注入されても外へ持ち出せない」側を締める:
+  // 画像は自ドメイン(cdn-cgiの変換込み)とSupabase Storageだけ。
+  // 本文写真・番組アートはすべて /cdn-cgi/image/ 経由=自ドメイン扱いなので足りる
+  // (実測: 全ページのimg srcは自ドメインとsupabase.coの2種のみ)。
+  // 本番オリジンを明示するのが必須(2026-07-30 検証で全画像が壊れた)。
+  // lib/site/img.tsのimgThumbは変換URLを`https://andyutaro.com/cdn-cgi/image/...`と
+  // **ドメイン固定の絶対URL**で作る(dev/併走環境でも変換済み画像を引くための設計)。
+  // 本番では'self'と同じだが、devではオリジンが違うので'self'に当たらない。
+  `img-src 'self' data: blob: ${SITE_ORIGIN} ${SUPABASE_ORIGIN}`,
+  // 音源はAnchorのenclosure(実体はcloudfrontへリダイレクト)。動画は自ドメイン
+  "media-src 'self' blob: https://anchor.fm https://d3ctxlq1ktw2nl.cloudfront.net",
   "font-src 'self' data:",
   `frame-src ${frameSrc}`,
   `connect-src ${connectSrc}`,
