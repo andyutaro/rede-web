@@ -8,10 +8,18 @@ import PlaceMap from '../PlaceMap'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // 全番組の舞台を1つの点の集合に畳む(2026-07-30)。白老は3番組が共有するので
-// 同じ座標は1点にまとめる=地図上で点が重なって濃くならないように
+// 同じ座標は1点にまとめる=地図上で点が重なって濃くならないように。
+//
+// 集約地図は**日本中心**にした(Andy「東京・宮城・僕のメイン拠点の北海道が
+// わかりにくいのが勿体無い。日本中心で修正して。NYを例外という扱いでいい」)。
+// 世界地図では日本の4点が数ピクセルに重なって1つの団子になり、
+// 「どこで作っているか」というこの節の主題が消えていた。
+// ニューヨークは例外として地図から外し、下の一行と番組ページの世界地図が担う。
 const ALL_PLACE_POINTS = Array.from(
   new Map(SHOWS.flatMap((s) => s.place?.points ?? []).map((p) => [`${p.lat},${p.lon}`, p])).values()
 )
+// 日本の点だけ(経度で切る)。地図の枠が日本なので、外の点は描いても見えない
+const JAPAN_PLACE_POINTS = ALL_PLACE_POINTS.filter((p) => p.lon > 100)
 
 // ISR: 番組カバーをRSSから引くため。文言編集は保存時にrevalidatePath('/about')で即反映
 export const revalidate = 1800
@@ -120,10 +128,10 @@ export default async function AboutPage() {
           <h2>PLACES</h2>
         </div>
         <div className="about-worldmap">
-          <PlaceMap points={ALL_PLACE_POINTS} view="world" width={640} />
+          <PlaceMap points={JAPAN_PLACE_POINTS} view="japan" width={300} labels />
           <p className="about-worldmap-note">
-            北海道と宮城から、ニューヨークまで。
-            <span>From Hokkaido and Miyagi, to New York.</span>
+            北海道と宮城から。ニューヨークへも、繋いで。
+            <span>From Hokkaido and Miyagi. And to New York, over a call.</span>
           </p>
         </div>
       </section>

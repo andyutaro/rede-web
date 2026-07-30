@@ -7,17 +7,20 @@ import { JAPAN, WORLD, JAPAN_PATH, WORLD_PATH, project, type GeoPoint } from '@/
 // サーバーコンポーネント。JSは1バイトも送らず、外部リクエストも増えない。
 // 海岸線はlib/site/geo.tsに焼き込んだ静的パス(実行時の計算は座標の投影だけ)。
 //
-// 彩色しない(サイトの原則)。線は紙の階調、**点だけが黒い**=「ここ」だけが目に入る。
-// 点は二重(黒い芯+細い輪)にして、線の集まりの中でも埋もれないようにする。
+// 点はLIVEの赤で明滅させる(2026-07-30 Andy指定)。サイトの彩色は「LIVE赤のみ」で、
+// この赤は「いま生きているものがそこにある」という一貫した意味を持つ——
+// 収録が今も続いている土地に同じ赤を打つのは、その語彙の正しい延長。
+// 明滅は2.8秒周期・波紋つきで、当日scribeのLIVEセルと同一(site.css)。
 export default function PlaceMap({
   points,
   view = 'japan',
   width,
   caption,
   link: linked = false,
+  labels = false,
 }: {
   points: GeoPoint[]
-  // japan=番組ページ(日本のどこか) / world=About・国を跨ぐ番組(地球のどこか)
+  // japan=番組ページ(日本のどこか) / world=国を跨ぐ番組(地球のどこか)
   view?: 'japan' | 'world'
   width?: number
   // 図の下に置く小さな見出し(任意)
@@ -26,25 +29,35 @@ export default function PlaceMap({
   // 呼ぶ側が明示する。点の数から推測すると、Aboutの集約地図で日本とNYが
   // たまたま2点に畳まれたときに繋いでしまう(2026-07-30に実際に出た)
   link?: boolean
+  // 点の横に地名を添える(Aboutの集約地図。番組ページは下に地名を書くので不要)
+  labels?: boolean
 }) {
   if (points.length === 0) return null
   const m = view === 'world' ? WORLD : JAPAN
   const path = view === 'world' ? WORLD_PATH : JAPAN_PATH
   const w = width ?? (view === 'world' ? 560 : 168)
   const h = Math.round((w * m.h) / m.w)
+  // 点の大きさは図の大きさに従わせる(世界地図では小さく、日本地図では大きく)
+  const r = view === 'world' ? 3.4 : 4.6
+
   // 表示サイズで見分けられない点は1つに畳む(2026-07-30)。
   // 世界地図では白老・北海道・女川・東京が数ピクセルに重なり、輪が団子になっていた。
-  // 「地球のどこか」を言う図なので、日本の中の差はここでは要らない
-  // (その差は番組ページの日本地図と、Aboutの一覧の「舞台」行が担う)
-  const merged: { x: number; y: number }[] = []
-  const minGap = (view === 'world' ? 3.4 : 4.6) * 4.4
-  for (const p of points.map((q) => project(q, m))) {
-    const near = merged.find((q) => Math.hypot(q.x - p.x, q.y - p.y) < minGap)
+  // 畳んだ点の名前は先に来たものを残す(白老と北海道はどちらも「北海道」)
+  const merged: { x: number; y: number; label?: string }[] = []
+  const minGap = r * 4.4
+  for (const p of points) {
+    const xy = project(p, m)
+    // 同じ名前の点は距離に関係なく1つにする(2026-07-30)。白老と北海道中央は
+    // 日本地図では25px離れていて畳まれず、「北海道」が2つ並んで出た
+    const near =
+      merged.find((q) => p.label != null && q.label === p.label) ??
+      merged.find((q) => Math.hypot(q.x - xy.x, q.y - xy.y) < minGap)
     if (near) {
-      near.x = (near.x + p.x) / 2
-      near.y = (near.y + p.y) / 2
+      near.x = (near.x + xy.x) / 2
+      near.y = (near.y + xy.y) / 2
+      near.label = near.label ?? p.label
     } else {
-      merged.push({ ...p })
+      merged.push({ ...xy, label: p.label })
     }
   }
   const xy = merged
@@ -56,9 +69,6 @@ export default function PlaceMap({
           Math.min(xy[0].y, xy[1].y) - Math.abs(xy[1].x - xy[0].x) * 0.18
         } ${xy[1].x} ${xy[1].y}`
       : null
-
-  // 点の大きさは図の大きさに従わせる(世界地図では小さく、日本地図では大きく)
-  const r = view === 'world' ? 3.4 : 4.6
 
   return (
     <figure className={`place-map ${view}`} style={{ width: w }}>
@@ -81,8 +91,15 @@ export default function PlaceMap({
         )}
         {xy.map((p, i) => (
           <g key={i}>
-            <circle cx={p.x} cy={p.y} r={r * 2.4} fill="none" stroke="var(--faint)" strokeWidth={0.9} />
-            <circle cx={p.x} cy={p.y} r={r} fill="var(--ink)" />
+            {/* 波紋 → 輪 → 芯 の順に重ねる(芯が一番前) */}
+            <circle className="pm-ripple" cx={p.x} cy={p.y} r={r} />
+            <circle className="pm-ring" cx={p.x} cy={p.y} r={r * 2.2} />
+            <circle className="pm-core" cx={p.x} cy={p.y} r={r} />
+            {labels && p.label && (
+              <text className="pm-label" x={p.x + r * 3.2} y={p.y + r * 0.9}>
+                {p.label}
+              </text>
+            )}
           </g>
         ))}
       </svg>

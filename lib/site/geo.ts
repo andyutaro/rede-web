@@ -12,7 +12,8 @@
 //   経度180度をまたぐ環は分割済み(繋ぐと地図を横断する直線が出る)
 // - 彩色しない。線は紙の階調、点だけが黒い=「ここ」だけが目に入る
 
-export type GeoPoint = { lat: number; lon: number }
+// labelはAboutの集約地図で点に添える短い地名(任意)
+export type GeoPoint = { lat: number; lon: number; label?: string }
 
 // 投影の枠。パスはこの枠で生成済みなので、変えるならパスも作り直すこと
 export const JAPAN = { box: [128, 30.5, 146.5, 46] as const, w: 320, h: 420 }

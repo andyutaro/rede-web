@@ -22,8 +22,10 @@ export type Platforms = {
 export type ShowPlace = {
   ja: string // 宮城県女川町
   en: string // Onagawa, Miyagi, Japan
-  // 地図に打つ点。BrandShiftのように国を跨ぐ番組は2点(細い弧で結ばれる)
-  points: { lat: number; lon: number }[]
+  // 地図に打つ点。BrandShiftのように国を跨ぐ番組は2点(細い弧で結ばれる)。
+  // labelはAboutの集約地図に添える短い地名(2026-07-30 Andy「東京・宮城・北海道が
+  // わかりにくいのが勿体無い」)。番組ページは下に地名を書くので使わない
+  points: { lat: number; lon: number; label?: string }[]
   // 世界地図で見せる番組(国を跨ぐもの)。既定は日本地図
   view?: 'japan' | 'world'
   note?: string // BrandShift: ビデオ通話で繋いで収録
@@ -96,7 +98,7 @@ export const SHOWS: Show[] = [
     place: {
       ja: '宮城県女川町',
       en: 'Onagawa, Miyagi, Japan',
-      points: [{ lat: 38.446, lon: 141.446 }],
+      points: [{ lat: 38.446, lon: 141.446, label: '宮城' }],
       // 制作の実態(2026-07-29 Andy)。舞台が遠いことは番組の性質そのもの
       note: '1ヶ月に一度、通って収録',
     },
@@ -139,7 +141,7 @@ export const SHOWS: Show[] = [
     place: {
       ja: '北海道白老町',
       en: 'Shiraoi, Hokkaido, Japan',
-      points: [{ lat: 42.533, lon: 141.35 }],
+      points: [{ lat: 42.533, lon: 141.35, label: '北海道' }],
     },
     // Ecce Planta / mimori Herbal Bathsalt / ZINE(2026-07-25 Andy指定の3つ)
     products: [
@@ -170,7 +172,7 @@ export const SHOWS: Show[] = [
     place: {
       ja: '北海道白老町',
       en: 'Shiraoi, Hokkaido, Japan',
-      points: [{ lat: 42.533, lon: 141.35 }],
+      points: [{ lat: 42.533, lon: 141.35, label: '北海道' }],
     },
     // おたより項目(2026-07-20 Andy指定の3つ)
     otayoriTopics: ['制作', '生活', 'ポッドキャストをやっててよかったこと'],
@@ -193,7 +195,7 @@ export const SHOWS: Show[] = [
     place: {
       ja: '北海道',
       en: 'Hokkaido, Japan',
-      points: [{ lat: 43.2, lon: 142.4 }],
+      points: [{ lat: 43.2, lon: 142.4, label: '北海道' }],
     },
     role: 'ディレクター兼サブMCとして、出演を含め番組制作上のほぼ全てに立ち上げから対応。',
     // 番組専用のおたよりフォーム(Google Form、2026-07-20 Andy指定)
@@ -216,8 +218,8 @@ export const SHOWS: Show[] = [
       ja: 'ニューヨーク ⇄ 東京',
       en: 'New York ⇄ Tokyo',
       points: [
-        { lat: 40.713, lon: -74.006 },
-        { lat: 35.689, lon: 139.692 },
+        { lat: 40.713, lon: -74.006, label: 'ニューヨーク' },
+        { lat: 35.689, lon: 139.692, label: '東京' },
       ],
       view: 'world',
       note: 'ビデオ通話で繋いで収録',

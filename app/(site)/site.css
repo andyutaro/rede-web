@@ -3410,6 +3410,84 @@ a.show-cast-name:hover {
   height: auto;
 }
 
+/* 点はLIVEの赤で明滅する(2026-07-30 Andy指定)。周期2.8秒・波紋つきは
+   当日scribeのLIVEセル(.live-cell)と同一の語彙。彩色は「LIVE赤のみ」の原則の
+   延長で、「いま生きているものがそこにある」を同じ赤で言う。
+   SVGのcircleを拡大するのでtransform-boxをfill-boxにする(既定のview-boxでは
+   図全体を基準に拡大して位置がずれる) */
+.place-map .pm-core {
+  fill: var(--live);
+  animation: pm-core 2.8s ease-in-out infinite;
+}
+
+@keyframes pm-core {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  25% {
+    opacity: 1;
+  }
+}
+
+.place-map .pm-ring {
+  fill: none;
+  stroke: var(--live);
+  stroke-width: 0.9;
+  animation: pm-ring 2.8s ease-in-out infinite;
+}
+
+@keyframes pm-ring {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  25% {
+    opacity: 0.6;
+  }
+}
+
+.place-map .pm-ripple {
+  fill: none;
+  stroke: var(--live);
+  stroke-width: 0.9;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pm-ripple 2.8s ease-out infinite;
+}
+
+@keyframes pm-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70%,
+  100% {
+    transform: scale(4.2);
+    opacity: 0;
+  }
+}
+
+/* 動きを控える設定では明滅させない(赤い点はそのまま見える) */
+@media (prefers-reduced-motion: reduce) {
+  .place-map .pm-core,
+  .place-map .pm-ring,
+  .place-map .pm-ripple {
+    animation: none;
+  }
+  .place-map .pm-ripple {
+    display: none;
+  }
+}
+
+/* 点に添える地名(Aboutの集約地図だけ)。図の中の活字なので最小限に */
+.place-map .pm-label {
+  fill: var(--mut);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
 .place-map figcaption {
   margin-top: 10px;
   text-align: center;
