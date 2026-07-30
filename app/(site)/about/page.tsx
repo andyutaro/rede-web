@@ -128,10 +128,10 @@ export default async function AboutPage() {
           <h2>PLACES</h2>
         </div>
         <div className="about-worldmap">
-          <PlaceMap points={JAPAN_PLACE_POINTS} view="japan" width={300} labels />
+          <PlaceMap points={JAPAN_PLACE_POINTS} view="japan" width={340} labels />
           <p className="about-worldmap-note">
-            北海道と宮城から。ニューヨークへも、繋いで。
-            <span>From Hokkaido and Miyagi. And to New York, over a call.</span>
+            白老と女川から。ニューヨークへも、繋いで。
+            <span>From Shiraoi and Onagawa. And to New York, over a call.</span>
           </p>
         </div>
       </section>

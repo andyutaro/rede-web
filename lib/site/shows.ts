@@ -23,9 +23,10 @@ export type ShowPlace = {
   ja: string // 宮城県女川町
   en: string // Onagawa, Miyagi, Japan
   // 地図に打つ点。BrandShiftのように国を跨ぐ番組は2点(細い弧で結ばれる)。
-  // labelはAboutの集約地図に添える短い地名(2026-07-30 Andy「東京・宮城・北海道が
-  // わかりにくいのが勿体無い」)。番組ページは下に地名を書くので使わない
-  points: { lat: number; lon: number; label?: string }[]
+  // labelはAboutの集約地図に添える短い地名(2026-07-30 Andy「東京・宮城・北海道・
+  // 白老町がわかりにくいのが勿体無い」)。番組ページは下に地名を書くので使わない。
+  // labelSideは名前を出す向き。白老と北海道中央は近いので、白老だけ西(左)へ逃がす
+  points: { lat: number; lon: number; label?: string; labelSide?: 'left' | 'right' }[]
   // 世界地図で見せる番組(国を跨ぐもの)。既定は日本地図
   view?: 'japan' | 'world'
   note?: string // BrandShift: ビデオ通話で繋いで収録
@@ -141,7 +142,7 @@ export const SHOWS: Show[] = [
     place: {
       ja: '北海道白老町',
       en: 'Shiraoi, Hokkaido, Japan',
-      points: [{ lat: 42.533, lon: 141.35, label: '北海道' }],
+      points: [{ lat: 42.533, lon: 141.35, label: '白老', labelSide: 'left' }],
     },
     // Ecce Planta / mimori Herbal Bathsalt / ZINE(2026-07-25 Andy指定の3つ)
     products: [
@@ -172,7 +173,7 @@ export const SHOWS: Show[] = [
     place: {
       ja: '北海道白老町',
       en: 'Shiraoi, Hokkaido, Japan',
-      points: [{ lat: 42.533, lon: 141.35, label: '北海道' }],
+      points: [{ lat: 42.533, lon: 141.35, label: '白老', labelSide: 'left' }],
     },
     // おたより項目(2026-07-20 Andy指定の3つ)
     otayoriTopics: ['制作', '生活', 'ポッドキャストをやっててよかったこと'],

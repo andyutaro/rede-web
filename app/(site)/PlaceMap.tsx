@@ -43,7 +43,7 @@ export default function PlaceMap({
   // 表示サイズで見分けられない点は1つに畳む(2026-07-30)。
   // 世界地図では白老・北海道・女川・東京が数ピクセルに重なり、輪が団子になっていた。
   // 畳んだ点の名前は先に来たものを残す(白老と北海道はどちらも「北海道」)
-  const merged: { x: number; y: number; label?: string }[] = []
+  const merged: { x: number; y: number; label?: string; labelSide?: 'left' | 'right' }[] = []
   const minGap = r * 4.4
   for (const p of points) {
     const xy = project(p, m)
@@ -56,8 +56,9 @@ export default function PlaceMap({
       near.x = (near.x + xy.x) / 2
       near.y = (near.y + xy.y) / 2
       near.label = near.label ?? p.label
+      near.labelSide = near.labelSide ?? p.labelSide
     } else {
-      merged.push({ ...xy, label: p.label })
+      merged.push({ ...xy, label: p.label, labelSide: p.labelSide })
     }
   }
   const xy = merged
@@ -96,7 +97,13 @@ export default function PlaceMap({
             <circle className="pm-ring" cx={p.x} cy={p.y} r={r * 2.2} />
             <circle className="pm-core" cx={p.x} cy={p.y} r={r} />
             {labels && p.label && (
-              <text className="pm-label" x={p.x + r * 3.2} y={p.y + r * 0.9}>
+              // 近い点同士で名前が衝突するときは向きを逃がす(白老と北海道中央)
+              <text
+                className="pm-label"
+                x={p.labelSide === 'left' ? p.x - r * 3.2 : p.x + r * 3.2}
+                y={p.y + r * 0.9}
+                textAnchor={p.labelSide === 'left' ? 'end' : 'start'}
+              >
                 {p.label}
               </text>
             )}
