@@ -44,17 +44,19 @@ const cache = new Map<string, { promise: Promise<ShowFeed | null>; ts: number }>
 // 同じAnchor枠で旧番組が配信されていた場合の混入除去(例: BrandShiftは新シリーズ
 // #001=2026-03-10以降のみ。それ以前は別番組がこの枠を使っていた)。
 export function fetchShowFeed(feedUrl: string, since?: string): Promise<ShowFeed | null> {
-  // 鍵に窓(30分)を混ぜる。tsだけの相対判定だと、窓が変わっても最大30分は
-  // 前の窓の実体を返し続け「30分で反映」が最悪60分になる(2026-07-29)
-  const key = `${feedWindow()}|${feedUrl}`
-  const hit = cache.get(key)
+  // 鍵は**feedUrlだけ**にする(2026-07-30 Error 1102の反省)。
+  // 一度、鍵に30分の窓を混ぜた。すると全拠点のパース済みキャッシュが同時刻に
+  // 一斉に無効化され、境界の最初のリクエストが830KBのXMLを5番組ぶん
+  // 再パースして無料プランのCPU 10msを超え、1102が出た。
+  // 相対TTL(書き込みから30分)なら期限は拠点ごとにばらけるので山が立たない。
+  // 新しさは取得URL側の窓(revUrl)だけで担保する。
+  const hit = cache.get(feedUrl)
   let promise: Promise<ShowFeed | null>
   if (hit && Date.now() - hit.ts < TTL_MS) {
     promise = hit.promise
   } else {
     promise = loadFeed(feedUrl)
-    cache.clear() // 前の窓のエントリを残さない(isolate内のMapを膨らませない)
-    cache.set(key, { promise, ts: Date.now() })
+    cache.set(feedUrl, { promise, ts: Date.now() })
   }
   if (!since) return promise
   return promise.then((feed) => applySince(feed, since))
@@ -65,15 +67,14 @@ export function fetchShowFeed(feedUrl: string, since?: string): Promise<ShowFeed
 // ここが軽いとサイト全リクエストのJSON.parseコストが桁で下がる。
 // 概要欄が要るのはPodcast棚の番組/エピソードページだけ(そこはフル版を使う)
 export function fetchShowFeedLight(feedUrl: string, since?: string): Promise<ShowFeed | null> {
-  const key = `${feedWindow()}|${feedUrl}`
-  const hit = lightCache.get(key)
+  // 鍵は feedUrl だけ(上と同じ理由。窓を混ぜると期限が同時刻に揃って山が立つ)
+  const hit = lightCache.get(feedUrl)
   let promise: Promise<ShowFeed | null>
   if (hit && Date.now() - hit.ts < TTL_MS) {
     promise = hit.promise
   } else {
     promise = loadFeedLight(feedUrl)
-    lightCache.clear()
-    lightCache.set(key, { promise, ts: Date.now() })
+    lightCache.set(feedUrl, { promise, ts: Date.now() })
   }
   if (!since) return promise
   return promise.then((feed) => applySince(feed, since))
@@ -96,7 +97,7 @@ function stripEpisodes(feed: ShowFeed): ShowFeed {
 
 async function loadFeedLight(feedUrl: string): Promise<ShowFeed | null> {
   const edge = edgeCache()
-  const edgeKey = `${EDGE_KEY_PREFIX}${feedWindow()}/light/${encodeURIComponent(feedUrl)}`
+  const edgeKey = `${EDGE_KEY_PREFIX}light/${encodeURIComponent(feedUrl)}`
   if (edge) {
     try {
       const hit = await edge.match(edgeKey)
@@ -134,11 +135,15 @@ const EDGE_KEY_PREFIX = 'https://feed-cache.internal/v2/'
 // 配り続けていた**(実測 age: 42034 = 11.7時間)。next.revalidateやTTLは
 // こちらの都合であって、共有キャッシュの寿命を短くする力はない。
 //
-// 対策: 取得URLに30分ごとに変わるパラメータを付けて**URL自体を別物にする**。
-// どの層のキャッシュも、今の窓のURLについては何も持っていないので必ず取り直す。
-// 窓の中では全層が素直にキャッシュしてよい(CPUもAnchorへの負荷も従来どおり)。
-// 「30分で反映される」を層の振る舞いに頼らず構造で保証するのが要点。
-// Anchorは未知のクエリを無視して同じ内容を返すことを確認済み。
+// 対策: **取得URLだけ**に30分ごとに変わるパラメータを付けて別物にする。
+// 期限が切れて取り直すとき、今の窓のURLはどの層も古い実体を持っていないので
+// 必ず新しく取れる。Anchorは未知のクエリを無視して同じ内容を返す(確認済み)。
+//
+// ※窓を**キャッシュの鍵**にも混ぜてはいけない(2026-07-30に一度やって1102を出した)。
+//   鍵に混ぜると全拠点のパース済みキャッシュが同時刻に一斉に無効化され、
+//   境界の最初のリクエストが830KBのXMLを5番組ぶん再パースしてCPU 10msを超える。
+//   鍵は相対TTL(書き込みから30分)のまま=期限が拠点ごとにばらけて山が立たない。
+//   その代わり反映は最悪60分になるが、落ちないことを優先する。
 function feedWindow(): number {
   return Math.floor(Date.now() / TTL_MS)
 }
@@ -163,8 +168,9 @@ function edgeCache(): EdgeCache | null {
 // (実測: 成功リクエストのCPU中央値13.7ms・P99 505msの主因がこのパースだった)
 async function loadFeed(feedUrl: string): Promise<ShowFeed | null> {
   const edge = edgeCache()
-  // 鍵にも窓を混ぜる=窓が変われば自動的に別の鍵になり、古い実体を読む経路が無い
-  const edgeKey = `${EDGE_KEY_PREFIX}${feedWindow()}/${encodeURIComponent(feedUrl)}`
+  // 鍵に窓は混ぜない(2026-07-30)。混ぜると全拠点の期限が同時刻に揃い、
+  // 境界で一斉に再パースが走って1102が出た。相対TTLで期限をばらけさせる
+  const edgeKey = `${EDGE_KEY_PREFIX}${encodeURIComponent(feedUrl)}`
   if (edge) {
     try {
       const hit = await edge.match(edgeKey)
