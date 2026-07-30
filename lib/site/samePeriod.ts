@@ -36,7 +36,10 @@ let memo: { promise: Promise<SamePeriodItem[]>; ts: number } | null = null
 
 function datedIndex(): Promise<SamePeriodItem[]> {
   if (memo && Date.now() - memo.ts < INDEX_TTL_SEC * 1000) return memo.promise
-  const promise = cachedJson('dated-index-2', INDEX_TTL_SEC, buildIndex)
+  // 鍵の数字はキャッシュ破棄用(索引に載る表記やhrefを変えたら上げる)。
+  // -3: scribe→deskの改名(2026-07-30)。古い索引が「SCRIBE『20260729』」と
+  // /scribe/…のhrefを抱えたままで、最大30分そのまま出ていた
+  const promise = cachedJson('dated-index-3', INDEX_TTL_SEC, buildIndex)
   memo = { promise, ts: Date.now() }
   return promise
 }

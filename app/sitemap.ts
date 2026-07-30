@@ -5,8 +5,10 @@ import { createService } from '@/lib/supabase/service'
 
 // sitemap.xml(2026-07-23): 検索エンジンにこのサイトの地図を渡す。
 // ポッドキャスターのサイトで一番拾われてほしいのはエピソードページなので、
-// 番組・エピソードは全て載せる。確定scribe・Notes/Photography/Physicalの各頁も。
-// 非公開・私的な口(studio, desk, live, search, 未確定scribe)は載せない。
+// 番組・エピソードは全て載せる。確定した日々の書き物(/desk/[date])・
+// Notes/Photography/Physical/Eventsの各頁も。
+// 非公開・私的な口(studio, /desk と /desk/about=執筆画面, live, search,
+// 未確定の当日分)は載せない。
 //
 // 生成はRSSとDBを引くため、ISRと同じ30分でキャッシュする(毎リクエスト作らない)
 export const revalidate = 1800
@@ -34,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const [feeds, scribeRes, articleRes] = await Promise.all([
     Promise.all(SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : null))),
-    // 確定済み・未削除のscribeだけ(/scribe/[date]が404を返さない日付)
+    // 確定済み・未削除の日だけ(/desk/[date]が404を返さない日付)
     service
       .from('scribe_days')
       .select('date, finalized_at')
@@ -72,7 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   for (const d of scribeRes.data ?? []) {
     entries.push({
-      url: `${BASE}/scribe/${d.date}`,
+      url: `${BASE}/desk/${d.date}`,
       lastModified: new Date(d.finalized_at as string),
       changeFrequency: 'yearly',
       priority: 0.5,
