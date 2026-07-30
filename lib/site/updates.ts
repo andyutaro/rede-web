@@ -76,8 +76,8 @@ export async function recentUpdates(
     kind: 'scribe',
     // scribeはNotes棚の配下なのでラベル=NOTES。タイトルは「SCRIBE『20260706』」
     label: 'NOTES',
-    excerpt: `SCRIBE『${scribeTitle(d.date as string)}』`,
-    href: `/scribe/${d.date}`,
+    excerpt: `DESK『${scribeTitle(d.date as string)}』`,
+    href: `/desk/${d.date}`,
   }))
 
   // 当日分(未確定=上のクエリに含まれない)を、確定行と同じ形式で先頭に載せる。
@@ -87,7 +87,7 @@ export async function recentUpdates(
       date: today,
       kind: 'scribe',
       label: 'NOTES',
-      excerpt: `SCRIBE『${scribeTitle(today)}』`,
+      excerpt: `DESK『${scribeTitle(today)}』`,
       href: '/live',
       live: true,
     })

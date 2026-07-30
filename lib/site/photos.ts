@@ -137,7 +137,7 @@ async function loadPhotoPool(): Promise<PoolEntry[]> {
     )
   }
   for (const d of (days ?? []).filter((d) => !d.deleted_at)) {
-    add(d.html as string, `/scribe/${d.date}`, 'scribe', d.date as string)
+    add(d.html as string, `/desk/${d.date}`, 'scribe', d.date as string)
   }
   return candidates
 }

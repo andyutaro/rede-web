@@ -21,7 +21,7 @@ export default async function SearchPage({
     <div className="measure search">
       <section className="section">
         <div className="section-head">
-          <h1>SEARCH — SCRIBE</h1>
+          <h1>SEARCH — DESK</h1>
         </div>
         <div className="section-body">
           <form className="search-form" action="/search" method="get">
@@ -44,7 +44,7 @@ export default async function SearchPage({
 
           <div className="search-results">
             {hits.map((h, i) => (
-              <Link className="search-hit" href={`/scribe/${h.date}`} key={`${h.date}-${i}`}>
+              <Link className="search-hit" href={`/desk/${h.date}`} key={`${h.date}-${i}`}>
                 <span className="search-date">{dateDots(h.date)}</span>
                 <span className="search-snippet">
                   {h.before}

@@ -13,8 +13,13 @@ export type AboutShow = { slug: string; name: string; blurb: string; role?: stri
 // サイト共通のmeta description(2026-07-25): Andy自身の署名+リードから組成する
 // (AI散文をサイトに載せない原則。文言の出所はAboutのDEFAULT=本人の言葉)。
 // studioでリードを変えた場合、ここは次のデプロイで同期される
+//
+// 「オフィシャルサイト」→「ホームページ」(2026-07-30 Andy)。
+// 概念としての変更。アクセス数の多寡と関係なく本人にとって価値が成立している
+// 場所であり、オフィシャルな発表窓ではなく**家(ホーム)**である、という判断。
+// scribe→deskの改名、メニューを「棚」と呼ぶことと同じ系譜の言葉。
 export const SITE_DESCRIPTION =
-  'Andy（安田裕太郎）のオフィシャルサイト。北海道から日本各地で活動しているPodcasterです。'
+  'Andy（安田裕太郎）のホームページ。北海道から日本各地で活動しているPodcasterです。'
 
 export type AboutContent = {
   name: string // 署名(名前)

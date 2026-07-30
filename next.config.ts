@@ -127,6 +127,12 @@ const nextConfig: NextConfig = {
       // 旧サイト(STUDIO)の/profileの後継は/about(PROFILE節を含む)。
       // Googleが旧URLを覚えていて404を報告していた(2026-07-27 Search Console)
       { source: "/profile", destination: "/about", permanent: true },
+      // scribe → desk へ改名(2026-07-30 Andy)。「オフィシャルサイトではなく
+      // ホームページである」という概念の変更に伴い、日々の書き物の場も
+      // 「机(desk)」の名に統一した。旧URLは38本ほど検索に載っているので
+      // 永続リダイレクトで受ける(private側の/desk・/desk/aboutは静的ルートなので
+      // 動的な/desk/[date]と衝突しない)
+      { source: "/scribe/:date", destination: "/desk/:date", permanent: true },
     ];
   },
 };

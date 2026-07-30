@@ -98,7 +98,7 @@ export default function LiveFull({ relay, today, initialHtml, recentlyWritten = 
   return (
     <section className="section">
       <div className="section-head">
-        <h1>SCRIBE — {dateLabel}</h1>
+        <h1>DESK — {dateLabel}</h1>
         {/* AWAYの正式表記はAWAY FROM SCREEN(2026-07-25 Andy)。スマホはAWAYに圧縮 */}
         <span className={`live-status ${mode === 'live' ? 'is-live' : ''}`}>
           <span className="live-dot" aria-hidden="true" />

@@ -6,7 +6,7 @@ import { isRecentlyWritten } from '@/lib/site/serverBody'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'scribe — live' }
+export const metadata: Metadata = { title: 'desk — live' }
 
 // 当日ライブ全文ページ(/watch後継)。Homeの窓の「全文を読む →」の遷移先。
 // 日が終われば同じ内容は確定アーカイブ(/scribe/[date])になる。

@@ -82,8 +82,8 @@ async function buildIndex(): Promise<SamePeriodItem[]> {
     items.push({
       date,
       label: 'NOTES',
-      title: `SCRIBE『${scribeTitle(date)}』`,
-      href: `/scribe/${date}`,
+      title: `DESK『${scribeTitle(date)}』`,
+      href: `/desk/${date}`,
       thumb,
       assigned,
     })
@@ -144,7 +144,7 @@ function daysApart(a: string, b: string): number {
 }
 
 // date: 基準日(YYYY-MM-DD)。excludePrefix: 同じ棚を外すためのhref接頭辞
-// (例 '/scribe/'、'/podcast/sakanakaigi/'、'/notes/')。
+// (例 '/desk/'、'/podcast/sakanakaigi/'、'/notes/')。
 // 近い日付を優先し、同距離なら新しい順。最大6件。
 export async function samePeriod(date: string, excludePrefix: string): Promise<SamePeriodItem[]> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return []

@@ -76,7 +76,7 @@ export default function ScribeEditForm({
       <h1 className="studio-h1">SCRIBE — {date.replaceAll('-', '')}(確定済みの修正)</h1>
       <div className="studio-status-line">
         {message || (
-          <Link href={`/scribe/${date}`} target="_blank">
+          <Link href={`/desk/${date}`} target="_blank">
             公開ページを見る →
           </Link>
         )}

@@ -73,9 +73,9 @@ export default function LiveWindow({ relay, today, initialHtml, recentlyWritten 
   const dateLabel = today.replaceAll('-', '.')
 
   return (
-    <section className="section" aria-label="scribe live">
+    <section className="section" aria-label="desk live">
       <div className="section-head">
-        <h2>SCRIBE</h2>
+        <h2>DESK</h2>
         {/* AWAYの正式表記はAWAY FROM SCREEN(2026-07-25 Andy)。スマホは頭の幅が
             足りないためAWAYに圧縮(語彙は同じ、長さだけ落とす=.ls-long) */}
         <span className={`live-status ${mode === 'live' ? 'is-live' : ''}`}>

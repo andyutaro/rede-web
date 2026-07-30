@@ -110,7 +110,7 @@ export async function scanBookmarks(service: SupabaseClient): Promise<{
     collect(d.html as string, {
       kind: 'scribe',
       label: `scribe ${date.replaceAll('-', '')}`,
-      href: `/scribe/${date}`,
+      href: `/desk/${date}`,
       date,
     })
   }

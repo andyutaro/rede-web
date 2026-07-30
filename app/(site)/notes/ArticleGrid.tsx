@@ -18,7 +18,14 @@ export type GridItem = {
 }
 
 // PHOTOGRAPHYタブは独立棚(/photography)への格上げに伴い廃止(2026-07-10)
-const TABS = ['ALL', 'ARTICLE', 'SCRIBE'] as const
+const TABS = ['ALL', 'ARTICLE', 'DESK'] as const
+
+// 内側の呼び名(kind)は'scribe'のまま——DBのテーブル名・注釈の対象種別・
+// APIの経路が全部その名前で動いているので触らない。
+// **見える名前だけ**をDESKにする(2026-07-30 scribe→deskの改名)
+function kindLabel(kind: string): string {
+  return kind === 'scribe' || kind === 'live' ? 'DESK' : kind.toUpperCase()
+}
 type Tab = (typeof TABS)[number]
 
 function visible(item: GridItem, tab: Tab): boolean {
@@ -27,7 +34,7 @@ function visible(item: GridItem, tab: Tab): boolean {
       return true
     case 'ARTICLE':
       return item.kind === 'article'
-    case 'SCRIBE':
+    case 'DESK':
       // LIVEセルはALL/SCRIBEタブでのみ表示(§6)
       return item.kind === 'scribe' || item.kind === 'live'
   }
@@ -59,7 +66,7 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
             <div key={item.key}>
               {/* 中身は装飾のspanだけなのでリンクに名前が無かった(2026-07-23)。
                   可視ラベルと同じ文言を読み上げ名にする(表示は変わらない) */}
-              <Link href={item.href} className="sq" aria-label={`SCRIBE LIVE ${dateShort(item.date)}`}>
+              <Link href={item.href} className="sq" aria-label={`DESK LIVE ${dateShort(item.date)}`}>
                 <span className="live-cell">
                   <span className="ripple" aria-hidden="true" />
                   <span className="core" aria-hidden="true" />
@@ -67,7 +74,7 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
               </Link>
               {/* ラベルは他セルと同じ3段構成で揃える(LIVE行だけ赤) */}
               <div className="ep-cell-label">
-                <span className="ep-show">SCRIBE</span>
+                <span className="ep-show">DESK</span>
                 <span className="ep-title is-live">LIVE</span>
                 <span className="ep-date">{dateShort(item.date)}</span>
               </div>
@@ -79,7 +86,7 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
               <Link
                 href={item.href}
                 className="sq"
-                aria-label={`${item.kind.toUpperCase()} ${item.title ?? (item.kind === 'scribe' ? 'Archive' : '')} ${dateShort(item.date)}`}
+                aria-label={`${kindLabel(item.kind)} ${item.title ?? (item.kind === 'scribe' ? 'Archive' : '')} ${dateShort(item.date)}`}
               >
                 {item.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -96,7 +103,7 @@ export default function ArticleGrid({ items }: { items: GridItem[] }) {
               {/* 全セル共通の3段ラベル(種別/タイトル/日付)。
                   確定scribeはタイトルを持たないため規則名「Archive」を置く */}
               <div className="ep-cell-label">
-                <span className="ep-show">{item.kind.toUpperCase()}</span>
+                <span className="ep-show">{kindLabel(item.kind)}</span>
                 <span className="ep-title">
                   {item.title ?? (item.kind === 'scribe' ? 'Archive' : '')}
                 </span>

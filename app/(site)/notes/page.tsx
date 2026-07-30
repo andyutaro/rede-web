@@ -85,7 +85,7 @@ export default async function ArticlePage() {
         )
       }
     }
-    items.push({ key: `scribe-${date}`, kind: 'scribe', date, href: `/scribe/${date}`, thumb, assigned })
+    items.push({ key: `scribe-${date}`, kind: 'scribe', date, href: `/desk/${date}`, thumb, assigned })
   }
   if (burnIns.length > 0) await Promise.all(burnIns)
 

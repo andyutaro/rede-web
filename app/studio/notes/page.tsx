@@ -10,12 +10,13 @@ export const dynamic = 'force-dynamic'
 
 // NOTES室(2026-07-17再編、旧ARTICLES室)。公開棚の改名(Article→Notes)に追従し、
 // 上部メニューの分散(PAGES/PHYSICAL/THUMBNAILS独立室)をタブとしてここに統合。
-// タブ: ARTICLE / SCRIBE / PHYSICAL / PAGES / THUMBNAILS / TRASH。
+// タブ: ARTICLE / DESK / PHYSICAL / EVENTS / PAGES / THUMBNAILS / TRASH。
+// (2026-07-30 scribe→deskへ改名。keyは'scribe'のまま=既存URLを壊さない)
 // 各一覧行にはサムネイルの実物と出所バッジ(専用/本文/充当/なし)を出す
 // =「自前サムネの無い記事」を探す手間をなくす(2026-07-17 Andy要望)。
 const TABS = [
   { key: 'article', label: 'ARTICLE' },
-  { key: 'scribe', label: 'SCRIBE' },
+  { key: 'scribe', label: 'DESK' },
   { key: 'physical', label: 'PHYSICAL' },
   { key: 'event', label: 'EVENTS' },
   { key: 'pages', label: 'PAGES' },
@@ -96,7 +97,7 @@ export default async function StudioNotes({
         id: d.date as string,
         date: d.date as string,
         label: 'FINALIZED',
-        title: `SCRIBE — ${scribeTitle(d.date as string)}`,
+        title: `DESK — ${scribeTitle(d.date as string)}`,
         href: `/studio/scribe/${d.date}`,
         ...t,
       }
@@ -106,7 +107,7 @@ export default async function StudioNotes({
         rows={rows}
         mode="active"
         endpoint="/api/scribe/delete"
-        emptyText="確定済みのscribeがありません"
+        emptyText="確定済みのdeskがありません"
       />
     )
   }
@@ -160,7 +161,7 @@ export default async function StudioNotes({
       items.push({
         target: 'scribe',
         id: d.date as string,
-        title: `SCRIBE — ${scribeTitle(d.date as string)}`,
+        title: `DESK — ${scribeTitle(d.date as string)}`,
         thumb:
           d.thumbnail_source === 'manual'
             ? (d.thumbnail_url as string)
@@ -172,7 +173,7 @@ export default async function StudioNotes({
   }
 
   if (tab === 'trash') {
-    // ゴミ箱: ARTICLE/SCRIBE/PHYSICALをまとめて(完全消去はここからのみ=2段階)
+    // ゴミ箱: ARTICLE/DESK/PHYSICALをまとめて(完全消去はここからのみ=2段階)
     const [{ data: articles }, { data: physicals }, { data: days }] = await Promise.all([
       supabase
         .from('articles')
@@ -195,8 +196,8 @@ export default async function StudioNotes({
     const scribeRows: SelectRow[] = (days ?? []).map((d) => ({
       id: d.date as string,
       date: d.date as string,
-      label: 'SCRIBE',
-      title: `SCRIBE — ${scribeTitle(d.date as string)}`,
+      label: 'DESK',
+      title: `DESK — ${scribeTitle(d.date as string)}`,
     }))
     body = (
       <>
@@ -205,7 +206,7 @@ export default async function StudioNotes({
           <SelectTable rows={articleRows(articles ?? [], null)} mode="trash" endpoint="/api/article/delete" emptyText="ゴミ箱は空です" />
         </div>
         <div className="studio-trash-section">
-          <div className="studio-trash-head">SCRIBE</div>
+          <div className="studio-trash-head">DESK</div>
           <SelectTable rows={scribeRows} mode="trash" endpoint="/api/scribe/delete" emptyText="ゴミ箱は空です" />
         </div>
         <div className="studio-trash-section">

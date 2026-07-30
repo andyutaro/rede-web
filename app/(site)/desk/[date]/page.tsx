@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 // 全幅に流すと「横にだらっと広がる」ため、行を設計して短い銘文として組む
 // (2026-07-19 Andy指摘)。改行は意味の切れ目で固定
 const PREAMBLE_LINES = [
-  'scribe — 読むポッドキャスト。',
+  'desk — 読むポッドキャスト。',
   '日々の考え事やつぶやきを生放送で書き、一日が終わると確定テキストになります。',
   'これはそのアーカイブ。',
 ]
@@ -33,7 +33,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { date } = await params
   // 確定scribeのタイトル規則(2026-07-10): 「Scribe Archive + 日付導出タイトル」
-  const title = `Scribe Archive ${scribeTitle(date)}`
+  const title = `Desk Archive ${scribeTitle(date)}`
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title }
   // SNSカードにその日のサムネイルを出す(2026-07-23)。
   // 公開されない日(未確定・ゴミ箱)はページ本体がnotFound()するので、
@@ -97,7 +97,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
       .maybeSingle(),
   ])
   const pagerLink = (d?: string | null) =>
-    d ? { href: `/scribe/${d}`, title: `Scribe Archive ${scribeTitle(d)}` } : null
+    d ? { href: `/desk/${d}`, title: `Desk Archive ${scribeTitle(d)}` } : null
 
   // 注釈(2026-07-28): 本文とは別レイヤー。ログイン中なら自分のサイトを普通に
   // 見ている画面から、ドラッグして直接足せる(書き込みの可否はAPI側で再検証する)
@@ -115,14 +115,14 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
           __html: breadcrumbJsonLd([
             { name: 'Home', path: '' },
             { name: 'Notes', path: '/notes' },
-            { name: `Scribe Archive ${scribeTitle(date)}`, path: `/scribe/${date}` },
+            { name: `Desk Archive ${scribeTitle(date)}`, path: `/desk/${date}` },
           ]),
         }}
       />
       <article className="section">
         {/* scribeのタイトルは日付導出(20260706)。日付はdatetimeとして併記 */}
         <div className="section-head">
-          <h1>SCRIBE ARCHIVE — {scribeTitle(date)}</h1>
+          <h1>DESK ARCHIVE — {scribeTitle(date)}</h1>
         </div>
         <p className="scribe-preamble">
           {PREAMBLE_LINES.map((line) => (
@@ -137,7 +137,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         />
         {/* 同じ頃(2026-07-28): この日の前後7日に生まれた他の仕事。
             scribe同士の行き来はPagerの担当なので/scribe/は除く */}
-        <SamePeriod date={date} excludePrefix="/scribe/" />
+        <SamePeriod date={date} excludePrefix="/desk/" />
         <Pager
           older={pagerLink(prevRes.data?.date as string)}
           newer={pagerLink(nextRes.data?.date as string)}
