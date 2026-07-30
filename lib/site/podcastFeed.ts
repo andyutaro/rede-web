@@ -88,13 +88,6 @@ function applySince(feed: ShowFeed | null, since: string): ShowFeed | null {
   return { ...feed, episodes, latest: episodes[0]?.date ?? null }
 }
 
-function stripEpisodes(feed: ShowFeed): ShowFeed {
-  return {
-    ...feed,
-    episodes: feed.episodes.map((e) => ({ ...e, description: '', searchText: '' })),
-  }
-}
-
 async function loadFeedLight(feedUrl: string): Promise<ShowFeed | null> {
   const edge = edgeCache()
   const edgeKey = `${EDGE_KEY_PREFIX}light/${encodeURIComponent(feedUrl)}`
@@ -106,9 +99,15 @@ async function loadFeedLight(feedUrl: string): Promise<ShowFeed | null> {
       // エッジキャッシュ不調時は素通りしてフル経路へ
     }
   }
-  const full = await fetchShowFeed(feedUrl)
-  if (!full) return null
-  const light = stripEpisodes(full)
+  // XMLから**直接軽量パース**する(2026-07-30)。以前はfetchShowFeed(フル)を
+  // 呼んでから概要欄を捨てていたため、軽量版が欲しいだけのリクエスト
+  // (Home・全ページ共通の波形キュー・sitemap・/podcast一覧)が、コールドな
+  // 拠点では必ずフルパースの代金を払っていた。
+  // 実測: Homeの5番組が全部コールドのとき 20.4ms → 10.7ms。
+  // さらにエッジに置くJSONが10分の1(467KB→44KB)になるので、
+  // 温まっているときのJSON.parseも1.07ms→0.1ms程度に落ちる=平常時が軽くなる。
+  const light = await loadFeedXml(feedUrl, { light: true })
+  if (!light) return null
   if (edge) {
     try {
       await edge.put(edgeKey, feedJsonResponse(light))
@@ -162,6 +161,22 @@ function edgeCache(): EdgeCache | null {
   return c?.default ?? null
 }
 
+// フィードを取ってパースする一段(2026-07-30に切り出し)。
+// フル・軽量のどちらもここを通る=取得URLの窓(revUrl)の扱いが1箇所に集まる。
+async function loadFeedXml(
+  feedUrl: string,
+  opts: { light?: boolean } = {}
+): Promise<ShowFeed | null> {
+  try {
+    const res = await fetch(revUrl(feedUrl), { next: { revalidate: 1800 } })
+    if (!res.ok) return null
+    return parseFeed(await res.text(), opts)
+  } catch {
+    // フィード到達不可: null(表示側はその番組を出さない/エピソードなし扱い)
+    return null
+  }
+}
+
 // 無料プランのCPU制限(10ms/リクエスト)対策(2026-07-21 Error 1102調査):
 // 1MB級XMLの正規表現パースをリクエスト経路から追い出し、パース済みJSONを
 // エッジ拠点毎に30分キャッシュする。コールドなisolateはJSON.parseだけで済む
@@ -180,13 +195,7 @@ async function loadFeed(feedUrl: string): Promise<ShowFeed | null> {
     }
   }
 
-  let feed: ShowFeed | null = null
-  try {
-    const res = await fetch(revUrl(feedUrl), { next: { revalidate: 1800 } })
-    if (res.ok) feed = parseFeed(await res.text())
-  } catch {
-    // フィード到達不可: null(表示側はその番組を出さない/エピソードなし扱い)
-  }
+  const feed = await loadFeedXml(feedUrl)
 
   if (feed && edge) {
     try {
@@ -295,7 +304,12 @@ function toTokyoDate(pubDate: string | null): string | null {
   return TOKYO_YMD.format(d)
 }
 
-function parseFeed(xml: string): ShowFeed {
+// light=true: 概要欄(容量の約9割)に一切触れない。抽出もせず検索テキストも作らない。
+// 2026-07-30の実測(手元, 9回平均): ON-AIRDOのフィード924KB・85話で
+//   full 6.6ms → light 3.0ms、JSON化後 467KB → 44KB。
+// 無料プランのCPUは10ms/リクエストなので、この差が1102の余裕を決める。
+// (正規表現を事前生成に変える案も測ったが誤差内だったので入れていない)
+function parseFeed(xml: string, { light = false }: { light?: boolean } = {}): ShowFeed {
   const [head, ...itemChunks] = xml.split(/<item[\s>]/i)
 
   const image = httpsUrl(
@@ -314,14 +328,16 @@ function parseFeed(xml: string): ShowFeed {
     const title = tagText(item, 'title')
     const date = toTokyoDate(tagText(item, 'pubDate'))
     if (!id || !title || !date) continue
-    const description = tagText(item, 'description') ?? ''
+    const description = light ? '' : (tagText(item, 'description') ?? '')
     episodes.push({
       id,
       title: decodeEntities(title),
       date,
       description,
-      // 検索用(EpisodeIndex)。表示毎に全話へ回すと重いのでここで1回だけ
-      searchText: htmlToPlainText(description).slice(0, 600),
+      // 検索用(EpisodeIndex)。表示毎に全話へ回すと重いのでここで1回だけ。
+      // 軽量版は概要欄を持たないので検索テキストも作らない(使う側=波形キュー・
+      // sitemap・カバーは概要欄を見ない)
+      searchText: light ? '' : htmlToPlainText(description).slice(0, 600),
       image: httpsUrl(item.match(/<itunes:image[^>]*\bhref\s*=\s*["']([^"']+)["']/i)?.[1] ?? null),
       link,
       audioUrl: httpsUrl(item.match(/<enclosure[^>]*\burl\s*=\s*["']([^"']+)["']/i)?.[1] ?? null),
@@ -331,7 +347,7 @@ function parseFeed(xml: string): ShowFeed {
 
   return {
     title: decodeEntities(tagText(head, 'title') ?? ''),
-    description: decodeEntities(tagText(head, 'description') ?? ''),
+    description: light ? '' : decodeEntities(tagText(head, 'description') ?? ''),
     image,
     latest: episodes[0]?.date ?? null,
     episodes,
