@@ -197,10 +197,6 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
                 </div>
               )}
               <h1 className="show-title">{feed?.title || show.name}</h1>
-              {/* 所属の一行(初見への直接回答)。詳細な担当領域はROLE欄 */}
-              <p className="show-affiliation">
-                {isOriginal ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
-              </p>
             </>
           )
           return show.heroVideo ? (
@@ -212,6 +208,13 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             identity
           )
         })()}
+        {/* 所属の一行(初見への直接回答)。詳細な担当領域はROLE欄。
+            水の外=紙の上に置く(2026-07-29 Andy)。水がフェードして紙になる帯に
+            ちょうど重なり、明色の文字が沈んでほぼ読めなかった。
+            舞台の銘板で同じ問題が起きたときと同じ判断 */}
+        <p className="show-affiliation">
+          {isOriginal ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
+        </p>
         {/* 番組の舞台(2026-07-25 Andy指定): 各地に根ざした制作という
             ユニークネスを、座標付きの銘板一行で記す(地図・彩色は使わない)。
             水を持つ番組でも水の外=紙の上に置く(マスクのフェード上では明色文字が

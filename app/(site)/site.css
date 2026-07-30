@@ -1343,9 +1343,8 @@ html[data-theme='dark'] .contact-pill:hover {
   color: #f2f6f9;
 }
 
-.show-hero.on-water .show-affiliation {
-  color: #9fb0bd;
-}
+/* 所属の一行は水の外へ出した(2026-07-29)のでon-waterの上書きは不要になった。
+   フェード帯の上では、どんな色を選んでもどこかで沈む=位置の問題だった */
 
 @media (prefers-reduced-motion: reduce) {
   .hero-water-video {
@@ -1367,11 +1366,12 @@ html[data-theme='dark'] .contact-pill:hover {
 }
 
 /* 所属の一行(オリジナル番組/制作参加)。タイトルの直下に控えめに */
+/* 紙の上に置くので、銘板・出演ラベルと同じ「小さなラベル」の族に揃える */
 .show-affiliation {
-  margin-top: 14px;
+  margin-top: 26px;
   font-size: 10px;
   letter-spacing: 0.22em;
-  color: var(--faint);
+  color: var(--mut);
 }
 
 /* 番組の言葉(2026-07-29): 識別部の頭に置く番組そのものの紹介。
