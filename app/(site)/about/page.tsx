@@ -5,6 +5,7 @@ import { channelInfo } from '@/lib/site/podcastFeed'
 import { getAboutContent, type AboutContent, type AboutShow } from '@/lib/site/about'
 import Accordion from './Accordion'
 import PlaceMap from '../PlaceMap'
+import PlacesTap from './PlacesTap'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // 全番組の舞台を1つの点の集合に畳む(2026-07-30)。白老は3番組が共有するので
@@ -20,6 +21,23 @@ const ALL_PLACE_POINTS = Array.from(
 )
 // 日本の点だけ(経度で切る)。地図の枠が日本なので、外の点は描いても見えない
 const JAPAN_PLACE_POINTS = ALL_PLACE_POINTS.filter((p) => p.lon > 100)
+
+// 地名 → その土地の番組名(2026-07-30)。Aboutに載っている番組だけを対象にする
+// =未公開番組(ガイロン等)を地図から漏らさない。名前はshows.tsの短い方を使う
+// (Aboutの表示名は副題つきで長く、小さなポップアップには入らない)
+function showsByPlace(listed: { slug: string }[]): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const { slug } of listed) {
+    const show = showBySlug(slug)
+    if (!show?.place) continue
+    const name = show.shortName ?? show.name
+    for (const p of show.place.points) {
+      if (!p.label) continue
+      out[p.label] = [...(out[p.label] ?? []), name].filter((v, i, a) => a.indexOf(v) === i)
+    }
+  }
+  return out
+}
 
 // ISR: 番組カバーをRSSから引くため。文言編集は保存時にrevalidatePath('/about')で即反映
 export const revalidate = 1800
@@ -128,7 +146,10 @@ export default async function AboutPage() {
           <h2>PLACES</h2>
         </div>
         <div className="about-worldmap">
-          <PlaceMap points={JAPAN_PLACE_POINTS} view="japan" width={340} labels />
+          {/* 点を押すとその土地の番組が出る(2026-07-30 Andy)。番組ページへは飛ばさない */}
+          <PlacesTap shows={showsByPlace([...c.original, ...c.branded])}>
+            <PlaceMap points={JAPAN_PLACE_POINTS} view="japan" width={340} labels interactive />
+          </PlacesTap>
           <p className="about-worldmap-note">
             白老と女川から。ニューヨークへも、繋いで。
             <span>From Shiraoi and Onagawa. And to New York, over a call.</span>

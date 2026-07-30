@@ -194,9 +194,11 @@ export const SHOWS: Show[] = [
     heroVideo: '/bg/onairdo-flight',
     // 「声で旅する北海道」=島全体が舞台なので座標は丸める
     place: {
-      ja: '北海道',
-      en: 'Hokkaido, Japan',
-      points: [{ lat: 43.2, lon: 142.4, label: '北海道' }],
+      // 「声で旅する北海道」は島全体が舞台。「北海道」だと1点の町のように
+      // 読めるので「北海道全域」と書く(2026-07-30 Andy)
+      ja: '北海道全域',
+      en: 'Across Hokkaido, Japan',
+      points: [{ lat: 43.2, lon: 142.4, label: '北海道全域' }],
     },
     role: 'ディレクター兼サブMCとして、出演を含め番組制作上のほぼ全てに立ち上げから対応。',
     // 番組専用のおたよりフォーム(Google Form、2026-07-20 Andy指定)

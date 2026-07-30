@@ -18,6 +18,7 @@ export default function PlaceMap({
   caption,
   link: linked = false,
   labels = false,
+  interactive = false,
 }: {
   points: GeoPoint[]
   // japan=番組ページ(日本のどこか) / world=国を跨ぐ番組(地球のどこか)
@@ -31,6 +32,10 @@ export default function PlaceMap({
   link?: boolean
   // 点の横に地名を添える(Aboutの集約地図。番組ページは下に地名を書くので不要)
   labels?: boolean
+  // 点を押せるようにする(2026-07-30 Andy「タップしたくなるのに何も起きない」)。
+  // ここは印を付けるだけ——実際の開閉はAboutのPlacesTap(クライアント)が受ける。
+  // 番組ページはJSを1バイトも送らないままにしたいので既定はfalse
+  interactive?: boolean
 }) {
   if (points.length === 0) return null
   const m = view === 'world' ? WORLD : JAPAN
@@ -91,7 +96,19 @@ export default function PlaceMap({
           <path d={link} fill="none" stroke="var(--dot)" strokeWidth={0.9} strokeDasharray="3 3" />
         )}
         {xy.map((p, i) => (
-          <g key={i}>
+          <g
+            key={i}
+            className={interactive ? 'pm-point is-tappable' : 'pm-point'}
+            data-place={interactive ? (p.label ?? '') : undefined}
+            role={interactive ? 'button' : undefined}
+            tabIndex={interactive ? 0 : undefined}
+            aria-label={interactive && p.label ? `${p.label}の番組を見る` : undefined}
+          >
+            {/* 指で押せる大きさの当たり判定(見えない)。細い輪や小さな芯だけでは
+                狙いにくいので、名前ごと押せる範囲を一枚敷く */}
+            {interactive && (
+              <circle className="pm-hit" cx={p.x} cy={p.y} r={r * 4.2} />
+            )}
             {/* 波紋 → 輪 → 芯 の順に重ねる(芯が一番前) */}
             <circle className="pm-ripple" cx={p.x} cy={p.y} r={r} />
             <circle className="pm-ring" cx={p.x} cy={p.y} r={r * 2.2} />

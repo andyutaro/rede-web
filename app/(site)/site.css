@@ -3481,6 +3481,28 @@ a.show-cast-name:hover {
   }
 }
 
+/* 押せる点(Aboutの集約地図だけ)。当たり判定は見えない一枚 */
+.place-map .pm-hit {
+  fill: transparent;
+}
+
+.place-map .pm-point.is-tappable {
+  cursor: pointer;
+}
+
+.place-map .pm-point.is-tappable:hover .pm-ring,
+.place-map .pm-point.is-tappable:focus-visible .pm-ring {
+  opacity: 0.85;
+}
+
+.place-map .pm-point.is-tappable:focus-visible {
+  outline: none;
+}
+
+.place-map .pm-point.is-tappable:focus-visible .pm-label {
+  fill: var(--ink);
+}
+
 /* 点に添える地名(Aboutの集約地図だけ)。図の中の活字なので最小限に */
 .place-map .pm-label {
   fill: var(--mut);
@@ -3522,4 +3544,39 @@ a.show-cast-name:hover {
   .about-worldmap {
     margin-top: 32px;
   }
+}
+
+
+/* 場所のポップアップ(2026-07-30 Andy「タップしたら対応している番組がわかるように」)。
+   注釈ポップアップ(.anno-pop)と同じ作法=紙・細罫・淡い影で静かに開く。
+   番組ページへは飛ばさない(地図を見ている流れを切らない)ので、リンクではなく
+   ただの名前の並びとして置く */
+.place-pop {
+  position: fixed;
+  z-index: 41;
+  background: var(--bg);
+  border: 1px solid var(--dot);
+  padding: 13px 15px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+}
+
+.place-pop-name {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  color: var(--faint);
+}
+
+.place-pop-shows {
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.place-pop-shows li {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--body);
 }
