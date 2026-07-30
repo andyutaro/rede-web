@@ -1394,24 +1394,28 @@ html[data-theme='dark'] .contact-pill:hover {
 /* 番組の舞台(2026-07-25): 識別部の最後に場所と座標の銘板一行。
    各地に根ざした制作というユニークネスを、地図・彩色なしの活字だけで立てる。
    水を持つ番組でも水の外=紙の上(フェード上では明色文字が沈むため) */
+/* 番組の舞台(2026-07-30に地図へ)。図→日本語の地名→英語の地名→制作の実態の順。
+   活字の座標は落とした(地図が同じことをより直感的に言う=冗長を残さない) */
 .show-place {
-  margin-top: 26px;
+  margin-top: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.show-place-name {
+  margin-top: 16px;
   font-size: 11px;
   letter-spacing: 0.2em;
   color: var(--mut);
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  gap: 16px;
-  flex-wrap: wrap;
 }
 
-.show-place-coords {
+/* 海外からの読み手への最短の答え。日本語の地名より一段静かに置く */
+.show-place-en {
+  margin-top: 6px;
   font-size: 9px;
   letter-spacing: 0.18em;
   color: var(--faint);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .show-place-note {
@@ -2207,12 +2211,10 @@ a.show-cast-name:hover {
 
 /* 番組の舞台(2026-07-25 Andy指定「一覧に落とし込む」): 担当と同じラベル行に
    「舞台 場所（注記） 座標」。座標だけ一段小さく退く(行が折れる時は塊のまま) */
-.about-show-role .asp-coords {
+.about-show-role .asp-en {
   font-size: 9px;
   letter-spacing: 0.18em;
   color: var(--faint);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
   margin-left: 0.9em;
 }
 
@@ -3390,4 +3392,56 @@ a.show-cast-name:hover {
    器を2つに分け、クライアントが書く器にはinnerHTMLを一切持たせない */
 .is-ssr-hidden {
   display: none;
+}
+
+
+/* ---- 場所の地図(2026-07-30 Andy指定) ----
+   「女川」「白老」と書かれても分かる人は少ない。初見の人、そしてフィジカルを
+   入口に海外から来る人に、図で一目で「ここでやっている」と伝える。
+   彩色しない。線は紙の階調、点だけが黒い=「ここ」だけが目に入る。 */
+.place-map {
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.place-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.place-map figcaption {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  color: var(--faint);
+}
+
+/* Aboutの世界地図: 全番組の舞台の集約(番組ページが「日本のどこか」、
+   ここが「地球のどこか」を言う) */
+.about-worldmap {
+  margin-top: 44px;
+}
+
+.about-worldmap-note {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--mut);
+}
+
+.about-worldmap-note span {
+  display: block;
+  margin-top: 7px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--faint);
+}
+
+@media (max-width: 640px) {
+  .about-worldmap {
+    margin-top: 32px;
+  }
 }

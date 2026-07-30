@@ -14,6 +14,7 @@ import PlatformLinks from '../PlatformLinks'
 import EpisodeIndex, { type IndexRow } from '../EpisodeIndex'
 import ShowPlayAll from '../ShowPlayAll'
 import ShowHeroWater from '../ShowHeroWater'
+import PlaceMap from '../../PlaceMap'
 
 // ISR: 30分ごとに再検証し、新エピソードを自動で番組ページに反映する
 export const revalidate = 1800
@@ -215,21 +216,25 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         <p className="show-affiliation">
           {isOriginal ? 'Andyのオリジナル番組' : 'Andyが制作参加する番組'}
         </p>
-        {/* 番組の舞台(2026-07-25 Andy指定): 各地に根ざした制作という
-            ユニークネスを、座標付きの銘板一行で記す(地図・彩色は使わない)。
-            水を持つ番組でも水の外=紙の上に置く(マスクのフェード上では明色文字が
-            沈むため。図版の下のマットに打たれた銘板の位置) */}
         {/* 番組の言葉(2026-07-29 Andy): 何の番組かが最初に出てこなかった
             (SHOW NOTESは畳まれている)。水の外=紙の上に置く */}
         {show.intro && <p className="show-intro">{show.intro}</p>}
+        {/* 番組の舞台(2026-07-25 → 2026-07-30に地図へ)。
+            「女川」「白老」と書かれても分かる人は少ない。初見の人、そして
+            フィジカルを入口に海外から来る人に、図で一目で伝える。
+            座標の活字は地図が同じことを言うので落とした(冗長を残さない)。
+            地名は日本語+英語の2行に畳む */}
         {show.place && (
-          <>
-            <p className="show-place">
-              <span>{show.place.ja}</span>
-              <span className="show-place-coords">{show.place.coords}</span>
-            </p>
+          <div className="show-place">
+            <PlaceMap
+              points={show.place.points}
+              view={show.place.view}
+              link={show.place.points.length > 1}
+            />
+            <p className="show-place-name">{show.place.ja}</p>
+            <p className="show-place-en">{show.place.en}</p>
             {show.place.note && <p className="show-place-note">{show.place.note}</p>}
-          </>
+          </div>
         )}
         {/* 出演者(2026-07-29 Andy): 番組を探して来た人の最初の問いは「誰の声か」。
             銘板の下に名前と担当だけを置く(写真は持ち込まない=本人の肖像を

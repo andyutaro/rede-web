@@ -1,10 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { showBySlug } from '@/lib/site/shows'
+import { SHOWS, showBySlug } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import { getAboutContent, type AboutContent, type AboutShow } from '@/lib/site/about'
 import Accordion from './Accordion'
+import PlaceMap from '../PlaceMap'
 import { imgThumb, IMG_W } from '@/lib/site/img'
+
+// 全番組の舞台を1つの点の集合に畳む(2026-07-30)。白老は3番組が共有するので
+// 同じ座標は1点にまとめる=地図上で点が重なって濃くならないように
+const ALL_PLACE_POINTS = Array.from(
+  new Map(SHOWS.flatMap((s) => s.place?.points ?? []).map((p) => [`${p.lat},${p.lon}`, p])).values()
+)
 
 // ISR: 番組カバーをRSSから引くため。文言編集は保存時にrevalidatePath('/about')で即反映
 export const revalidate = 1800
@@ -104,6 +111,23 @@ export default async function AboutPage() {
         </Accordion>
       </section>
 
+      {/* 世界地図(2026-07-30 Andy指定): 番組ページが「日本のどこか」を言うのに対し、
+          Aboutは全番組の集約として「地球のどこか」を言う。ここを通ってから
+          下の一覧を読むと、各番組の「舞台」の一行が地図上の点として読める。
+          点はshows.tsのplaceから引く=単一の真実(手で置き直さない) */}
+      <section className="about-movement">
+        <div className="section-head">
+          <h2>PLACES</h2>
+        </div>
+        <div className="about-worldmap">
+          <PlaceMap points={ALL_PLACE_POINTS} view="world" width={640} />
+          <p className="about-worldmap-note">
+            北海道と宮城から、ニューヨークまで。
+            <span>From Hokkaido and Miyagi, to New York.</span>
+          </p>
+        </div>
+      </section>
+
       {/* 楽章3: 番組ポートフォリオ。各エントリに番組の舞台の銘板を組み込む
           (2026-07-25 Andy指定「地名はこの一覧に落とし込む」。独立のPLACES節は廃止) */}
       <ShowList heading="ORIGINAL PODCASTS" shows={c.original} covers={covers} />
@@ -162,7 +186,9 @@ function ShowList({
                     <span className="role-label">舞台</span>
                     {place.ja}
                     {place.note && `（${place.note}）`}
-                    <span className="asp-coords">{place.coords}</span>
+                    {/* 座標の活字は上の世界地図が担うので落とした(2026-07-30)。
+                        代わりに海外の読み手が読める英語表記を添える */}
+                    <span className="asp-en">{place.en}</span>
                   </p>
                 ) : null
               })()}

@@ -13,11 +13,19 @@ export type Platforms = {
 }
 
 // 番組の舞台(2026-07-25 Andy指定)。各地に根ざして制作されていることが
-// Andyのユニークネスであり、番組ページとAboutに銘板として記す。
-// 地図・彩色は持ち込まない(座標の活字だけで場所を立てる)
+// Andyのユニークネスであり、番組ページとAboutに記す。
+//
+// 2026-07-30に地図へ移行。「女川」「白老」と書かれても分かる人は少なく、
+// フィジカルを入口に海外から来る可能性もある。座標の活字(38°27′N…)は
+// **地図が同じことをより直感的に言うので落とした**——冗長を残さない。
+// 代わりに英語表記を持たせる(初見・海外向けの最短の答え)。
 export type ShowPlace = {
   ja: string // 宮城県女川町
-  coords: string // 38°27′N 141°27′E
+  en: string // Onagawa, Miyagi, Japan
+  // 地図に打つ点。BrandShiftのように国を跨ぐ番組は2点(細い弧で結ばれる)
+  points: { lat: number; lon: number }[]
+  // 世界地図で見せる番組(国を跨ぐもの)。既定は日本地図
+  view?: 'japan' | 'world'
   note?: string // BrandShift: ビデオ通話で繋いで収録
 }
 
@@ -87,7 +95,8 @@ export const SHOWS: Show[] = [
     heroVideo: '/bg/sakanakaigi-school',
     place: {
       ja: '宮城県女川町',
-      coords: '38°27′N 141°27′E',
+      en: 'Onagawa, Miyagi, Japan',
+      points: [{ lat: 38.446, lon: 141.446 }],
       // 制作の実態(2026-07-29 Andy)。舞台が遠いことは番組の性質そのもの
       note: '1ヶ月に一度、通って収録',
     },
@@ -127,7 +136,11 @@ export const SHOWS: Show[] = [
     feed: 'https://anchor.fm/s/ccd5236c/podcast/rss',
     // サクラマスが滝を跳ぶ(2026-07-25 Andy素材)
     heroVideo: '/bg/mimoriradio-falls',
-    place: { ja: '北海道白老町', coords: '42°32′N 141°21′E' },
+    place: {
+      ja: '北海道白老町',
+      en: 'Shiraoi, Hokkaido, Japan',
+      points: [{ lat: 42.533, lon: 141.35 }],
+    },
     // Ecce Planta / mimori Herbal Bathsalt / ZINE(2026-07-25 Andy指定の3つ)
     products: [
       'ed4d2a90-4f1d-47f8-99a7-7a4f4e4c9693',
@@ -154,7 +167,11 @@ export const SHOWS: Show[] = [
     feed: 'https://anchor.fm/s/f20aee28/podcast/rss',
     // 夕暮れの白老の浜(2026-07-25 Andy素材)
     heroVideo: '/bg/longpost-sea',
-    place: { ja: '北海道白老町', coords: '42°32′N 141°21′E' },
+    place: {
+      ja: '北海道白老町',
+      en: 'Shiraoi, Hokkaido, Japan',
+      points: [{ lat: 42.533, lon: 141.35 }],
+    },
     // おたより項目(2026-07-20 Andy指定の3つ)
     otayoriTopics: ['制作', '生活', 'ポッドキャストをやっててよかったこと'],
     platforms: {
@@ -173,7 +190,11 @@ export const SHOWS: Show[] = [
     // 機窓の雲海(2026-07-25 Andy素材。縦動画から反射光を避けて16:9切出し)
     heroVideo: '/bg/onairdo-flight',
     // 「声で旅する北海道」=島全体が舞台なので座標は丸める
-    place: { ja: '北海道', coords: '43°N 142°E' },
+    place: {
+      ja: '北海道',
+      en: 'Hokkaido, Japan',
+      points: [{ lat: 43.2, lon: 142.4 }],
+    },
     role: 'ディレクター兼サブMCとして、出演を含め番組制作上のほぼ全てに立ち上げから対応。',
     // 番組専用のおたよりフォーム(Google Form、2026-07-20 Andy指定)
     otayoriUrl:
@@ -193,7 +214,12 @@ export const SHOWS: Show[] = [
     since: '2026-03-10',
     place: {
       ja: 'ニューヨーク ⇄ 東京',
-      coords: '40°43′N 74°00′W ⇄ 35°41′N 139°42′E',
+      en: 'New York ⇄ Tokyo',
+      points: [
+        { lat: 40.713, lon: -74.006 },
+        { lat: 35.689, lon: 139.692 },
+      ],
+      view: 'world',
       note: 'ビデオ通話で繋いで収録',
     },
     role: 'ディレクターとしてChronicleチームに参画し立ち上げから対応。',
