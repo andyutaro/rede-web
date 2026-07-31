@@ -113,6 +113,8 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     let h = 0
     let raf = 0
     let last = 0
+    // drawを定義し終えるまではresize()から呼べない(const宣言のTDZ)。この旗が立ってから呼ぶ
+    let started = false
 
     // 「動きを減らす」設定(2026-07-23): 波形はcanvasなのでCSSでは止まらない。
     // 流れを止めて静止した一本の波形として一度だけ描く(存在は残す)
@@ -139,10 +141,11 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       canvas.height = Math.round(h * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       readColor()
-      if (reduceMq.matches) draw(0)
+      // canvas.widthへの代入は中身を消すので、その場で描き直して空白フレームを作らない
+      // (回転など実際に寸法が変わった時。drawはこの下で定義するので初回はまだ呼ばない)
+      if (started) draw(last)
     }
     window.addEventListener('resize', resize)
-    resize()
 
     const draw = (t: number) => {
       const playing = playingRef.current
@@ -239,6 +242,8 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       else raf = requestAnimationFrame(loop)
     }
     reduceMq.addEventListener('change', applyMotionPref)
+    started = true
+    resize() // 初回の寸法計測(この中で1枚描くので、ループが回る前も空白にならない)
     applyMotionPref()
 
     return () => {

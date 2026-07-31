@@ -488,10 +488,17 @@ html[data-theme='dark'] .contact-pill:hover {
   position: fixed;
   top: 0;
   right: 0;
-  bottom: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  /* 高さは「URLバーが引っ込んだ状態のビューポート」に固定する(2026-07-31
+     Andy指摘「少しスクロールすると背景が一瞬ズレる」)。
+     原因: height:100%(=top/bottom:0)だとスマホのURLバーが隠れた瞬間に箱が伸び、
+     canvasのビットマップは古い寸法のまま引き伸ばされ→resizeで作り直されて一瞬空白、
+     さらに波形の基準(高さの中央)も動く。この3つが重なって「ズレ」に見えていた。
+     lvhに固定すればURLバーの開閉で箱が変わらない=描き直しも位置の移動も起きない。
+     100vhは非対応ブラウザ向けのフォールバック(PCでは両者とも同値) */
+  height: 100vh;
+  height: 100lvh;
   z-index: -1;
   pointer-events: none;
 }
