@@ -147,39 +147,75 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     const draw = (t: number) => {
       const playing = playingRef.current
       const n = peaks.length
-      const cy = h * 0.5
 
-      // ボタン(右レールのピル)が縦中央付近にあるとき、波形をその左エッジ手前で止めて接続
-      const btn = btnRef.current
+      // ボタン(右レールのピル)の位置で波形の形が決まる。
+      // ・デスクトップ: ボタンは画面のY中央 → 従来どおり中央を横切る一直線(1pxも変わらない)
+      // ・スマホ: ボタンが右下に退いた(2026-07-31) → 直線ではなく、ボタンの左端から
+      //   大きな円弧として出す(Andy案)。円の中心は画面右寄り・Y中央、左端に接する半径。
+      //   右半分は画面外に見切れ、見えるのは画面をぐるりと囲む大きな弧になる。
+      //   振幅はボタンから離れるにつれて立ち上がる=「ボタンから音が出ている」
+      const br = btnRef.current?.getBoundingClientRect()
+      const cyMid = h * 0.5
+      const bcy = br ? br.top + br.height / 2 : cyMid
+      const onMidLine = Math.abs(bcy - cyMid) < h * 0.25
       let endX = w - 8
       let connectX: number | null = null
-      if (btn) {
-        const br = btn.getBoundingClientRect()
-        const bcy = br.top + br.height / 2
-        if (Math.abs(bcy - cy) < h * 0.25 && br.left > w * 0.4) {
-          endX = br.left - 10
-          connectX = br.left - 2
-        }
+      if (br && br.left > w * 0.4 && onMidLine) {
+        endX = br.left - 10
+        connectX = br.left - 2
       }
       if (endX < 40) endX = w - 8
 
       ctx.clearRect(0, 0, w, h)
       const amp = (playing ? CFG.ampP : CFG.amp) * h * (0.92 + 0.08 * Math.sin(t * 0.0014))
       const off = t * (playing ? CFG.speedP : CFG.speed)
-      ctx.beginPath()
-      for (let x = 0; x <= endX; x += 3) {
-        const f = x / endX
+      // 位置f(0..1)における波の双極値(-1..1)。直線でも円弧でも同じ波形を使う
+      const waveAt = (f: number) => {
         const idx = (f * (n - 1) + off) % (n - 1)
         const i0 = Math.floor(idx)
         const frac = idx - i0
-        const p = peaks[i0] * (1 - frac) + peaks[(i0 + 1) % n] * frac
-        const bip = (p - 0.5) * 2
-        const taper = Math.min(1, Math.min(x, endX - x) / 90)
-        const y = cy + bip * amp * taper
-        if (x === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
+        return (peaks[i0] * (1 - frac) + peaks[(i0 + 1) % n] * frac - 0.5) * 2
       }
-      if (connectX !== null) ctx.lineTo(connectX, cy) // ボタンへ水平ベースラインで接続
+
+      ctx.beginPath()
+      if (br && !onMidLine) {
+        // ---- 円弧(スマホ) ----
+        const bx = br.left - 2 // ボタンの左端(紙マットの下に少し潜る)
+        // 円の左端。振幅ぶん内側に取る(2026-07-31 Andy指摘「左端が少しはみ出てるのがイマイチ」)。
+        // 基準線を画面左端に接させると、波の山だけが画面外へ出て平らに切り落とされていた。
+        // ampを足しておけば山の頂点がちょうど左端8pxに揃う=切れずに、円は最大の大きさを保つ
+        const xL = 8 + amp
+        const d = bcy - cyMid
+        // 中心(cx, cyMid)は「左端xLに接し、かつボタン左端を通る」条件で一意に決まる
+        const cx = (xL * xL - bx * bx - d * d) / (2 * (xL - bx))
+        const r = cx - xL
+        const thB = Math.atan2(d, bx - cx)
+        const dir = d >= 0 ? 1 : -1
+        const sweep = Math.PI * 1.1 // 画面外へ抜けきる長さ
+        const steps = Math.max(120, Math.round((r * sweep) / 3.5))
+        for (let i = 0; i <= steps; i++) {
+          const f = i / steps
+          // ボタンから出た直後は振幅0、弧長110pxかけて満振幅へ
+          const grow = Math.min(1, (f * sweep * r) / 110)
+          // 波の流れる向きを反転(2026-07-31 Andy指定)。fを裏返して読むと、模様は
+          // ボタンへ吸い込まれる向きから、ボタンから離れて広がる向きになる
+          const rr = r + waveAt(1 - f) * amp * grow
+          const th = thB + dir * f * sweep
+          const x = cx + rr * Math.cos(th)
+          const y = cyMid + rr * Math.sin(th)
+          if (i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        }
+      } else {
+        // ---- 直線(デスクトップ・音源が取れない時) ----
+        for (let x = 0; x <= endX; x += 3) {
+          const taper = Math.min(1, Math.min(x, endX - x) / 90)
+          const y = cyMid + waveAt(x / endX) * amp * taper
+          if (x === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        }
+        if (connectX !== null) ctx.lineTo(connectX, cyMid) // ボタンへ水平ベースラインで接続
+      }
       ctx.strokeStyle = color
       ctx.globalAlpha = playing ? CFG.opP : CFG.op
       ctx.lineWidth = CFG.lw

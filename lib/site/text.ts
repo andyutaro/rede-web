@@ -46,6 +46,23 @@ export function dateDots(isoDate: string): string {
   return isoDate.replaceAll('-', '.')
 }
 
+// 更新リストの日付を「年」と「月日」に分ける(2026-07-31)。スマホでは今年の行の年を
+// CSSで畳んで柱の幅を本文に返す(全行同じ「2026.」が行頭に並んでも読む値が無いため)。
+// 年が意味を持つ昨年以前の行はthisYear=falseになり畳まれない(dateShortと同じ考え方)。
+// データも表示文字列も作り変えないので、デスクトップは1pxも変わらない
+export function dateDotsParts(isoDate: string): {
+  year: string
+  rest: string
+  thisYear: boolean
+} {
+  const currentYear = tokyoYmd(new Date()).slice(0, 4)
+  return {
+    year: `${isoDate.slice(0, 4)}.`,
+    rest: isoDate.slice(5).replace('-', '.'),
+    thisYear: isoDate.startsWith(currentYear),
+  }
+}
+
 // 注釈に添える日時(2026-07-28): 「2026.07.28 21:34」。東京基準。
 // 注釈は「後から書き込んだもの」なので、いつの追記かが分かることに意味がある
 const TOKYO_DT = new Intl.DateTimeFormat('ja-JP', {

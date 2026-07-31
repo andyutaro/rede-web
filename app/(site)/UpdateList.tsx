@@ -1,14 +1,19 @@
 import Link from 'next/link'
 import type { UpdateRow } from '@/lib/site/updates'
-import { dateDots } from '@/lib/site/text'
+import { dateDotsParts } from '@/lib/site/text'
 
 export default function UpdateList({ rows }: { rows: UpdateRow[] }) {
   return (
     <div>
       {rows.map((row) => {
+        // 年はスマホでのみ畳む(今年の行だけ)。表記そのものは従来と同じ「2026.07.31」
+        const d = dateDotsParts(row.date)
         const cells = (
           <>
-            <span className="update-date">{dateDots(row.date)}</span>
+            <span className="update-date">
+              <span className={d.thisYear ? 'ud-year' : undefined}>{d.year}</span>
+              {d.rest}
+            </span>
             <span className="update-kind">{row.label ?? row.kind.toUpperCase()}</span>
             {row.excerpt && <span className="update-excerpt">{row.excerpt}</span>}
             {row.live && <span className="update-live-dot" aria-label="LIVE" />}
