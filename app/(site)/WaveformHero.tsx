@@ -113,6 +113,9 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     let h = 0
     let raf = 0
     let last = 0
+    // 波の流れる量は「実際に描けた時間」を積む(2026-07-31)。時刻から直に出すと、
+    // スクロール中などrAFが間引かれている間も進み続け、再開した瞬間に模様が飛ぶ
+    let phase = 0
     // drawを定義し終えるまではresize()から呼べない(const宣言のTDZ)。この旗が立ってから呼ぶ
     let started = false
 
@@ -171,7 +174,7 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
 
       ctx.clearRect(0, 0, w, h)
       const amp = (playing ? CFG.ampP : CFG.amp) * h * (0.92 + 0.08 * Math.sin(t * 0.0014))
-      const off = t * (playing ? CFG.speedP : CFG.speed)
+      const off = phase
       // 位置f(0..1)における波の双極値(-1..1)。直線でも円弧でも同じ波形を使う
       const waveAt = (f: number) => {
         const idx = (f * (n - 1) + off) % (n - 1)
@@ -230,7 +233,10 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
 
     const loop = (t: number) => {
       if (t - last >= 33) {
+        // 間引かれた分は捨てる(上限64ms)。復帰時に模様がワープしない
+        const dt = Math.min(64, t - last)
         last = t
+        phase += dt * (playingRef.current ? CFG.speedP : CFG.speed)
         draw(t)
       } // ~30fps
       raf = requestAnimationFrame(loop)
