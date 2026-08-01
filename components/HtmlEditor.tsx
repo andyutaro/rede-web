@@ -21,7 +21,9 @@ const EDITOR_CSS = `
 .embed-podcast { display: block; margin: 14px 0; border-radius: 10px; cursor: pointer;
   overflow: hidden; background: rgba(255,255,255,0.03); }
 .embed-podcast iframe { display: block; border: none; width: 100%; }
-.embed-video { display: block; max-width: 100%; border-radius: 6px; margin: 14px 0; }
+/* max-heightは公開側(site.css)と同じ理由: 縦動画が画面の高さを越えると
+   放送卓でも書いている場所が見えなくなる。置換要素なので縦横比は保たれる */
+.embed-video { display: block; max-width: 100%; max-height: 70vh; border-radius: 6px; margin: 14px 0; }
 .embed-selected { outline: 2px solid #7fb0e0; outline-offset: 3px; border-radius: 6px; }
 a.plain-link { color: #7fb0e0; text-decoration: underline; word-break: break-all; }
 .upload-placeholder { display: block; width: fit-content; padding: 10px 14px; margin: 10px 0;

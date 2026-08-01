@@ -998,9 +998,15 @@ html[data-theme='dark'] .contact-pill:hover {
   margin: 14px 0;
 }
 
+/* 高さの上限を持たせる(2026-08-01)。スマホで撮った縦動画(1080×1920)は、
+   幅だけ640pxに合わせると1138pxになり画面の高さを越える=上下が同時に見えない。
+   置換要素なので max-width と max-height を両方置けば縦横比は保たれる。
+   70vhにすると上下に本文が残り、動画が本文の一部であることが見えたままになる
+   (vhはスマホでもURLバーの開閉で変わらない=スクロール中に本文が動かない) */
 .scribe-html .embed-video {
   display: block;
   max-width: 100%;
+  max-height: 70vh;
   border-radius: 6px;
   margin: 14px 0;
 }

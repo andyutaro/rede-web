@@ -77,8 +77,16 @@ const csp = [
   // **ドメイン固定の絶対URL**で作る(dev/併走環境でも変換済み画像を引くための設計)。
   // 本番では'self'と同じだが、devではオリジンが違うので'self'に当たらない。
   `img-src 'self' data: blob: ${SITE_ORIGIN} ${SUPABASE_ORIGIN}`,
-  // 音源はAnchorのenclosure(実体はcloudfrontへリダイレクト)。動画は自ドメイン
-  "media-src 'self' blob: https://anchor.fm https://d3ctxlq1ktw2nl.cloudfront.net",
+  // 音源はAnchorのenclosure(実体はcloudfrontへリダイレクト)。
+  // 動画は2種類あり、出所が違う(2026-08-01修正):
+  //   ①番組ページのヒーロー映像 = /public/bg/*.mp4 = 自ドメイン('self'で足りる)
+  //   ②本文にアップした動画 = Supabase Storageの公開URLを直に読む
+  // ②を入れ忘れていたため、2026-07-30にmedia-srcを`https:`からホスト列挙へ
+  // 絞った時点から本文の動画が全部ブロックされていた(Chromeの
+  // 「Media load rejected by URL safety check」、要素は300x150の空箱になる)。
+  // 画像が無事だったのはimgThumbが/cdn-cgi/image/経由=自ドメインに書き換えるから。
+  // 動画にはその変換が無く、生のSupabase URLのまま出るのでimg-srcの許可が効かない
+  `media-src 'self' blob: ${SUPABASE_ORIGIN} https://anchor.fm https://d3ctxlq1ktw2nl.cloudfront.net`,
   "font-src 'self' data:",
   `frame-src ${frameSrc}`,
   `connect-src ${connectSrc}`,
