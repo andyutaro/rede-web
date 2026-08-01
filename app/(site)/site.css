@@ -271,17 +271,24 @@
   z-index: 20;
 }
 
+/* 溝(トラック)。2026-08-01 Andy指摘「特にライトモードで視認性が悪い」の修正:
+   輪郭が--dot(地とほぼ同じ濃さ)で消えかけ、地も半透明の--selだったため、
+   隣のMAIL(塗り)・MENU(線)に比べて何なのか読めない曖昧な塊になっていた。
+   ①輪郭をMENUと同じ--mut=右レールで既に使っている線の濃さに揃える(新しい値は作らない)
+   ②地を不透明の--ghostにして「一段沈んだ溝」にする。ノブ(紙色)が浮いて見え、
+     スイッチだと分かる。不透明なので本文が透ける問題も同時に消える */
 .theme-toggle .tt-track {
   position: absolute;
   inset: 0;
-  border: 1px solid var(--dot);
+  border: 1px solid var(--mut);
   border-radius: 999px;
-  /* トラックを薄く塗って「空の枠」に見えないようにする(視認性) */
-  background: var(--sel);
+  background: var(--ghost);
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-/* スライドするノブ(つまみ)。ライト=左、ダーク=右 */
+/* スライドするノブ(つまみ)。ライト=左、ダーク=右。
+   輪郭は持たせない(2026-08-01 Andy指摘「太陽マークにまで輪郭があるのはミニマルさに欠ける」)。
+   溝(--ghost)と紙色(--bg)の濃さの差だけで丸は読めるので、線は溝の外周1本に絞る */
 .theme-toggle .tt-thumb {
   position: absolute;
   top: 3px;
@@ -290,7 +297,7 @@
   height: 24px;
   border-radius: 50%;
   background: var(--bg);
-  border: 1px solid var(--dot);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2963,10 +2970,8 @@ a.show-cast-name:hover {
     left: calc(100% - 24px);
   }
 
-  /* 地を不透明にしてクリーンなチップとして立たせる(本文が透けて混ざらない) */
-  .theme-toggle .tt-track {
-    background: var(--bg);
-  }
+  /* トラックの地色の上書きは廃止(2026-08-01)。基本ルールで不透明の--ghostに
+     したので、本文が透ける心配はここでも無い */
 
   .contact-pill {
     top: 47px;
@@ -3054,11 +3059,8 @@ a.show-cast-name:hover {
     left: calc(100% - 24px);
   }
 
-  /* スマホは右空白が無く、ピルがコンテンツに重なる。透けて混ざらないよう
-     地を不透明(--bg)にしてクリーンなチップとして立たせる(2026-07-13) */
-  .theme-toggle .tt-track {
-    background: var(--bg);
-  }
+  /* トラックの地色の上書きは廃止(2026-08-01)。基本ルールで不透明の--ghostに
+     したので、スマホでコンテンツに重なっても透けない */
 
   /* Contactピルはスイッチ(top12+高さ27)の下に8px空ける。
      塗り(--ink)は不透明なのでスマホの重なり対策の地色上書きは不要 */
