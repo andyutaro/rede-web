@@ -173,6 +173,30 @@ export default async function AboutPage() {
           ))}
         </ol>
       </section>
+
+      {/* 楽章5: 便り(2026-08-01)。Aboutは「入口にはならないが、来た人はよく読む」
+          面なので、読み切った先に窓口を置く。それまでの終着はOVERVIEW内の
+          mailto一本だけで、隔離フィルタを通らない経路に人を出していた。
+          見た目は増やさない: /contactが冒頭で出すモードタイルをそのまま借りて、
+          「仕事の相談」と「番組へのおたより」の両方が送れることを一目で見せる。
+          右のタイルは?mode=otayoriでおたより面を開いた状態に着地する
+          (ContactModesがマウント時にURLを読む既存の仕掛け) */}
+      <section className="about-movement">
+        <div className="section-head">
+          <h2>MAIL</h2>
+        </div>
+        <p className="about-mail-note">お仕事のご相談も、番組へのおたよりも、ここから。</p>
+        <div className="mail-modes about-mail-modes">
+          <Link href="/contact" className="mail-mode">
+            <span className="mm-en">FOR CLIENT</span>
+            <span className="mm-ja">お仕事のご相談</span>
+          </Link>
+          <Link href="/contact?mode=otayori" className="mail-mode">
+            <span className="mm-en">FOR LISTENER</span>
+            <span className="mm-ja">番組へのおたより</span>
+          </Link>
+        </div>
+      </section>
     </div>
   )
 }

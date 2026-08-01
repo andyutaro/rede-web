@@ -3574,6 +3574,20 @@ a.show-cast-name:hover {
   color: var(--faint);
 }
 
+/* Aboutの末尾の窓口(2026-08-01)。組みは世界地図の注記と同じ字面=新しい見た目を
+   増やさない。タイル自体は/contactの.mail-modesの借用なので寸法は触らない */
+.about-mail-note {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--mut);
+}
+
+.about-mail-modes {
+  margin-top: 22px;
+}
+
 @media (max-width: 640px) {
   .about-worldmap {
     margin-top: 32px;
