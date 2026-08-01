@@ -11,8 +11,19 @@ import LiveWindow from './LiveWindow'
 import UpdateList from './UpdateList'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 
-// ライブ・ランダム写真・当日行はリクエストごとに変わるので静的化しない
-export const dynamic = 'force-dynamic'
+// ISR 60秒(2026-08-01)。以前は force-dynamic だった=一番人が来るページを
+// 毎リクエスト組み直していて、Error 1102(CPU 10ms超過)が**混んだ日に集中して**
+// 出ていた。人が来た時にだけ壊れて見えるという一番まずい出方だったので、
+// Homeから静める。1分あれば突発的な集中(SNSで流れた等)はほぼキャッシュが吸う。
+//
+// 60秒間だけ据え置きになるもの:
+// - scribeの当日窓 … クライアントがマウント後に中継へ繋いで上書きするので、
+//   人の画面では実質いままで通り。据え置きが見えるのはJSを実行しない読み手だけ。
+//   生存表示(recentlyWritten)も3分の近似なので1分のずれは吸収される。
+// - ランダム写真とPODCASTピルのキュー … 1分ごとに引き直し。
+//   ピルのキューは/aboutなど既にISRのページで同じ扱い(layout側の既存の前提)。
+// - UPDATES … 元より日単位の粒度。
+export const revalidate = 60
 
 export const metadata = {
   alternates: { canonical: 'https://andyutaro.com' },
