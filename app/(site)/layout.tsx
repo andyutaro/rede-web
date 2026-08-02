@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Noto_Sans_JP } from 'next/font/google'
 import NavLinks from './NavLinks'
 import ThemeToggle from './ThemeToggle'
+import MailPill from './MailPill'
 import SiteMenu from './SiteMenu'
 import Wordmark from './Wordmark'
 import WaveformHero from './WaveformHero'
@@ -89,12 +90,10 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       </Suspense>
       {/* 右上の縦積みUI(上から): テーマスイッチ → Contactピル → MENU */}
       <ThemeToggle />
-      {/* MAILピル(2026-07-20改称、旧Contact): 仕事の相談と番組へのおたよりの
-          両方の入口。「Contact & Otayori」は長いため封筒の一語に畳む。
-          ナビから外しテーマトグルの下に固定、穏やかに明滅(2026-07-12)。 */}
-      <Link href="/contact" className="contact-pill" aria-label="Contact & Otayori — お仕事のご相談・番組へのおたより">
-        MAIL
-      </Link>
+      {/* 仕事の相談と番組へのおたよりの両方の入口。一語に畳んだ「MAIL」から、
+          CONTACTとOTAYORIが縦に入れ替わるピルへ(2026-08-01 Andy指定)。
+          ナビから外しテーマトグルの下に固定(2026-07-12)。 */}
+      <MailPill />
       {/* ナビはMENUに格納(2026-07-12)。押すとオーバーレイで縦一列に展開 */}
       <SiteMenu />
       <header className="site-header measure">

@@ -363,18 +363,51 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   font-size: 10px;
   /* タイポはMENUと同一(2026-07-20 Andy指定): 同じ字間で縦積みの秩序を揃える */
   letter-spacing: 0.22em;
-  text-indent: 0.22em; /* letter-spacingの右アキ分を中央に寄せ戻す(MENUと同じ) */
   color: var(--bg);
   z-index: 20;
-  animation: pill-breathe 3.4s ease-in-out infinite;
+  /* 明滅は廃止(2026-08-01)。中の言葉が入れ替わるようになり、存在を知らせる役目は
+     そちらが担う。ピル1つに2つの運動を持たせない */
   transition: color 0.2s, border-color 0.2s, background 0.2s ease;
+}
+
+/* ---- CONTACT / OTAYORI の入れ替わり(2026-08-01 Andy指定) ----
+   横に並べた2語を窓で切り、まとめてずらす=次の語が横から入ってくる。
+   ずらす量はコンポーネントがインラインで与える(カスケード依存を避ける)。
+   1語=窓と同じ幅にしておくと、ずらす量が語数だけで決まり寸法の重複を持たない */
+.contact-pill .cp-roll {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 14px;
+}
+
+/* 幅(語数ぶん)とずらす量はコンポーネントがインラインで与える */
+.contact-pill .cp-track {
+  display: flex;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contact-pill .cp-word {
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  white-space: nowrap;
+  text-indent: 0.22em; /* letter-spacingの右アキ分を中央に寄せ戻す(MENUと同じ) */
+}
+
+/* 「動きを減らす」設定では入れ替えの移動を消す(語は切り替わる) */
+@media (prefers-reduced-motion: reduce) {
+  .contact-pill .cp-track {
+    transition: none;
+  }
 }
 
 .contact-pill:hover {
   background: var(--body);
   border-color: var(--body);
   color: var(--bg);
-  animation: none;
 }
 
 /* ダークでは--mutの塗りが白っぽく浮いて眩しい(2026-07-20 Andy)。
@@ -392,30 +425,20 @@ html[data-theme='dark'] .contact-pill:hover {
   color: var(--bg);
 }
 
-.contact-pill[aria-current='page'] {
-  animation: none;
-}
-
-/* 全体を消しすぎず、静かに脈打つ程度に留める(存在は常に見える) */
-@keyframes pill-breathe {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.78;
-  }
-}
-
 /* ---- MENUボタン(2026-07-12): Contactピルの下・同サイズ。
-   押すとナビをオーバーレイで縦展開。開くと枠が反転して"閉じる"と分かる ---- */
+   押すとナビをオーバーレイで縦展開。開くと枠が反転して"閉じる"と分かる。
+   2026-08-01: 「地味すぎて視認性が悪い」(Andy)。原因は地ではなく線で、輪郭が
+   --mut(地との差2.9)しか手掛かりが無かった。一度--ghostで塗ったが「全部くすんだ色に
+   なった」(Andy)ので取り消し、**地は紙色のまま、輪郭だけを--body(本文と同じ濃さ)に
+   上げる**。塗りを足さないので右レールにくすみが増えず、MENUは3つの中で唯一の
+   紙色=いちばん抜けの良いピルとして立つ。線の濃さは地との差2.9→9.2 ---- */
 .menu-toggle {
   position: fixed;
   top: 100px; /* テーマ(20)→Contact(60)→MENU(100) の縦積み */
   right: 22px;
   width: 88px;
   height: 30px;
-  border: 1px solid var(--mut);
+  border: 1px solid var(--body);
   border-radius: 999px;
   background: var(--bg);
   color: var(--ink);
