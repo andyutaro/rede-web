@@ -19,6 +19,10 @@ type Episode = { audioUrl: string; showName: string; title: string; date: string
 
 const START_AT = 600 // 10:00から再生(尺が足りなければ25%地点にフォールバック)
 
+// 点列に置く点の最大数。これを超える長さのキュー(=番組まるごとのまとめ聞き)は、
+// 点だけでは1回ずつしか寄せられないので、回そのものを並べた一覧も一緒に出す
+const DOTS_MAX = 10
+
 // ハンドオフ確定値(2a「かろうじて分かる/最小」)
 const CFG = {
   seed: 20260713,
@@ -97,10 +101,45 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
   // 前の回/次の回ボタンから曲間遷移を呼ぶ(実体は音源エフェクト内のskip)
   const skipRef = useRef<((delta: number) => void) | null>(null)
   const episode = uiQueue?.[idx % uiQueue.length] ?? null
+  // 点列(2026-08-01改): 点はキュー全体に等間隔で置き、押すとその位置へ飛ぶ。
+  // まとめ聞きのキューは番組まるごと(数十〜百回)になるので、全部を点にすると
+  // 読めない帯になり、矢印だけでは目当ての回まで何十回も押すことになる。
+  // 10点で全体を張れば、1タップで大まかな位置まで跳んで、あとは矢印で寄せられる。
+  // キューが10本以下(PODCASTピルの全番組キュー等)のときは従来どおり1回=1点
+  const dots = (() => {
+    const q = uiQueue ?? []
+    const cur = q.length ? idx % q.length : 0
+    const MAX = DOTS_MAX
+    const idxs =
+      q.length <= MAX
+        ? q.map((_, i) => i)
+        : Array.from({ length: MAX }, (_, k) => Math.round((k * (q.length - 1)) / (MAX - 1)))
+    // 光らせるのは現在地にいちばん近い点(点が間引かれていても「いまここ」は出る)
+    const lit = idxs.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a), idxs[0] ?? 0)
+    return { idxs, cur, lit }
+  })()
+  // 一覧を出すのは長いキューだけ。出しているときは点列・矢印を畳む(役目が重なる)
+  const hasList = !!uiQueue && uiQueue.length > DOTS_MAX
   const playingRef = useRef(false)
   useEffect(() => {
     playingRef.current = playing
   }, [playing])
+
+  // 一覧はいま鳴っている回が見えている状態で開く(2026-08-01)。
+  // 68行の途中が鳴っているのに先頭が見えていると、結局そこから探すことになる
+  const queueListRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = queueListRef.current
+    const cur = list?.querySelector<HTMLElement>('[data-cur="1"]')
+    if (!list || !cur) return
+    // scrollIntoViewは使わない: 祖先(固定オーバーレイ)まで動かしうるし、
+    // 呼ぶ時点のレイアウトが未確定だとずれる。次のフレームで自前に位置を入れる。
+    // offsetTopが一覧の内側基準になるよう、CSSで.sound-queue-listにpositionを与えてある
+    const id = requestAnimationFrame(() => {
+      list.scrollTop = cur.offsetTop - list.clientHeight / 2 + cur.offsetHeight / 2
+    })
+    return () => cancelAnimationFrame(id)
+  }, [idx, playing])
 
   // ---- 波形アニメーション(常時) ----
   useEffect(() => {
@@ -301,10 +340,13 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     }
     skipRef.current = skip
 
-    // 番組ページの「この番組を連続再生」からのキュー差し替え。クリックハンドラ内から
-    // 同期的に届く=このplay()はユーザー操作起点として許容される
+    // 「作業用まとめ聞き」からのキュー差し替え。クリックハンドラ内から
+    // 同期的に届く=このplay()はユーザー操作起点として許容される。
+    // fromStartが立っていれば1本目も頭から(2026-08-01): 狙って選んだ回に
+    // 「放送に途中から合流する」10:00シークを掛けると、聴きたい所を飛ばしてしまう
     const onPlayShow = (e: Event) => {
-      const eps = (e as CustomEvent<{ episodes?: Episode[] }>).detail?.episodes
+      const detail = (e as CustomEvent<{ episodes?: Episode[]; fromStart?: boolean }>).detail
+      const eps = detail?.episodes
       if (!eps || eps.length === 0) return
       queueRef.current = eps
       idxRef.current = 0
@@ -312,7 +354,7 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       setIdx(0)
       chaining = true
       a.src = eps[0].audioUrl
-      a.addEventListener('loadedmetadata', seekJoin, { once: true }) // 合流演出は差し替え時も
+      if (!detail?.fromStart) a.addEventListener('loadedmetadata', seekJoin, { once: true })
       fadeInAudio(a, fadeRafBox)
       a.play()
         .then(() => {
@@ -416,21 +458,55 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
             <span className="show">{episode.showName} — {episode.date}</span>
             <span className="ttl">{episode.title}</span>
           </Link>
+          {/* 長いキュー(まとめ聞き)は回そのものを並べて選ばせる(2026-08-01)。
+              点列と矢印は「近くを1つずつ」動く道具なので、68回の中からEP30を
+              出そうとすると何度も押すことになる。狙った回を1タップで出すには
+              名前が並んでいる必要がある。指1本でスクロールして1回押すだけ。
+              組みは番組ページのエピソード索引と同じ(日付+タイトルの1行) */}
+          {hasList && (
+            <div className="sound-queue-list" ref={queueListRef}>
+              {uiQueue.map((e, qi) => (
+                <button
+                  key={e.href}
+                  type="button"
+                  className={`sq-row${qi === dots.cur ? ' on' : ''}`}
+                  data-cur={qi === dots.cur ? '1' : undefined}
+                  onClick={() => skipRef.current?.(qi - dots.cur)}
+                >
+                  <span className="sq-date">{e.date}</span>
+                  <span className="sq-ttl">{e.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {/* キュー操作(2026-07-19再設計): ←|点列|→ だけで「続きがあり、いまここ」を
-              無言で伝える(説明語ゼロ)。現在位置の点はON AIRと同じ赤。矢印は頭から再生 */}
+              無言で伝える(説明語ゼロ)。現在位置の点はON AIRと同じ赤。矢印は頭から再生。
+              2026-08-01: 一覧を出しているときはこの行ごと畳む。一覧があれば
+              「隣の回へ」も「遠くへ跳ぶ」も行を押すだけで済み、押して寄せる道具は
+              役目を終える(Andy「ぽちぽちやるボタンがスクロールで不要になった」) */}
+          {!hasList && (
           <div className="sound-queue">
             <button type="button" className="q-arrow" aria-label="前の回へ" onClick={() => skipRef.current?.(-1)}>
               ←
             </button>
-            <span className="q-dots" aria-hidden="true">
-              {uiQueue!.map((e, i) => (
-                <span key={e.href} className={`q-dot${i === idx % uiQueue!.length ? ' on' : ''}`} />
+            {/* 点はキュー全体に等間隔。押すとその位置へ跳ぶ(2026-08-01)。
+                見た目は従来の点列のまま=説明語ゼロの語法を崩さない */}
+            <span className="q-dots">
+              {dots.idxs.map((qi) => (
+                <button
+                  key={qi}
+                  type="button"
+                  className={`q-dot${qi === dots.lit ? ' on' : ''}`}
+                  aria-label={`${uiQueue![qi].date} の回へ`}
+                  onClick={() => skipRef.current?.(qi - dots.cur)}
+                />
               ))}
             </span>
             <button type="button" className="q-arrow" aria-label="次の回へ" onClick={() => skipRef.current?.(1)}>
               →
             </button>
           </div>
+          )}
         </div>
       )}
 

@@ -134,10 +134,14 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
     searchText: ep.searchText,
   }))
 
-  // NEWドット境界(7日前)とWaveformHeroへ渡す連続再生キュー素材
+  // NEWドット境界(7日前)と「作業用まとめ聞き」のキュー素材。
+  // フィードは新しい順なので反転して第1回からの放送順にする(2026-08-01)。
+  // 番組ページのボタンは「この番組を最初から通して流す」担当で、途中から流したい時は
+  // エピソードページ側の「この回から」を使う
   const newSince = tokyoDaysAgo(7)
   const playable = episodes
     .filter((e) => e.audioUrl)
+    .reverse()
     .map((e) => ({
       audioUrl: e.audioUrl!,
       showName: show.display ?? show.name,
@@ -283,7 +287,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             ・おたより = 継続中のORIGINALはサイト内フォーム、専用フォームを
               持つ番組(ON-AIRDO等)は番組自身のフォームへ */}
         <div className="show-actions">
-          <ShowPlayAll episodes={playable} />
+          <ShowPlayAll episodes={playable} label="第1回から作業用まとめ聞き" />
           {isOriginal && !show.ended && !show.otayoriUrl && (
             <Link className="ep-letter" href={`/contact?show=${show.slug}`}>
               番組へのおたよりを送る →

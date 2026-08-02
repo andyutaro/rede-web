@@ -11,6 +11,7 @@ import SamePeriod from '../../../SamePeriod'
 import EpisodeNotes from '../../EpisodeNotes'
 import AudioPlayer from '../../AudioPlayer'
 import PlatformLinks from '../../PlatformLinks'
+import ShowPlayAll from '../../ShowPlayAll'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // ISR: 30分ごとに再検証。新エピソードのページは初回アクセス時に生成・キャッシュされる
@@ -75,6 +76,22 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
   const newerEp = idx > 0 ? feed.episodes[idx - 1] : undefined
   const pagerLink = (e?: { id: string; title: string }) =>
     e ? { href: `/podcast/${show.slug}/${e.id}`, title: e.title } : null
+
+  // 「作業用まとめ聞き」の起点をこの回にしたキュー(2026-08-01 Andy指定
+  // 「好きなエピソードから連続再生する」)。フィードは新しい順なので、この回から
+  // 上(=新しい方)を取って反転する=この回から先へ、放送順に流れる。
+  // 「前に聴いた回の続きから追いつく」という聴き方がそのまま成立する向き
+  const playFromHere = feed.episodes
+    .slice(0, idx + 1)
+    .reverse()
+    .filter((e) => e.audioUrl)
+    .map((e) => ({
+      audioUrl: e.audioUrl!,
+      showName: show.display ?? show.name,
+      title: e.title,
+      date: dateDots(e.date),
+      href: `/podcast/${show.slug}/${e.id}`,
+    }))
 
   // 検索エンジン向けのエピソード構造化データ(2026-07-25、事実データのみ)
   const epUrl = `https://andyutaro.com/podcast/${show.slug}/${ep.id}`
@@ -148,6 +165,9 @@ export default async function EpisodePage({ params }: { params: Promise<Params> 
               エピソードページの行動は便り1つだが、器を共有すると
               番組ページと同じ位置・同じ余白に着地する */}
           <div className="show-actions">
+            {/* この回を起点にした作業用まとめ聞き(2026-08-01)。番組ページの
+                同じボタンが「最新回から」なのに対し、ここは「この回から」 */}
+            <ShowPlayAll episodes={playFromHere} label="この回から作業用まとめ聞き" />
             {isOriginal && !show.ended && (
               <Link
                 className="ep-letter"

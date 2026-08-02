@@ -568,6 +568,87 @@ html[data-theme='dark'] .contact-pill:hover {
   white-space: nowrap;
 }
 
+/* ---- 再生中のキュー一覧(2026-08-01): 長いキュー(番組まるごとのまとめ聞き)でだけ出る。
+   点列と矢印は近くを1つずつ動かす道具なので、68回からEP30を出そうとすると
+   何度も押すことになる(Andy)。名前が並んでいれば、スクロールして1回押すだけで済む。
+   組みは番組ページのエピソード索引と同じ「日付 + タイトルの1行」。
+   高さは5行ぶんに抑えて、タイトルと点列に挟まれた静かな窓にする ---- */
+.sound-queue-list {
+  /* 行のoffsetTopがこの箱の内側基準になるようにする(現在行へ位置を合わせる計算で使う) */
+  position: relative;
+  margin-top: 26px;
+  max-height: 190px;
+  overflow-y: auto;
+  text-align: left;
+  /* つまみのぶんだけ本文を左に寄せる(文字とバーを重ねない) */
+  padding-right: 14px;
+  /* 上下のフェード(mask)は廃止(2026-08-01)。maskは要素の描画全体に掛かるので
+     スクロールバーまで端で薄くなり、「見やすくする」の逆になる。
+     窓の中に続きがあることは、見えるようになったバーが代わりに伝える */
+  /* スクロールバーを見えるようにする(2026-08-01 Andy)。既定の細い半透明では
+     一覧が動かせることが伝わらない。地(--dot)と摘み(--mut)は既存の階調のまま */
+  scrollbar-width: thin;
+  scrollbar-color: var(--body) var(--dot);
+}
+
+.sound-queue-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sound-queue-list::-webkit-scrollbar-track {
+  background: var(--dot);
+  border-radius: 999px;
+}
+
+/* 摘みは本文と同じ濃さ。68回ぶんの中の5行ぶんなので摘みは元々小さく、
+   薄い灰だと在ることに気づけない(2026-08-01 Andy「もっとみやすく」) */
+.sound-queue-list::-webkit-scrollbar-thumb {
+  background: var(--body);
+  border-radius: 999px;
+}
+
+.sound-queue-list .sq-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  padding: 7px 2px;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+  color: var(--body);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.sound-queue-list .sq-row:hover {
+  color: var(--ink);
+}
+
+.sound-queue-list .sq-date {
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
+
+.sound-queue-list .sq-ttl {
+  font-size: 12px;
+  line-height: 1.7;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* いま鳴っている回。色はON AIRの赤(=いま)と揃える */
+.sound-queue-list .sq-row.on,
+.sound-queue-list .sq-row.on .sq-date {
+  color: var(--live);
+}
+
 /* 再生中のキュー操作(2026-07-19再設計): 説明語を排し「← 点列 →」だけで
    "続きがあり、いまここ"を伝える。現在位置の点はON AIRと同じ赤 */
 .sound-queue {
@@ -597,19 +678,34 @@ html[data-theme='dark'] .contact-pill:hover {
 .sound-queue .q-dots {
   display: flex;
   align-items: center;
-  gap: 7px;
+  /* 点は押せるボタン(2026-08-01)。指の当たり面はpaddingで作るので隙間は持たない */
+  gap: 0;
 }
 
+/* 点そのものは4pxのまま。周りのpaddingが透明な当たり面になる
+   (box-sizingはcontent-box、背景はcontent-box止まり=見た目は点だけ)。
+   これで長いキューでも1タップで大きく移動できる */
 .sound-queue .q-dot {
+  box-sizing: content-box;
   width: 4px;
   height: 4px;
+  padding: 6px;
+  border: none;
   border-radius: 50%;
   background: var(--ghost);
+  background-clip: content-box;
+  cursor: pointer;
   transition: background 0.3s ease;
+}
+
+.sound-queue .q-dot:hover {
+  background: var(--mut);
+  background-clip: content-box;
 }
 
 .sound-queue .q-dot.on {
   background: var(--live);
+  background-clip: content-box;
 }
 
 .sound-btn:hover {
