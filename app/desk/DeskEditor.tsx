@@ -26,6 +26,8 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
   const rawHtmlRef = useRef(initialHtml)
   const onEditRef = useRef<() => void>(() => {})
   const onRawChangeRef = useRef<() => void>(() => {})
+  // 保存待ちを送り切ってから画面を出るためのフック(実体は効果内のonBeforeUnload)
+  const flushRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     const openedDate = initialDate
@@ -279,6 +281,9 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       navigator.sendBeacon?.('/api/scribe/save', new Blob([body], { type: 'application/json' }))
     }
     window.addEventListener('beforeunload', onBeforeUnload)
+    // 画面から出る前に、デバウンス待ちの分を送り切るための口(2026-08-01)。
+    // スマホのbeforeunloadは発火が当てにならないので、遷移する側から明示的に呼ぶ
+    flushRef.current = onBeforeUnload
 
     const dateInterval = setInterval(checkDateChange, 60 * 1000)
     function onVisibility() {
@@ -378,6 +383,19 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
               onRawChangeRef.current()
             }}
             onError={setStatus}
+            // 右下のボタンから編集室へ(2026-08-01 Andy指定。スマホで書いている
+            // ときに行き先が無かった)。ボタンは増やさず「追加」と同じ1つに畳む。
+            // 出る前にデバウンス待ちの保存を送り切る。クライアント遷移だと
+            // beforeunloadが走らず、直前の数秒ぶんが落ちる
+            menuActions={[
+              {
+                label: '編集室(STUDIO)へ',
+                onClick: () => {
+                  flushRef.current?.()
+                  location.href = '/studio'
+                },
+              },
+            ]}
           />
         </div>
       </div>

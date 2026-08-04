@@ -31,12 +31,21 @@ a.plain-link { color: #7fb0e0; text-decoration: underline; word-break: break-all
 .html-editor-surface { width: 100%; font-size: 17px; line-height: 1.9; color: #e8e6e0;
   outline: none; white-space: pre-wrap; word-break: break-word; caret-color: #e8e6e0; padding: 4px 0; }
 .html-editor-surface:empty::before { content: attr(data-placeholder); color: #4a4a4a; pointer-events: none; }
+/* 道具は右下にまとめる(2026-08-01 Andy: スマホで書くので、右利きの親指が届く位置)。
+   縦積みにして、ボタンの上へメニューが開く。横並びだと長いチップが画面からはみ出す */
 .html-editor-toolbelt { position: fixed; right: 18px; bottom: 24px; display: flex;
-  align-items: center; gap: 12px; z-index: 10; }
+  flex-direction: column; align-items: flex-end; gap: 10px; z-index: 10; }
 .html-editor-add { width: 44px; height: 44px; border-radius: 50%; background: rgba(30,30,30,0.92);
-  border: 1px solid rgba(255,255,255,0.14); color: #6b6b6b; font-size: 22px; line-height: 1; cursor: pointer; }
+  border: 1px solid rgba(255,255,255,0.14); color: #6b6b6b; font-size: 22px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; }
 .html-editor-delete { padding: 9px 16px; font-size: 12px; letter-spacing: 0.06em; color: #d96b6b;
   background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; cursor: pointer; }
+/* メニューの項目。削除チップと同じ形(丸いチップ)で、色だけ通常色にする */
+.html-editor-menuitem { padding: 9px 16px; font-size: 12px; letter-spacing: 0.06em; color: #e8e6e0;
+  background: rgba(30,30,30,0.92); border: 1px solid rgba(255,255,255,0.14); border-radius: 999px;
+  cursor: pointer; font-family: inherit; white-space: nowrap; }
+.html-editor-menuitem:hover { border-color: rgba(255,255,255,0.35); }
+.html-editor-bars { display: block; }
 `
 
 // 外側(DeskEditor等)からの命令的操作。他端末の内容の取り込み(applyRemote)と
@@ -65,6 +74,10 @@ type Props = {
   // カーソルが画面下55%より下に来たら40%あたりまで能動スクロール(desk)
   keepCaretCentered?: boolean
   controllerRef?: React.MutableRefObject<HtmlEditorController | null>
+  // 右下のボタンに相乗りさせる行き先(2026-08-01 Andy指定)。
+  // 渡すとボタンがメニューになり、「画像・動画・PDFを追加」と一緒に並ぶ。
+  // 渡さなければ従来どおり+ボタン1つのまま(studioのエディタは変えない)
+  menuActions?: { label: string; onClick: () => void }[]
 }
 
 export default function HtmlEditor({
@@ -78,10 +91,14 @@ export default function HtmlEditor({
   autoFocus = false,
   keepCaretCentered = false,
   controllerRef,
+  menuActions,
 }: Props) {
   const editorRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [embedSelected, setEmbedSelected] = useState(false)
+  // 右下のメニューの開閉(menuActionsが渡された時だけ使う)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const hasMenu = (menuActions?.length ?? 0) > 0
   const uploadFilesRef = useRef<(files: FileList | File[]) => void>(() => {})
   const deleteEmbedRef = useRef<() => void>(() => {})
   // コールバックは毎レンダー新しい参照になりうるのでrefで持つ(メインeffectは初回のみ)
@@ -441,13 +458,49 @@ export default function HtmlEditor({
             選択した埋め込みを削除
           </button>
         )}
+        {/* メニュー(2026-08-01): ボタンを増やさずに行き先を持たせるため、
+            「追加」と行き先を1つのボタンの中にまとめる。開いた時だけ項目が立つ */}
+        {hasMenu && menuOpen && (
+          <>
+            <button
+              type="button"
+              className="html-editor-menuitem"
+              onClick={() => {
+                setMenuOpen(false)
+                fileInputRef.current?.click()
+              }}
+            >
+              画像・動画・PDFを追加
+            </button>
+            {menuActions!.map((a) => (
+              <button
+                key={a.label}
+                type="button"
+                className="html-editor-menuitem"
+                onClick={() => {
+                  setMenuOpen(false)
+                  a.onClick()
+                }}
+              >
+                {a.label}
+              </button>
+            ))}
+          </>
+        )}
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
-          aria-label="画像・動画・PDFを追加"
+          onClick={() => (hasMenu ? setMenuOpen((v) => !v) : fileInputRef.current?.click())}
+          aria-label={hasMenu ? (menuOpen ? 'メニューを閉じる' : 'メニュー') : '画像・動画・PDFを追加'}
+          aria-expanded={hasMenu ? menuOpen : undefined}
           className="html-editor-add"
         >
-          +
+          {!hasMenu || menuOpen ? (
+            menuOpen ? '×' : '+'
+          ) : (
+            <svg className="html-editor-bars" width="18" height="12" viewBox="0 0 18 12" aria-hidden="true">
+              <path d="M0 1h18M0 6h18M0 11h18" stroke="currentColor" strokeWidth="1.4" />
+            </svg>
+          )}
         </button>
       </div>
     </div>
