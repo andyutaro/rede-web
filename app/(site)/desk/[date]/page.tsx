@@ -102,10 +102,12 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
   // いちばん新しい確定アーカイブの「次」は、まだ確定していない今日のdesk(2026-08-01
   // Andy指定)。ここが空欄だと、前日まで遡って読んだ人が今日へ戻る道を失う。
   // 次の確定日がある回では従来どおりそちらが「次」
+  // 日付ではなくTodayと呼ぶ(2026-08-01 Andy指定)。この行き先だけは日付で
+  // 指すものではなく「いま」なので、確定アーカイブの番号付けから外す
   const today = todayInTokyo()
   const newerLink =
     pagerLink(nextRes.data?.date as string) ??
-    (date < today ? { href: '/live', title: `Desk Live ${scribeTitle(today)}` } : null)
+    (date < today ? { href: '/live', title: 'Desk Live Today', live: true } : null)
 
   // 注釈(2026-07-28): 本文とは別レイヤー。ログイン中なら自分のサイトを普通に
   // 見ている画面から、ドラッグして直接足せる(書き込みの可否はAPI側で再検証する)

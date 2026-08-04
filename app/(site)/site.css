@@ -2567,6 +2567,19 @@ a.show-cast-name:hover {
   color: var(--ink);
 }
 
+/* 「今日のdesk」への行き先に添える赤い点(2026-08-01 Andy指定)。
+   実際に書いているかどうかに関わらず打つ=確定した過去ではなく、
+   まだ書き換わりうる今日だ、という区別。明滅はscribeのLIVEと同じ息づかい */
+.pager-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--live);
+  animation: rec-breathe 2.2s ease-in-out infinite;
+}
+
 /* 棚が空のとき(Photography等) */
 .shelf-empty {
   margin-top: 70px;
