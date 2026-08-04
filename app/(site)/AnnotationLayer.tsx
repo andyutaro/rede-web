@@ -65,29 +65,37 @@ export default function AnnotationLayer({
     const root = rootRef.current
     if (!root) return
     let timer: ReturnType<typeof setTimeout> | null = null
-    const check = () => {
+    // byGesture: 指やマウスを離した結果として見にきたか。
+    // 選択が無い/使えない時にボタンを引っ込めるのは、この場合だけにする。
+    // ライブ本文(/live)は打鍵のたびにブロックが差し替わり、そのたびに選択が
+    // 消える。選択の消滅でボタンを消すと、書いている最中は出た瞬間に消えて
+    // 「ボタン自体が出ない」ことになる(2026-08-01 Andy報告)。
+    // アンカーは選んだ瞬間に確保済みなので、選択が消えてもボタンは残してよい
+    // (2026-07-29の設計。押した時に選択を読み直さないのはそのため)
+    const check = (byGesture: boolean) => {
+      const drop = () => (byGesture ? setPick(null) : undefined)
       const sel = window.getSelection()
-      if (!sel || sel.isCollapsed || sel.rangeCount === 0) return setPick(null)
-      if (!root.contains(sel.getRangeAt(0).commonAncestorContainer)) return setPick(null)
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) return drop()
+      if (!root.contains(sel.getRangeAt(0).commonAncestorContainer)) return drop()
       // ここでアンカーを確保する。取れない選択(本文外・既存注釈との重なり)には
       // そもそもボタンを出さない=押してから断るより静か
       const res = anchorFromSelection(root)
-      if ('error' in res) return setPick(null)
+      if ('error' in res) return drop()
       const r = sel.getRangeAt(0).getBoundingClientRect()
       setPick({ x: r.left, y: r.bottom, anchor: res.anchor })
     }
     // クリックで選択が畳まれる場合があるので少し待ってから見る
-    const later = (ms: number) => {
+    const later = (ms: number, byGesture: boolean) => {
       if (timer) clearTimeout(timer)
-      timer = setTimeout(check, ms)
+      timer = setTimeout(() => check(byGesture), ms)
     }
-    const onUp = () => later(10)
+    const onUp = () => later(10, true)
     // スマホ対策(2026-08-01 Andy「/liveで注釈を足せない」):
     // 長押しで選ぶ端末では、選択が確定するのはtouchendの**後**で、さらに
     // 掴みを引きずって範囲を広げる操作はOS側のUIなのでtouchendが飛んでこない。
     // mouseup/touchendだけを見ていると、選んだのにボタンが出ない。
     // selectionchangeなら選び直しも掴みの移動も拾える(連続で飛ぶので少し待つ)
-    const onSelectionChange = () => later(180)
+    const onSelectionChange = () => later(180, false)
     document.addEventListener('selectionchange', onSelectionChange)
     document.addEventListener('mouseup', onUp)
     document.addEventListener('touchend', onUp)
