@@ -5,6 +5,8 @@ import { scribeTitle } from '@/lib/site/text'
 import LiveFull from './LiveFull'
 import Pager from '../Pager'
 import { isRecentlyWritten } from '@/lib/site/serverBody'
+import { loadAnnotations } from '@/lib/site/annotations'
+import { isEditor } from '@/lib/supabase/editor'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +19,10 @@ export default async function LivePage() {
   const service = createService()
   // 前日への行き先(2026-08-01 Andy指定)。確定済みかつゴミ箱でない日だけを渡り歩く
   // =確定アーカイブ側のPagerとまったく同じ条件にする(行き来が食い違わない)
-  const [{ data }, prevRes] = await Promise.all([
+  // 当日の本文にも注釈をつけられるようにする(2026-08-01 Andy指定)。
+  // 宛先キーは確定アーカイブとまったく同じ(kind:'scribe', key:日付)。
+  // 0:01に確定してアーカイブになった後も、同じ注釈がそのまま出る
+  const [{ data }, prevRes, annotations, canEdit] = await Promise.all([
     service.from('scribe_days').select('html, updated_at').eq('date', today).maybeSingle(),
     service
       .from('scribe_days')
@@ -28,6 +33,8 @@ export default async function LivePage() {
       .order('date', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    loadAnnotations({ kind: 'scribe', key: today }),
+    isEditor(),
   ])
 
   const recentlyWritten = isRecentlyWritten(data?.updated_at as string | null)
@@ -40,6 +47,9 @@ export default async function LivePage() {
         recentlyWritten={recentlyWritten}
         today={today}
         initialHtml={data?.html || null}
+        annotations={annotations}
+        canEdit={canEdit}
+        target={{ kind: 'scribe', key: today }}
       />
       {/* 当日の画面にも前日と一覧への行き先を置く(2026-08-01 Andy指定)。
           「次」は無い: 今日が最新なので、進む先はまだ生まれていない */}

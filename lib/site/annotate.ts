@@ -81,6 +81,27 @@ function wrap(segs: Seg[], id: string) {
   }
 }
 
+// 引いた下線を全部外して素の本文に戻す(2026-08-01)。
+// ライブ本文(/live)で必要になる: 差分エンジンは「DOMが受信HTMLと一致している」
+// 前提でouterHTMLを比べるので、注釈spanが入ったままだとそのブロックが毎回
+// 「変わった」と判定され、画像や動画ごと作り直されてしまう。
+// パッチの直前に外し、直後に貼り直せば、差分は従来どおり効く。
+// spanを外したあとnormalize()でテキストノードを繋ぎ直すのが要点(繋がないと
+// 分割されたままでouterHTMLが一致しない)
+export function clearAnnotations(root: HTMLElement) {
+  const spans = Array.from(root.querySelectorAll('span.anno'))
+  if (spans.length === 0) return
+  const touched = new Set<Node>()
+  for (const span of spans) {
+    const parent = span.parentNode
+    if (!parent) continue
+    while (span.firstChild) parent.insertBefore(span.firstChild, span)
+    span.remove()
+    touched.add(parent)
+  }
+  for (const p of touched) (p as Element).normalize?.()
+}
+
 // 適用できた注釈のIDを返す(返らなかったものは「迷子」=本文に出せなかった注釈)
 export function applyAnnotations(root: HTMLElement, list: Annotation[]): Set<string> {
   const applied = new Set<string>()
