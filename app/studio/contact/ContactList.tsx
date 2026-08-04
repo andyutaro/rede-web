@@ -20,13 +20,21 @@ export type ContactRow = {
 // SPAMタブ(2026-07-27): 自動隔離した分。消さずにここに残り、
 // 「スパムではない」で受信箱へ戻せる(判定は必ず間違えるので救出路を必ず持つ)
 type Filter = 'unread' | 'all' | 'spam' | 'trash'
+// 種別(2026-08-01 Andy「お問合せとおたよりがごっちゃなUIに見える」)。
+// おたよりフォームはtopicsを「おたより — 宛先」の形で送る(OtayoriForm)ので、
+// データを足さずに1件ずつ判別できる。仕事の相談はそれ以外
+type Kind = 'all' | 'client' | 'otayori'
+const isOtayori = (r: ContactRow) => r.topics.some((t) => t.startsWith('おたより'))
 
 // 問い合わせ受信箱v2(2026-07-17): 列を整列した表形式(日付/状態/名前/メール/用件/本文冒頭)。
 // 行クリックで本文展開(展開と同時に既読)。検索+行単位クイック操作(既読⇄未読/ゴミ箱)
 // +チェックボックス一括操作(既読/未読/ゴミ箱/復元/完全消去)。
 export default function ContactList({ rows }: { rows: ContactRow[] }) {
   const router = useRouter()
-  const [filter, setFilter] = useState<Filter>('unread')
+  // 既定は全件(2026-08-01 Andy「開いた時にメール全件が見れない」)。
+  // 未読を既定にしていたため、全部読み終わっていると開いた瞬間は空に見えていた
+  const [filter, setFilter] = useState<Filter>('all')
+  const [kind, setKind] = useState<Kind>('all')
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<Set<string>>(() => new Set())
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
@@ -36,6 +44,7 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return rows.filter((r) => {
+      if (kind !== 'all' && (kind === 'otayori') !== isOtayori(r)) return false
       if (filter === 'trash') {
         if (!r.deleted) return false
       } else if (filter === 'spam') {
@@ -53,12 +62,18 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
         r.topics.some((t) => t.toLowerCase().includes(needle))
       )
     })
-  }, [rows, filter, q])
+  }, [rows, filter, kind, q])
 
-  const unreadCount = rows.filter((r) => !r.deleted && !r.spam && !r.read).length
-  const allCount = rows.filter((r) => !r.deleted && !r.spam).length
-  const spamCount = rows.filter((r) => !r.deleted && r.spam).length
-  const trashCount = rows.filter((r) => r.deleted).length
+  // 状態タブの件数は種別の絞り込みを反映する(絞った状態で数が合わないと迷う)
+  const inKind = (r: ContactRow) => kind === 'all' || (kind === 'otayori') === isOtayori(r)
+  const unreadCount = rows.filter((r) => inKind(r) && !r.deleted && !r.spam && !r.read).length
+  const allCount = rows.filter((r) => inKind(r) && !r.deleted && !r.spam).length
+  const spamCount = rows.filter((r) => inKind(r) && !r.deleted && r.spam).length
+  const trashCount = rows.filter((r) => inKind(r) && r.deleted).length
+  // 種別タブの件数は受信箱(ゴミ箱・隔離を除く)の中で数える
+  const inbox = rows.filter((r) => !r.deleted && !r.spam)
+  const otayoriCount = inbox.filter(isOtayori).length
+  const clientCount = inbox.length - otayoriCount
 
   async function act(
     action: 'read' | 'unread' | 'trash' | 'restore' | 'purge' | 'spam' | 'notspam',
@@ -106,6 +121,30 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
 
   return (
     <>
+      {/* 種別(2026-08-01): 仕事の相談と番組へのおたよりは性質が別物なので、
+          まずここで分けられるようにする。既定は両方 */}
+      <div className="inbox-filter inbox-filter-kind">
+        {(
+          [
+            ['all', `すべて(${inbox.length})`],
+            ['client', `問い合わせ(${clientCount})`],
+            ['otayori', `おたより(${otayoriCount})`],
+          ] as const
+        ).map(([k, label]) => (
+          <button
+            key={k}
+            type="button"
+            className={kind === k ? 'active' : ''}
+            onClick={() => {
+              setKind(k)
+              setSelected(new Set())
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="inbox-filter">
         {(
           [
@@ -190,6 +229,7 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
           <span className="row-check" />
           <span className="row-date">日付</span>
           <span className="contact-state">状態</span>
+          <span className="contact-kind">種別</span>
           <span className="contact-name">名前</span>
           <span className="contact-email">メール</span>
           <span className="contact-excerpt">用件 / 本文</span>
@@ -211,6 +251,11 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
               <span className="row-date">{dateDots(r.createdAt.slice(0, 10))}</span>
               <span className="contact-state">
                 {r.deleted ? 'ゴミ箱' : r.spam ? '隔離' : r.read ? '既読' : <span className="contact-unread-dot">未読</span>}
+              </span>
+              {/* 種別は行の左側に固定で出す。一覧を眺めた時に仕事の相談だけを
+                  拾えるよう、そちらを明るく、おたよりは落ち着いた緑にする */}
+              <span className={`contact-kind${isOtayori(r) ? ' kind-otayori' : ' kind-client'}`}>
+                {isOtayori(r) ? 'おたより' : '問い合わせ'}
               </span>
               <button type="button" className="contact-row-title" onClick={() => toggleOpen(r)}>
                 <span className="contact-name">{r.name}</span>

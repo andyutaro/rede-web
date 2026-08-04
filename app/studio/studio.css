@@ -1121,78 +1121,7 @@
   color: #a8a49c;
 }
 
-/* ==== スマホ(≦640px、2026-07-11) ==== */
-@media (max-width: 640px) {
-  .studio-bar {
-    gap: 12px 18px;
-    padding: 12px 14px;
-  }
 
-  .studio-nav {
-    gap: 14px;
-  }
-
-  .studio-main {
-    padding: 26px 14px 30vh;
-  }
-
-  /* 行はみ出し対策: 折り返してタイトルを2行目に落とす */
-  .studio-row {
-    flex-wrap: wrap;
-    row-gap: 2px;
-  }
-
-  .studio-row .row-title {
-    flex: 1 1 100%;
-    order: 10;
-    padding-left: 26px; /* チェックボックス分だけ字下げして揃える */
-  }
-
-  .studio-row .row-tags {
-    max-width: 120px;
-  }
-
-  .inbox-row {
-    flex-wrap: wrap;
-    row-gap: 6px;
-  }
-
-  .inbox-row .row-ep {
-    flex: 1 1 100%;
-    order: 10;
-    padding-left: 26px;
-  }
-
-  .inbox-row .inbox-tagpicker {
-    flex: 1 1 70%;
-    order: 11;
-    padding-left: 26px;
-  }
-
-  /* 入門トグルは日付行ではなくタグ行へ降ろす(対象の回のすぐ下で操作する)。
-     トグルのある行はタグ欄を詰めて「タグ/入門/保存」を1行に収める */
-  .inbox-row .starter-toggle {
-    order: 12;
-  }
-
-  .inbox-row:has(.starter-toggle) .inbox-tagpicker {
-    flex-basis: 40%;
-    min-width: 0; /* デスクトップのmin-width:200pxを解いて3つを1行に収める */
-  }
-
-  .inbox-row .row-save {
-    order: 13;
-  }
-
-  .thumb-row {
-    flex-wrap: wrap;
-  }
-
-  .thumb-row .thumb-actions {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-  }
-}
 
 /* ---- CONTACT室: 問い合わせ受信箱(2026-07-12、2026-07-17に列を固定幅で整列) ---- */
 .contact-row {
@@ -1231,6 +1160,30 @@
 
 .contact-unread-dot {
   color: #d96b6b;
+}
+
+/* 種別列(2026-08-01): 仕事の相談と番組へのおたよりを一覧で見分ける。
+   仕事の相談は明るく(拾い漏らしたくない側)、おたよりは落ち着いた緑 */
+.contact-kind {
+  flex: none;
+  width: 62px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: #6b6b6b;
+  white-space: nowrap;
+}
+
+.contact-kind.kind-client {
+  color: #e8e6e0;
+}
+
+.contact-kind.kind-otayori {
+  color: #7fb08a;
+}
+
+/* 種別の絞り込みは状態タブの上。押している方だけ明るい(inbox-filterと同じ語法) */
+.inbox-filter-kind {
+  margin-bottom: 10px;
 }
 
 .contact-name {
@@ -1348,12 +1301,8 @@
   color: #e8e6e0;
 }
 
-@media (max-width: 640px) {
-  .contact-row-title {
-    flex-wrap: wrap;
-    gap: 4px 14px;
-  }
-}
+/* MAIL室のスマホ組みは上のスマホ節にまとめた(2026-08-01)。
+   ここにあった.contact-row-titleの折返し指定は、後から効いて上書きしてしまうので削除 */
 
 /* ---- PAGES室: 固定ページの文章編集(2026-07-13) ---- */
 .page-editor {
@@ -1501,4 +1450,252 @@
   font-size: 11px;
   color: #8a8a84;
   margin: 0 0 10px;
+}
+
+/* ==== スマホ(≦640px、2026-07-11 / 2026-08-01全面改訂) ====
+   studioの一覧はどれも「固定幅の列を横に並べた表」で組んである。デスクトップでは
+   列が揃って読みやすいが、スマホでは列の合計が画面幅を越えて崩れる
+   (例: MAILの行は チェック15+日付+状態44+種別62+名前110+メール190+本文 で、
+   余白を入れると500px超。390pxの画面に入るはずがない)。
+   そこでスマホでは全ての一覧を「表」から「2段のカード」に組み替える:
+     1段目 = 日付・状態・種別など短い属性
+     2段目 = 見出し(タイトル/名前/本文冒頭)を全幅で
+     3段目 = 操作(右寄せ)
+   ヘッダー行は列が無くなるので隠す。列の固定幅はすべて解く。
+   ==== */
+@media (max-width: 640px) {
+  .studio-bar {
+    gap: 10px 16px;
+    padding: 10px 12px;
+  }
+
+  /* ナビ9室は横スクロールで通す(折り返すとバーが画面の1/3を占める)。
+     端で切れていることが分かるよう、画面端まで伸ばしてから中身を寄せる */
+  .studio-nav {
+    gap: 16px;
+    flex: 1 1 100%;
+    order: 10;
+    margin: 0 -12px;
+    padding: 2px 12px;
+    scrollbar-width: none;
+  }
+
+  .studio-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .studio-bar-right {
+    gap: 14px;
+  }
+
+  .studio-main {
+    padding: 24px 14px 30vh;
+  }
+
+  .studio-h1 {
+    margin-bottom: 20px;
+  }
+
+  /* 検索欄は固定220pxをやめて全幅。指で押せる高さも確保する */
+  .toolbar-search {
+    width: 100%;
+    padding: 9px 12px;
+  }
+
+  .studio-toolbar,
+  .inbox-filter {
+    gap: 12px 16px;
+  }
+
+  .toolbar-count {
+    margin-left: 0;
+  }
+
+  /* 表のヘッダー行はカード組みでは意味を持たないので隠す */
+  .studio-row-head,
+  .contact-head-row {
+    display: none;
+  }
+
+  /* 一括操作は指で押せる大きさに。横に溢れず折り返す */
+  .studio-bulkbar {
+    gap: 10px 12px;
+  }
+
+  .bulk-btn {
+    padding: 8px 14px;
+  }
+
+  /* 行内クイック操作は小さすぎて押せないので、当たり面を広げる */
+  .row-act {
+    padding: 4px 0;
+    font-size: 11px;
+  }
+
+  /* 行はみ出し対策: 折り返してタイトルを2行目に落とす */
+  .studio-row {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .studio-row .row-title {
+    flex: 1 1 100%;
+    order: 10;
+    padding-left: 26px; /* チェックボックス分だけ字下げして揃える */
+  }
+
+  .studio-row .row-tags {
+    max-width: none;
+    flex: 1 1 100%;
+    order: 11;
+    padding-left: 26px;
+  }
+
+  /* 状態列の固定82pxを解く(文字数ぶんで足りる)。操作は行の右端へ */
+  .studio-row .row-status {
+    width: auto;
+  }
+
+  .studio-row .row-actions {
+    flex: 1 1 100%;
+    order: 20;
+    justify-content: flex-end;
+    gap: 16px;
+  }
+
+  .inbox-row {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .inbox-row .row-ep {
+    flex: 1 1 100%;
+    order: 10;
+    padding-left: 26px;
+  }
+
+  .inbox-row .inbox-tagpicker {
+    flex: 1 1 70%;
+    order: 11;
+    padding-left: 26px;
+  }
+
+  /* 入門トグルは日付行ではなくタグ行へ降ろす(対象の回のすぐ下で操作する)。
+     トグルのある行はタグ欄を詰めて「タグ/入門/保存」を1行に収める */
+  .inbox-row .starter-toggle {
+    order: 12;
+  }
+
+  .inbox-row:has(.starter-toggle) .inbox-tagpicker {
+    flex-basis: 40%;
+    min-width: 0; /* デスクトップのmin-width:200pxを解いて3つを1行に収める */
+  }
+
+  .inbox-row .row-save {
+    order: 13;
+  }
+
+  .thumb-row {
+    flex-wrap: wrap;
+  }
+
+  .thumb-row .thumb-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  /* ---- MAIL室: 表からカードへ ---- */
+  .contact-row-head {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 12px 2px;
+  }
+
+  /* 名前・メール・本文冒頭は横並びをやめて全幅で積む。
+     デスクトップの固定幅(110px/190px)は解く */
+  .contact-row-title {
+    flex: 1 1 100%;
+    order: 10;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-left: 26px; /* チェックボックス分の字下げ(他の一覧と揃える) */
+  }
+
+  .contact-name,
+  .contact-email {
+    width: auto;
+    max-width: 100%;
+  }
+
+  .contact-excerpt {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+    white-space: normal;
+  }
+
+  .contact-topics {
+    max-width: 100%;
+  }
+
+  /* 本文冒頭は1行で切らず2行まで見せる(誰から何の用かを開かずに掴む) */
+  .contact-preview {
+    flex: 1 1 100%;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.7;
+  }
+
+  .contact-actions {
+    flex: 1 1 100%;
+    order: 20;
+    justify-content: flex-end;
+    gap: 16px;
+  }
+
+  .contact-body {
+    padding-left: 2px;
+  }
+
+  /* ---- USAGE室: 名前と数字が潰れるので2段に ---- */
+  .usage-table-row {
+    flex-wrap: wrap;
+    gap: 2px 12px;
+  }
+
+  .usage-table-name {
+    flex: 1 1 100%;
+  }
+
+  .usage-table-bytes {
+    width: auto;
+    text-align: left;
+  }
+
+  .usage-section .usage-table-bytes {
+    min-width: 0;
+  }
+
+  /* ---- 入力系: 指で押せる高さと全幅 ---- */
+  .studio-select,
+  .toolbar-select {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .page-editor input,
+  .page-editor textarea {
+    font-size: 16px; /* iOSは16px未満だと入力時に自動ズームする */
+  }
+
+  .studio-title-input {
+    font-size: 19px;
+  }
+
+  .studio-tag-editor,
+  .tag-picker {
+    min-width: 0;
+  }
 }
