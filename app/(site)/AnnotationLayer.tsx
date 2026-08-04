@@ -64,23 +64,36 @@ export default function AnnotationLayer({
     if (!canEdit) return
     const root = rootRef.current
     if (!root) return
-    const onUp = () => {
-      // クリックで選択が畳まれる場合があるので次のフレームで見る
-      setTimeout(() => {
-        const sel = window.getSelection()
-        if (!sel || sel.isCollapsed || sel.rangeCount === 0) return setPick(null)
-        if (!root.contains(sel.getRangeAt(0).commonAncestorContainer)) return setPick(null)
-        // ここでアンカーを確保する。取れない選択(本文外・既存注釈との重なり)には
-        // そもそもボタンを出さない=押してから断るより静か
-        const res = anchorFromSelection(root)
-        if ('error' in res) return setPick(null)
-        const r = sel.getRangeAt(0).getBoundingClientRect()
-        setPick({ x: r.left, y: r.bottom, anchor: res.anchor })
-      }, 10)
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const check = () => {
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) return setPick(null)
+      if (!root.contains(sel.getRangeAt(0).commonAncestorContainer)) return setPick(null)
+      // ここでアンカーを確保する。取れない選択(本文外・既存注釈との重なり)には
+      // そもそもボタンを出さない=押してから断るより静か
+      const res = anchorFromSelection(root)
+      if ('error' in res) return setPick(null)
+      const r = sel.getRangeAt(0).getBoundingClientRect()
+      setPick({ x: r.left, y: r.bottom, anchor: res.anchor })
     }
+    // クリックで選択が畳まれる場合があるので少し待ってから見る
+    const later = (ms: number) => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(check, ms)
+    }
+    const onUp = () => later(10)
+    // スマホ対策(2026-08-01 Andy「/liveで注釈を足せない」):
+    // 長押しで選ぶ端末では、選択が確定するのはtouchendの**後**で、さらに
+    // 掴みを引きずって範囲を広げる操作はOS側のUIなのでtouchendが飛んでこない。
+    // mouseup/touchendだけを見ていると、選んだのにボタンが出ない。
+    // selectionchangeなら選び直しも掴みの移動も拾える(連続で飛ぶので少し待つ)
+    const onSelectionChange = () => later(180)
+    document.addEventListener('selectionchange', onSelectionChange)
     document.addEventListener('mouseup', onUp)
     document.addEventListener('touchend', onUp)
     return () => {
+      if (timer) clearTimeout(timer)
+      document.removeEventListener('selectionchange', onSelectionChange)
       document.removeEventListener('mouseup', onUp)
       document.removeEventListener('touchend', onUp)
     }
