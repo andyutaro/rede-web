@@ -99,6 +99,14 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
   const pagerLink = (d?: string | null) =>
     d ? { href: `/desk/${d}`, title: `Desk Archive ${scribeTitle(d)}` } : null
 
+  // いちばん新しい確定アーカイブの「次」は、まだ確定していない今日のdesk(2026-08-01
+  // Andy指定)。ここが空欄だと、前日まで遡って読んだ人が今日へ戻る道を失う。
+  // 次の確定日がある回では従来どおりそちらが「次」
+  const today = todayInTokyo()
+  const newerLink =
+    pagerLink(nextRes.data?.date as string) ??
+    (date < today ? { href: '/live', title: `Desk Live ${scribeTitle(today)}` } : null)
+
   // 注釈(2026-07-28): 本文とは別レイヤー。ログイン中なら自分のサイトを普通に
   // 見ている画面から、ドラッグして直接足せる(書き込みの可否はAPI側で再検証する)
   const [annotations, canEdit] = await Promise.all([
@@ -140,7 +148,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         <SamePeriod date={date} excludePrefix="/desk/" />
         <Pager
           older={pagerLink(prevRes.data?.date as string)}
-          newer={pagerLink(nextRes.data?.date as string)}
+          newer={newerLink}
           back={{ href: '/notes', title: 'NOTES' }}
         />
       </article>
