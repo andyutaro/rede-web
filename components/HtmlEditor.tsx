@@ -279,19 +279,8 @@ export default function HtmlEditor({
     }
     uploadFilesRef.current = uploadFiles
 
-    // ペースト: 画像ファイル(Gboardのクリップボード等) or 単体URL(カード化/リンク化)。
-    // それ以外は通常のペーストに任せる(inputイベント経由で保存される)
-    function onPaste(e: ClipboardEvent) {
-      const files = e.clipboardData?.files
-      if (files && files.length > 0) {
-        e.preventDefault()
-        uploadFiles(files)
-        return
-      }
-      const text = e.clipboardData?.getData('text') ?? ''
-      if (!isBareUrl(text)) return
-      e.preventDefault()
-      const url = text.trim()
+    // 単体URLをカード(ポッドキャスト/動画)またはリンクとしてキャレット位置に挿入
+    function insertUrlAtCaret(url: string) {
       const cfg = embedConfigFor(url)
       if (cfg) {
         const wrap = document.createElement('div')
@@ -315,6 +304,57 @@ export default function HtmlEditor({
       }
       insertNodeAtCaret(document.createElement('br'))
       emitChange()
+    }
+
+    // ペースト: 画像ファイル(Gboardのクリップボード等) or 単体URL(カード化/リンク化)。
+    // それ以外は通常のペーストに任せる(inputイベント経由で保存される)
+    function onPaste(e: ClipboardEvent) {
+      const files = e.clipboardData?.files
+      if (files && files.length > 0) {
+        e.preventDefault()
+        uploadFiles(files)
+        return
+      }
+      const text = e.clipboardData?.getData('text') ?? ''
+      if (!isBareUrl(text)) return
+      e.preventDefault()
+      insertUrlAtCaret(text.trim())
+    }
+
+    // AndroidのGboard等はクリップボードからの貼り付けでpasteイベントを発火させず、
+    // beforeinput(insertFromPaste)やinsertTextでテキストを流し込むことがある。
+    // 一撃で完全なURLが入ってくるのは貼り付けだけ(手打ちは1文字ずつ)なので、
+    // 挿入テキスト全体が単体URLのときだけ横取りしてカード化する
+    function onBeforeInput(e: Event) {
+      const ev = e as InputEvent
+      if (ev.inputType !== 'insertFromPaste' && ev.inputType !== 'insertText') return
+      const text = ev.dataTransfer?.getData('text/plain') ?? ev.data ?? ''
+      if (!isBareUrl(text)) return
+      e.preventDefault()
+      insertUrlAtCaret(text.trim())
+    }
+
+    // さらにIMEがペーストを合成テキストとして確定する経路(insertCompositionTextは
+    // キャンセル不可)への対応: 確定された文字列が単体URLなら、挿入済みの生テキストを
+    // キャレット位置から遡って取り除き、カードに置き換える
+    function onCompositionEnd(e: CompositionEvent) {
+      const text = (e.data ?? '').trim()
+      if (!isBareUrl(text)) return
+      const sel = window.getSelection()
+      if (!sel || !sel.rangeCount) return
+      const range = sel.getRangeAt(0)
+      const node = range.startContainer
+      if (node.nodeType !== Node.TEXT_NODE || !editor!.contains(node)) return
+      const content = node.textContent ?? ''
+      const start = range.startOffset - text.length
+      if (start < 0 || content.slice(start, range.startOffset) !== text) return
+      node.textContent = content.slice(0, start) + content.slice(range.startOffset)
+      const r = document.createRange()
+      r.setStart(node, start)
+      r.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(r)
+      insertUrlAtCaret(text)
     }
 
     function onDragOver(e: DragEvent) {
@@ -399,6 +439,8 @@ export default function HtmlEditor({
     }
     editor.addEventListener('input', onInput)
     editor.addEventListener('paste', onPaste)
+    editor.addEventListener('beforeinput', onBeforeInput)
+    editor.addEventListener('compositionend', onCompositionEnd)
     editor.addEventListener('dragover', onDragOver)
     editor.addEventListener('drop', onDrop)
     editor.addEventListener('click', onEditorClick)
@@ -417,6 +459,8 @@ export default function HtmlEditor({
     return () => {
       editor.removeEventListener('input', onInput)
       editor.removeEventListener('paste', onPaste)
+      editor.removeEventListener('beforeinput', onBeforeInput)
+      editor.removeEventListener('compositionend', onCompositionEnd)
       editor.removeEventListener('dragover', onDragOver)
       editor.removeEventListener('drop', onDrop)
       editor.removeEventListener('click', onEditorClick)
