@@ -23,6 +23,13 @@ Content-Signal: search=yes, ai-train=yes, use=reference
 # 「先に一致した規則が勝つ」解釈(古典的な実装)の両方で同じ結果になるようにするため。
 # Allow: / を先頭に置くと後者で非公開の口が開いてしまう(2026-07-23に実測で発見)
 Disallow: /studio
+# /deskは7/30のscribe→desk改名で「非公開の放送卓」と「公開のDesk Archive(/desk/日付)」が
+# 同じ接頭辞に同居した。閉じるのは口だけ(=/desk本体と/desk/about=執筆画面)、
+# アーカイブは開く(sitemapにも載せている公開ページ。塞ぐと日々の書き物が機械に一切届かない)。
+# この3行の順序は上のDisallow先行の理屈と同じ: 先一致の実装でも
+# /desk/aboutが先に閉じ、/desk/日付がAllowで開き、/desk本体が最後に閉じる
+Disallow: /desk/about
+Allow: /desk/
 Disallow: /desk
 Disallow: /api/
 Disallow: /live
