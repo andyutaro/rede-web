@@ -18,7 +18,8 @@ export type CoverShow = {
 //
 // onAirSince: この日付以降に更新された番組は日付がON AIR表示になる(2026-08-05 Andy
 // 「三日以内に更新されている番組は、その日付にエフェクトと色と小さな動きを。
-// humbleな範囲での遊び心」)。境界の計算はページ側でtokyoDaysAgo(3)を渡す
+// humbleな範囲での遊び心」)。**窓は同日中に4日へ広げた**(Andy)。
+// 境界の計算はページ側でtokyoDaysAgo(4)を渡す
 // =Date.now()をrenderに持ち込まない(text.tsの規約、EpisodeIndex等と同じ形)。
 // 既定は'9999-12-31'=渡さなければ誰も光らない。
 export default function CoverGrid({

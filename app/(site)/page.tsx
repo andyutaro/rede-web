@@ -90,13 +90,13 @@ export default async function Home() {
     .sort((a, b) => (b.latest ?? '').localeCompare(a.latest ?? ''))
   const originals = withArt.filter((s) => s.group === 'original')
   const works = withArt.filter((s) => s.group === 'works')
-  const onAirSince = tokyoDaysAgo(3)
+  const onAirSince = tokyoDaysAgo(4)
 
   return (
     <div className="measure">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: IDENTITY_JSONLD }} />
       <h1 className="sr-only">Andy — Podcaster</h1>
-      {/* onAirSince: 3日以内に更新された番組の日付がON AIR表示になる(2026-08-05)。
+      {/* onAirSince: 4日以内に更新された番組の日付がON AIR表示になる(2026-08-05)。
           ISR60秒なので境界は最大1分ぶん古いが、3日の窓に対しては誤差にならない */}
       {originals.length > 0 && (
         <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} onAirSince={onAirSince} />
