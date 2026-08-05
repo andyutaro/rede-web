@@ -6,12 +6,13 @@ import { randomPhotoWithHref } from '@/lib/site/photos'
 import { isRecentlyWritten } from '@/lib/site/serverBody'
 import { SHOWS } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
+import { tokyoDaysAgo } from '@/lib/site/text'
 import CoverGrid from './CoverGrid'
 import LiveWindow from './LiveWindow'
 import UpdateList from './UpdateList'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 
-// ISR 60秒(2026-08-01)。以前は force-dynamic だった=一番人が来るページを
+// ISR 60秒(2026-08-05)。以前は force-dynamic だった=一番人が来るページを
 // 毎リクエスト組み直していて、Error 1102(CPU 10ms超過)が**混んだ日に集中して**
 // 出ていた。人が来た時にだけ壊れて見えるという一番まずい出方だったので、
 // Homeから静める。1分あれば突発的な集中(SNSで流れた等)はほぼキャッシュが吸う。
@@ -89,13 +90,18 @@ export default async function Home() {
     .sort((a, b) => (b.latest ?? '').localeCompare(a.latest ?? ''))
   const originals = withArt.filter((s) => s.group === 'original')
   const works = withArt.filter((s) => s.group === 'works')
+  const onAirSince = tokyoDaysAgo(3)
 
   return (
     <div className="measure">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: IDENTITY_JSONLD }} />
       <h1 className="sr-only">Andy — Podcaster</h1>
-      {originals.length > 0 && <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} />}
-      {works.length > 0 && <CoverGrid heading="PODCAST — WORKS" shows={works} />}
+      {/* onAirSince: 3日以内に更新された番組の日付がON AIR表示になる(2026-08-05)。
+          ISR60秒なので境界は最大1分ぶん古いが、3日の窓に対しては誤差にならない */}
+      {originals.length > 0 && (
+        <CoverGrid heading="PODCAST — ORIGINAL" shows={originals} onAirSince={onAirSince} />
+      )}
+      {works.length > 0 && <CoverGrid heading="PODCAST — WORKS" shows={works} onAirSince={onAirSince} />}
 
       <section className="section">
         <div className="section-head">

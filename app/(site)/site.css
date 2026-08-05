@@ -1280,6 +1280,23 @@ html[data-theme='dark'] .contact-pill:hover {
   letter-spacing: 0.08em;
 }
 
+/* 3日以内に更新された番組(2026-08-05 Andy「その日付にエフェクトと色と小さな動きを。
+   humbleな範囲での遊び心」)。新しい色も新しい形も作らない:
+   - 色 … サイト唯一の彩色であるLIVE赤(§10)。「いま生きている」の意味がそのまま合う
+   - 形 … エピソード一覧の.new-dot(7日以内の新着)をそのまま使い回す
+   - 効果と動き … ON AIRランプの滲み(box-shadow)がゆっくり呼吸する。
+     周期2.4sはUPDATESの当日ドット(update-live-blink)と同じ=サイト内で
+     「生きている」の合図が全部同じ速さで動く。
+   減光の指定(prefers-reduced-motion)は全アニメーション共通の規則が既に効く */
+.cover-label .latest-date.on-air {
+  color: var(--live);
+}
+
+.new-dot.on-air-lamp {
+  box-shadow: 0 0 6px var(--live);
+  animation: update-live-blink 2.4s ease-in-out infinite;
+}
+
 /* ---- Article一覧のタブ(§6): 実フィルタ、デフォルトALL ---- */
 .article-tabs {
   gap: 30px;
@@ -3714,7 +3731,7 @@ a.show-cast-name:hover {
   color: var(--faint);
 }
 
-/* Aboutの末尾の窓口(2026-08-01)。組みは世界地図の注記と同じ字面=新しい見た目を
+/* Aboutの末尾の窓口(2026-08-05)。組みは世界地図の注記と同じ字面=新しい見た目を
    増やさない。タイル自体は/contactの.mail-modesの借用なので寸法は触らない */
 .about-mail-note {
   margin-top: 30px;

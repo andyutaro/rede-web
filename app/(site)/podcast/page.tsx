@@ -55,8 +55,18 @@ export default async function PodcastPage() {
   return (
     <div className="measure">
       <h1 className="sr-only">Podcast</h1>
-      <CoverGrid heading="ORIGINAL" shows={withArt.filter((s) => s.group === 'original')} />
-      <CoverGrid heading="WORKS" shows={withArt.filter((s) => s.group === 'works')} />
+      {/* 番組の更新は3日、下のエピソード新着は7日と窓が違う(2026-08-05)。
+          番組タイルは「いま動いている番組」を短い窓で示す方が意味が立つ */}
+      <CoverGrid
+        heading="ORIGINAL"
+        shows={withArt.filter((s) => s.group === 'original')}
+        onAirSince={tokyoDaysAgo(3)}
+      />
+      <CoverGrid
+        heading="WORKS"
+        shows={withArt.filter((s) => s.group === 'works')}
+        onAirSince={tokyoDaysAgo(3)}
+      />
       <PodcastEpisodeGrid
         episodes={allEpisodes}
         total={allEpisodes.length}
