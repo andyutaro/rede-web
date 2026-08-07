@@ -93,9 +93,34 @@ export default async function AboutPage() {
       <section className="about-movement">
         <Accordion label="PROFILE">
           <div className="about-prose about-prose-tight">
-            {c.profile.map((p, i) => (
+            {/* 署名の行にSNSアイコンを添える(2026-08-07 Andy指定)。丸い形そのものが
+                「SNSではこう見えている」を語るので、説明のラベルは足さない。
+                写真はpublic/に置く=Storageの母集団に入らないため、Homeのランダム写真
+                にもPHOTOLOGにも決して出ない(構造で担保。フィルタを足さない) */}
+            <div className="profile-head">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="profile-avatar"
+                src="/profile/avatar-tsunohokori.jpg"
+                alt="SNSで使っているアイコン(ツノホコリ)"
+                width={192}
+                height={192}
+              />
+              {c.profile.length > 0 && <p>{c.profile[0]}</p>}
+            </div>
+            {c.profile.slice(1).map((p, i) => (
               <p key={i}>{p}</p>
             ))}
+            {/* 遠い近影: 顔の大写しではなく、風景の中に小さく立っている一枚 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="profile-figure"
+              src="/profile/distant.jpg"
+              alt="噴気の上がる山肌を背に立つAndy(遠景)"
+              width={640}
+              height={426}
+              loading="lazy"
+            />
           </div>
         </Accordion>
         <Accordion label="OVERVIEW">

@@ -2224,6 +2224,41 @@ a.show-cast-name:hover {
   line-height: 2.4;
 }
 
+/* PROFILEの写真2枚(2026-08-07 Andy指定)。どちらも「humbleに小さめ」が要件なので、
+   本文柱いっぱいに広げず、文字の脇と下に控えめに置く */
+
+/* 署名の行+SNSアイコン。丸い形だけで「これがSNSでの見え方」を語らせる */
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 1.9em;
+}
+
+.profile-head p {
+  margin-bottom: 0;
+}
+
+.profile-avatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  /* 元画像が黒地なので、明るいテーマでは縁が無いと紙から浮く。細罫で受け止める */
+  border: 1px solid var(--dot);
+}
+
+/* 遠い近影: 本文幅の半分以下に留める(顔写真として主張させない) */
+.profile-figure {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  margin-top: 2.4em;
+  border-radius: 2px;
+}
+
 /* 長文格納アコーディオン(旧AboutのPROFILE/OVERVIEW) */
 .accordion {
   border-bottom: 1px solid var(--dot);
