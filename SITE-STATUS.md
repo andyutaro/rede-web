@@ -134,7 +134,11 @@ ISR化したページは `s-maxage={revalidate}, stale-while-revalidate=2592000`
 
 - **Notes** = `article`（記事）＋ scribeアーカイブ
 - **Photography** = `photography`（下位区分 `photo_kind`: artwork / photolog）
-- **Physical** = `physical`（物理作品）
+- **Physical** = `physical` ＋ `event`（下位区分タブ: OBJECT / EVENT）
+
+**Events棚はPhysicalへ統合（2026-08-07 Andy承認）。** Physical 4件・Events 5件と薄い棚が2つ並んでいたのを、棚の定義を「物理作品のアーカイブ」から**「物理世界にあるもの・あったこと」**へ広げて1つにした。中は **もの（OBJECT）と こと（EVENT）** のタブ。ナビは9項目に（Eventsが消えた）。DBの`type`は`physical`/`event`のまま＝**棚名だけの変更**（Article棚→Notes改名と同じ作法）。旧URLは`next.config.ts`で308（`/events`→`/physical`、`/events/:id`→`/physical/:id`）。studioは`/studio/physical`と`/studio/events`の2部屋のまま（「部屋がtypeを決める」設計を崩さないため）。
+
+- 検討して**採らなかった案**: Photographyも含めた3棚統合（Photographyは132件で、混ぜるとNotes/Physicalの性格が消える）／棚名を`Works`（番組ページのWORKS棚と衝突）／棚名を`Expansion`（中身ではなく由来を語る名前で、初見に中身が見えない。「番組から生まれたもの」という由来の提示は番組ページのEXPANSION節が既に担っている）。
 
 ---
 

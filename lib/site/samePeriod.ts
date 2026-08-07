@@ -104,9 +104,9 @@ async function buildIndex(): Promise<SamePeriodItem[]> {
       type === 'photography'
         ? 'PHOTOGRAPHY'
         : type === 'physical'
-          ? 'PHYSICAL'
+          ? 'OBJECT'
           : type === 'event'
-            ? 'EVENTS'
+            ? 'EVENT'
             : 'NOTES'
     items.push({ date, label, title, href: `${shelf}/${a.id}`, thumb, assigned })
   }

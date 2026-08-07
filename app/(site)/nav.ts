@@ -11,11 +11,9 @@ export const NAV = [
   { label: 'Notes', href: '/notes' },
   // Photographyは独立棚(2026-07-10格上げ: Podcast/Notesと並ぶ存在に)
   { label: 'Photography', href: '/photography' },
-  // Physical=物理的な作品のアーカイブ棚(2026-07-12)
+  // Physical=物理世界にあるもの・あったことの棚(2026-07-12、
+  // 2026-08-07にEvents棚を吸収して定義を拡張。中はOBJECT/EVENTのタブ)
   { label: 'Physical', href: '/physical' },
-  // Events=これまでに開いた催しの記録(2026-07-29 Andy指定)。
-  // 棚のかたまり(Updates〜Physical)の最後に置き、場所→棚→関係の並びを保つ
-  { label: 'Events', href: '/events' },
   // Membership=rooomの援護導線(2026-07-13、旧andyutaro.comから移植)
   { label: 'Membership', href: '/membership' },
   // Contact=旧andyutaro.comの受注装置を移植(2026-07-12)

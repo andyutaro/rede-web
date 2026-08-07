@@ -25,7 +25,6 @@ const STATIC_PATHS = [
   '/notes',
   '/photography',
   '/physical',
-  '/events',
   '/membership',
   '/contact',
   '/privacy',
@@ -82,12 +81,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Notes/Photography/Physicalは同じarticlesテーブルをtypeで分ける
-  // (公開棚はNotesに改名済みだがDBのtypeは'article'のまま)
+  // (公開棚はNotesに改名済みだがDBのtypeは'article'のまま。
+  //  eventは2026-08-07にPhysical棚へ統合、typeはeventのまま)
   const SHELF: Record<string, string> = {
     article: '/notes',
     photography: '/photography',
     physical: '/physical',
-    event: '/events',
+    event: '/physical',
   }
   for (const a of articleRes.data ?? []) {
     if (a.status !== 'published' || !a.published_at || a.deleted_at) continue

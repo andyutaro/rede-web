@@ -350,9 +350,11 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         // 物(Physical)も催し(Events)も「番組から生まれたもの」という一つの事実なので
         // 節を分けず一続きに並べる。通常の4列より一段深い2列(トップ写真を大きく)、
         // 正方形とラベルの文法は各棚と共通。並びはshows.tsの宣言順(物→催し)
+        // 行き先はどちらもPhysical棚(2026-08-07にEvents棚を吸収)。
+        // ラベルは棚の中の下位区分に揃える(OBJECT / EVENT)
         const expansion = [
-          ...products.map((p) => ({ ...p, shelf: 'physical', label: 'PHYSICAL' })),
-          ...events.map((e) => ({ ...e, shelf: 'events', label: 'EVENTS' })),
+          ...products.map((p) => ({ ...p, shelf: 'physical', label: 'OBJECT' })),
+          ...events.map((e) => ({ ...e, shelf: 'physical', label: 'EVENT' })),
         ]
         const expansionSection = expansion.length > 0 && (
           <section className="section" key="expansion">

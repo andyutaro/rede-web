@@ -100,8 +100,10 @@ export async function recentUpdates(
       if (!a.published_at) continue
       // タイトルは現在値を都度読む(後から付けたタイトルもここに反映される)。
       // 空のまま公開された記事は空欄ではなく(無題)を出す。
-      // ラベル=棚名: Notesの記事はNOTES+ARTICLE『…』、
-      // Photography/Physicalは独立棚なので棚名+『…』
+      // ラベル=棚名。棚が下位区分を持つ場合は本文側に種別を添える:
+      // NotesはARTICLE『…』(DESK行と区別)、PhysicalはOBJECT/EVENT『…』
+      // (2026-08-07にEvents棚を吸収したので同じ作法にした)。
+      // Photographyは区分を掲げない従来どおり
       const title = ((a.title as string) ?? '').trim() || '無題'
       const clipped = compact ? clip(title, HOME_TITLE_MAX) : title
       const type = a.type as string
@@ -109,9 +111,9 @@ export async function recentUpdates(
         type === 'photography'
           ? { kind: 'Photography' as const, label: 'PHOTOGRAPHY', excerpt: `『${clipped}』`, href: `/photography/${a.id}` }
           : type === 'physical'
-            ? { kind: 'Physical' as const, label: 'PHYSICAL', excerpt: `『${clipped}』`, href: `/physical/${a.id}` }
+            ? { kind: 'Physical' as const, label: 'PHYSICAL', excerpt: `OBJECT『${clipped}』`, href: `/physical/${a.id}` }
             : type === 'event'
-              ? { kind: 'Event' as const, label: 'EVENTS', excerpt: `『${clipped}』`, href: `/events/${a.id}` }
+              ? { kind: 'Event' as const, label: 'PHYSICAL', excerpt: `EVENT『${clipped}』`, href: `/physical/${a.id}` }
               : { kind: 'Article' as const, label: 'NOTES', excerpt: `ARTICLE『${clipped}』`, href: `/notes/${a.id}` }
       rows.push({
         date: tokyoYmd(a.published_at as string),

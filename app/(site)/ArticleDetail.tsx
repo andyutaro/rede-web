@@ -12,22 +12,20 @@ import { isEditor } from '@/lib/supabase/editor'
 // 本文はscribeと同じSSOT(生HTML)なので、同じサニタイザ・同じ本文スタイルで描画する。
 // 戻る・進むは同じ棚の中だけを渡り歩く。
 
-type Shelf = 'notes' | 'photography' | 'physical' | 'events'
+type Shelf = 'notes' | 'photography' | 'physical'
 
-// 棚⇔type対応(typeがarticle以外はtype名=棚名。eventsだけは棚が複数形)
 const SHELF_LABEL: Record<Shelf, string> = {
   notes: 'NOTES',
   photography: 'PHOTOGRAPHY',
   physical: 'PHYSICAL',
-  events: 'EVENTS',
 }
 
-// 棚名からDBのtypeへ(notes=article、events=event、他は同名)
-const SHELF_TYPE: Record<Shelf, string> = {
-  notes: 'article',
-  photography: 'photography',
-  physical: 'physical',
-  events: 'event',
+// 棚名からDBのtypeへ。notes=article。physicalはもの(physical)と こと(event)の
+// 2種を抱えるので複数(2026-08-07にEvents棚を吸収)
+const SHELF_TYPES: Record<Shelf, string[]> = {
+  notes: ['article'],
+  photography: ['photography'],
+  physical: ['physical', 'event'],
 }
 
 // UUID以外はDBに問い合わせない(不正パスの早期404)
@@ -49,8 +47,7 @@ export async function loadPublishedArticle(id: string) {
 
 function shelfOf(type: string): Shelf {
   if (type === 'photography') return 'photography'
-  if (type === 'physical') return 'physical'
-  if (type === 'event') return 'events'
+  if (type === 'physical' || type === 'event') return 'physical'
   return 'notes'
 }
 
@@ -68,8 +65,9 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
   const service = createService()
   const shelfQuery = () => {
     const q = service.from('articles').select('id, title').eq('status', 'published')
-    // 棚名とDBのtypeは一致しないものがある(notes=article、events=event)
-    return q.eq('type', SHELF_TYPE[shelf])
+    // 棚名とDBのtypeは一致しない(notes=article、physical=physical+event)。
+    // Physical棚ではもの と こと を混ぜて時系列に渡り歩く(一覧のALLと同じ並び)
+    return q.in('type', SHELF_TYPES[shelf])
   }
   const [prevRes, nextRes] = await Promise.all([
     a.published_at
@@ -108,13 +106,13 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: crumbs }} />
       <article className="section">
         <div className="section-head">
-          {/* photographyは下位区分(ARTWORK/PHOTOLOG)を種別として掲げる(2026-07-11)。
-              physicalはPHYSICAL、notesはARTICLE */}
+          {/* 下位区分を種別として掲げる: photographyはARTWORK/PHOTOLOG(2026-07-11)、
+              physical棚はOBJECT/EVENT(2026-08-07)。notesはARTICLE */}
           <h2>
             {a.type === 'photography'
               ? ((a.photo_kind as string | null) ?? 'photolog').toUpperCase()
               : a.type === 'physical'
-                ? 'PHYSICAL'
+                ? 'OBJECT'
                 : a.type === 'event'
                   ? 'EVENT'
                   : 'ARTICLE'}

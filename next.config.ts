@@ -141,6 +141,11 @@ const nextConfig: NextConfig = {
       // 永続リダイレクトで受ける(private側の/desk・/desk/aboutは静的ルートなので
       // 動的な/desk/[date]と衝突しない)
       { source: "/scribe/:date", destination: "/desk/:date", permanent: true },
+      // Events棚はPhysicalへ統合(2026-08-07 Andy承認)。物理世界の「もの」と
+      // 「こと」を一つの棚に収め、中はOBJECT/EVENTのタブで分ける。
+      // 旧URLは永続リダイレクトで受ける(IDは同じarticlesのUUIDなのでそのまま渡せる)
+      { source: "/events", destination: "/physical", permanent: true },
+      { source: "/events/:id", destination: "/physical/:id", permanent: true },
     ];
   },
 };

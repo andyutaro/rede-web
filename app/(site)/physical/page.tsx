@@ -1,21 +1,21 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { createService } from '@/lib/supabase/service'
-import { firstImageSrc, dateShort, tokyoYmd } from '@/lib/site/text'
+import { firstImageSrc, tokyoYmd } from '@/lib/site/text'
 import { assignedOf, listAllImages } from '@/lib/site/photos'
-import { imgThumb, IMG_W } from '@/lib/site/img'
+import PhysicalGrid, { type PhysicalItem } from './PhysicalGrid'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Physical',
-  description: 'Andyの物理的な作品のアーカイブ。',
+  description: 'Andyがつくったもの(OBJECT)と、開いた催しの記録(EVENT)。',
   alternates: { canonical: 'https://andyutaro.com/physical' },
 }
 
-// Physical棚(2026-07-12): 物理的な作品のアーカイブ(物+軽い文章)。
-// データはarticlesのtype=physical。レイアウトはNotes/Photographyと共通の
-// グリッド+3段ラベル(下位区分は持たないのでタブなし)。
+// Physical棚(2026-07-12 / 2026-08-07にEvents棚を吸収)。
+// 棚の定義は「物理作品のアーカイブ」から「物理世界にあるもの・あったこと」へ広げた。
+// 薄い棚が2つ並ぶより、もの・ことが一つの棚にある方が構造が見える(Andy承認)。
+// DBのtypeはphysical/eventのまま=棚名だけの変更(Article棚→Notesと同じ作法)。
 export default async function PhysicalPage() {
   const service = createService()
   const [{ data: rows }, pool] = await Promise.all([
@@ -23,18 +23,19 @@ export default async function PhysicalPage() {
       .from('articles')
       .select('*')
       .eq('status', 'published')
-      .eq('type', 'physical')
+      .in('type', ['physical', 'event'])
       .order('published_at', { ascending: false }),
     listAllImages(),
   ])
 
-  const items = (rows ?? [])
+  const items: PhysicalItem[] = (rows ?? [])
     .filter((a) => a.published_at && !a.deleted_at)
     .map((a) => {
       const first = firstImageSrc((a.html as string) ?? '')
       const thumb = (a.thumbnail_url as string | null) ?? first ?? assignedOf(pool, a.id as string)
       return {
         id: a.id as string,
+        kind: a.type === 'event' ? 'event' : 'object',
         title: ((a.title as string) || '').trim() || '(無題)',
         date: tokyoYmd(a.published_at as string),
         thumb,
@@ -44,41 +45,8 @@ export default async function PhysicalPage() {
 
   return (
     <div className="measure">
-      <section className="section">
-        <div className="section-head">
-          <h1>PHYSICAL — {items.length}</h1>
-        </div>
-        <div className="section-body grid4">
-          {items.map((item) => (
-            <div key={item.id}>
-              {/* 同上(2026-07-23): サムネイルは装飾でタイトルは兄弟div。リンク名を与える */}
-              <Link
-                href={`/physical/${item.id}`}
-                className="sq"
-                aria-label={`PHYSICAL ${item.title} ${dateShort(item.date)}`}
-              >
-                {item.thumb ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={imgThumb(item.thumb, IMG_W.tile)}
-                    alt=""
-                    loading="lazy"
-                    className={item.assigned ? 'thumb-assigned' : undefined}
-                  />
-                ) : (
-                  <span className="empty-cell" />
-                )}
-              </Link>
-              <div className="ep-cell-label">
-                <span className="ep-show">PHYSICAL</span>
-                <span className="ep-title">{item.title}</span>
-                <span className="ep-date">{dateShort(item.date)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-        {items.length === 0 && <p className="shelf-empty">まだ作品がありません</p>}
-      </section>
+      <h1 className="sr-only">Physical</h1>
+      <PhysicalGrid items={items} />
     </div>
   )
 }
