@@ -1429,7 +1429,7 @@ html[data-theme='dark'] .contact-pill:hover {
 
 /* ---- scribe個別(確定アーカイブ) ---- */
 /* scribe冒頭の位置づけ文: 全幅散文でなく行を設計した銘文(2026-07-19)。
-   1行=1span(display:block)。長い行も狭い画面では自然に折り返す */
+   1行=1span(display:block)、その中は意味の切れ目で分節したspan */
 .scribe-preamble {
   margin-top: 70px;
   font-size: 11px;
@@ -1438,8 +1438,21 @@ html[data-theme='dark'] .contact-pill:hover {
   color: var(--mut);
 }
 
-.scribe-preamble span {
+.scribe-preamble > span {
   display: block;
+}
+
+/* 分節は広い画面では地続きの一行(折り返さない長さ)。狭い画面ではそれぞれが
+   1行になる = 折り返しが必ず意味の切れ目で起こる。任意の位置で折れると
+   「なります。」だけが次行に取り残されて銘文の律動が崩れる(2026-08-07 Andy指摘) */
+.scribe-preamble > span > span {
+  display: inline;
+}
+
+@media (max-width: 640px) {
+  .scribe-preamble > span > span {
+    display: block;
+  }
 }
 
 .scribe-archive-body {

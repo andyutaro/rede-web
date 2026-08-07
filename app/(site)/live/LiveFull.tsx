@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { connectLive, patchInto, sanitizeNodes } from '@/lib/scribe/liveClient'
 import { applyAnnotations, clearAnnotations } from '@/lib/site/annotate'
 import AnnotationLayer from '../AnnotationLayer'
+import DeskPreamble from '../DeskPreamble'
 import type { Annotation, AnnotationTarget } from '@/lib/site/annotations'
 import { serverBodyHtml } from '@/lib/site/serverBody'
 
@@ -152,6 +153,9 @@ export default function LiveFull({
           )}
         </span>
       </div>
+      {/* 確定アーカイブと同じ位置づけ文を当日にも(2026-08-07 Andy指定)。
+          締めの一行だけが「これは今日の生放送。」に変わる */}
+      <DeskPreamble variant="live" />
       <div className="section-body">
         {mode === 'idle' && <div className="live-full-idle">{dateLabel}</div>}
         {/* ①サーバー描画用(JSを実行しない読み手向け)。JSが描いたら隠す */}

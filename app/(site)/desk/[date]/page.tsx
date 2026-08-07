@@ -6,23 +6,13 @@ import { firstImageSrc, plainExcerpt, scribeTitle } from '@/lib/site/text'
 import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
+import DeskPreamble from '../../DeskPreamble'
 import ScribeArchive from '../ScribeArchive'
 import SamePeriod from '../../SamePeriod'
 import { loadAnnotations } from '@/lib/site/annotations'
 import { isEditor } from '@/lib/supabase/editor'
 
 export const dynamic = 'force-dynamic'
-
-// scribeをArticle配下に格納する設計意図の担保(handoff-notes §11):
-// 各アーカイブ冒頭に「scribeとは何か」の位置づけ文をテンプレート焼き込みで置く。
-// 文言はAndyの承認待ち(仮置き)。
-// 全幅に流すと「横にだらっと広がる」ため、行を設計して短い銘文として組む
-// (2026-07-19 Andy指摘)。改行は意味の切れ目で固定
-const PREAMBLE_LINES = [
-  'desk — 読むポッドキャスト。',
-  '日々の考え事やつぶやきを生放送で書き、一日が終わると確定テキストになります。',
-  'これはそのアーカイブ。',
-]
 
 type Params = { date: string }
 
@@ -134,11 +124,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         <div className="section-head">
           <h1>DESK ARCHIVE — {scribeTitle(date)}</h1>
         </div>
-        <p className="scribe-preamble">
-          {PREAMBLE_LINES.map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-        </p>
+        <DeskPreamble variant="archive" />
         <ScribeArchive
           html={data.html as string}
           annotations={annotations}
