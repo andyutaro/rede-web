@@ -1301,6 +1301,14 @@
   color: #e8e6e0;
 }
 
+/* 返信できない相手(メール未記入のおたより)。押せないボタンを出す代わりの一行 */
+.contact-reply-none {
+  margin-top: 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #6f6b64;
+}
+
 /* MAIL室のスマホ組みは上のスマホ節にまとめた(2026-08-01)。
    ここにあった.contact-row-titleの折返し指定は、後から効いて上書きしてしまうので削除 */
 

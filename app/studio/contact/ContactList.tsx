@@ -306,9 +306,18 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
                   <p className="contact-spam-why">隔離の理由: {r.spamReasons.join(' / ')}</p>
                 )}
                 <p>{r.message}</p>
-                <a className="contact-reply" href={`mailto:${r.email}`}>
-                  メールで返信 →
-                </a>
+                {/* おたよりはメール任意(公開フォームの仕様)。空のまま返信ボタンを
+                    出すとhref="mailto:"になり、押しても何も起きなかった
+                    (2026-08-07 Andy報告)。宛先が無い時はボタンを出さず理由を書く */}
+                {r.email ? (
+                  <a className="contact-reply" href={`mailto:${r.email}`}>
+                    メールで返信 →
+                  </a>
+                ) : (
+                  <p className="contact-reply-none">
+                    メールアドレスの記入なし（おたよりは任意）。返信の宛先がありません。
+                  </p>
+                )}
               </div>
             )}
           </div>
