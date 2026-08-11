@@ -26,6 +26,20 @@ type Filter = 'unread' | 'all' | 'spam' | 'trash'
 type Kind = 'all' | 'client' | 'otayori'
 const isOtayori = (r: ContactRow) => r.topics.some((t) => t.startsWith('おたより'))
 
+// 返信の宛先を開くURL(2026-08-07 Andy報告の修正)。
+// mailto:を使わない理由: macOSはmailto:をChromeに渡す設定になっており、
+// そのChromeにGmailがハンドラ登録されていないと、押しても何も起きずに終わる
+// (リンクは正しく生成されていたが受け皿が無かった)。OS・ブラウザの設定に
+// 依存しないよう、Gmailの作成画面を直接開く。studioはAndy専用の部屋なので
+// 送信元をGmailに決め打ちしてよい。
+function replyHref(r: ContactRow): string {
+  const subject = isOtayori(r)
+    ? `Re: おたよりありがとうございます（${r.name}さん）`
+    : `Re: お問い合わせの件（${r.name}さん）`
+  const q = new URLSearchParams({ view: 'cm', fs: '1', to: r.email, su: subject })
+  return `https://mail.google.com/mail/?${q.toString()}`
+}
+
 // 問い合わせ受信箱v2(2026-07-17): 列を整列した表形式(日付/状態/名前/メール/用件/本文冒頭)。
 // 行クリックで本文展開(展開と同時に既読)。検索+行単位クイック操作(既読⇄未読/ゴミ箱)
 // +チェックボックス一括操作(既読/未読/ゴミ箱/復元/完全消去)。
@@ -310,7 +324,12 @@ export default function ContactList({ rows }: { rows: ContactRow[] }) {
                     出すとhref="mailto:"になり、押しても何も起きなかった
                     (2026-08-07 Andy報告)。宛先が無い時はボタンを出さず理由を書く */}
                 {r.email ? (
-                  <a className="contact-reply" href={`mailto:${r.email}`}>
+                  <a
+                    className="contact-reply"
+                    href={replyHref(r)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     メールで返信 →
                   </a>
                 ) : (
