@@ -23,8 +23,8 @@ const GROW_MS = 1100 // 波形から生え切るまで
 
 // 線と絵が重ならないようにする(2026-08-07 Andy指摘)。線をまたぐと、
 // 波形が絵を横切って読めなくなる。全部どちらか片側に寄せて、必ず隙間を空ける。
-// 0.3→0.55: 波形に近すぎた(2026-08-12 Andy指摘)ので気持ち離す
-const GAP = 0.55
+// 0.3→0.55→0.8: 二度の「近すぎる」指摘(2026-08-12、PC・スマホとも)を受けて段階的に
+const GAP = 0.8
 
 // --- 10種の線画。すべてctx.beginPath()済みの状態で呼ばれ、strokeは呼び出し側 ---
 
@@ -541,13 +541,13 @@ export const KINDS = SHAPES.length
 
 // kindを指定すると同じ絵で生える(到着の合図が種類を運ぶので、送り手と受け手の
 // 画面に同じ生きものが現れる)。省略時はランダム。
-// 基準サイズ15→17: 小さすぎた(2026-08-12 Andy指摘)ので気持ち大きく
+// 基準サイズ15→17→20: 二度の「小さすぎる」指摘(2026-08-12、PC・スマホとも)を受けて段階的に
 export function newCreature(now: number, kind?: number): Creature {
   const k = kind != null && Number.isInteger(kind) && kind >= 0 && kind < KINDS
     ? kind
     : Math.floor(Math.random() * KINDS)
   // 生え出す位置を少しだけ散らす(同時に来ると重なって一匹に見えるため)
-  return { kind: k, p: Math.random() * 0.2, born: now, size: 17 * SIZE_MUL[k], spawnedAt: Date.now() }
+  return { kind: k, p: Math.random() * 0.2, born: now, size: 20 * SIZE_MUL[k], spawnedAt: Date.now() }
 }
 
 // 進み具合pを波形上の位置fへ。直線は右から左、円弧はボタンから離れる向きへ流れる
