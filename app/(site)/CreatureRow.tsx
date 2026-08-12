@@ -7,8 +7,9 @@ import { paintShapeCentered } from './waveCreatures'
 // 生えた順にずらっと並べる。遊びの意匠であって機能ではないので、
 // 数字も名前も出さないし、何かを押せるようにもしない。
 // 絵は波形と同じ色・同じ線幅で描く(サイト全体で線の文法をひとつに保つ)。
-const CELL = 26
-const SIZE = 9
+// 26/9→32/11: 小さすぎた(2026-08-12 Andy指摘)ので気持ち大きく
+const CELL = 32
+const SIZE = 11
 
 export default function CreatureRow({ kinds }: { kinds: number[] }) {
   const ref = useRef<HTMLCanvasElement>(null)

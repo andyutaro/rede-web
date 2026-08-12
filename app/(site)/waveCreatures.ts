@@ -15,14 +15,16 @@ type Ctx = CanvasRenderingContext2D
 // 波形上の位置fは描画時にpから引く: 直線とスマホの円弧では模様の流れる向きが
 // 逆なので、向きを状態として持たせると、途中で画面幅が変わった時に破綻する
 // (円弧に切り替わった瞬間、直線用に生えた個体が一瞬で流れ去っていた)
-export type Creature = { kind: number; p: number; born: number; size: number }
+// spawnedAt=生えた時刻(エポックms)。「今日来てくれた人」の二重計上避けに使う
+export type Creature = { kind: number; p: number; born: number; size: number; spawnedAt: number }
 
 export const MAX_ON_SCREEN = 5 // 同時に泳げる数の上限(2026-08-07 Andy指定)
 const GROW_MS = 1100 // 波形から生え切るまで
 
 // 線と絵が重ならないようにする(2026-08-07 Andy指摘)。線をまたぐと、
-// 波形が絵を横切って読めなくなる。全部どちらか片側に寄せて、必ず隙間を空ける
-const GAP = 0.3
+// 波形が絵を横切って読めなくなる。全部どちらか片側に寄せて、必ず隙間を空ける。
+// 0.3→0.55: 波形に近すぎた(2026-08-12 Andy指摘)ので気持ち離す
+const GAP = 0.55
 
 // --- 10種の線画。すべてctx.beginPath()済みの状態で呼ばれ、strokeは呼び出し側 ---
 
@@ -537,10 +539,15 @@ const EXTRA = [
 
 export const KINDS = SHAPES.length
 
-export function newCreature(now: number): Creature {
-  const kind = Math.floor(Math.random() * KINDS)
+// kindを指定すると同じ絵で生える(到着の合図が種類を運ぶので、送り手と受け手の
+// 画面に同じ生きものが現れる)。省略時はランダム。
+// 基準サイズ15→17: 小さすぎた(2026-08-12 Andy指摘)ので気持ち大きく
+export function newCreature(now: number, kind?: number): Creature {
+  const k = kind != null && Number.isInteger(kind) && kind >= 0 && kind < KINDS
+    ? kind
+    : Math.floor(Math.random() * KINDS)
   // 生え出す位置を少しだけ散らす(同時に来ると重なって一匹に見えるため)
-  return { kind, p: Math.random() * 0.2, born: now, size: 15 * SIZE_MUL[kind] }
+  return { kind: k, p: Math.random() * 0.2, born: now, size: 17 * SIZE_MUL[k], spawnedAt: Date.now() }
 }
 
 // 進み具合pを波形上の位置fへ。直線は右から左、円弧はボタンから離れる向きへ流れる

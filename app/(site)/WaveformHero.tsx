@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { markArrived } from './arrivalSignal'
+import { pushFinishedArrival } from './arrivalSignal'
 import {
   MAX_ON_SCREEN,
   creatureF,
@@ -104,9 +104,9 @@ function fadeInAudio(a: HTMLAudioElement, rafBox: { current: number }) {
 export default function WaveformHero({ episodes }: { episodes: Episode[] | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
-  // 到着で生きものを一つ生やし、その種類を返す(上限に達していたらnull)。
-  // 実体は波形アニメーションのeffectが入れる
-  const spawnRef = useRef<(() => number | null) | null>(null)
+  // 到着で生きものを一つ生やす(kind指定なら同じ絵)。戻り値は生えた種類と、
+  // 実際に画面へ出たか。実体は波形アニメーションのeffectが入れる
+  const spawnRef = useRef<((kind?: number) => { kind: number; spawned: boolean }) | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
   // 再生キュー: 初期値はlayoutの全番組キュー。番組ページの「この番組を連続再生」が
@@ -357,7 +357,12 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
         const df = step / (CFG.n - 1)
         for (let i = creatures.length - 1; i >= 0; i--) {
           creatures[i].p += df
-          if (creatures[i].p > 1) creatures.splice(i, 1) // 一往復したら消える(溜めない)
+          if (creatures[i].p > 1) {
+            // 一往復したら消える(溜めない)。渡り終えた瞬間に「今日来てくれた人」へ
+            // 加わる(2026-08-12 Andy指定: リロード不要で増える)
+            pushFinishedArrival(creatures[i].kind, creatures[i].spawnedAt)
+            creatures.splice(i, 1)
+          }
         }
         draw(t)
       } // ~30fps
@@ -371,14 +376,15 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     }
     reduceMq.addEventListener('change', applyMotionPref)
     // 誰かがサイトを開いた合図。上流側の位置に生やして、流れる道のりを持たせる。
-    // 「動きを減らす」設定の間は生やさない(止まった生きものが居座ってしまう)
-    // 生やして、その種類を返す(自分の到着は記録に残すため呼び出し側が受け取る)。
+    // kind指定つき(合図が種類を運ぶ)なら同じ絵で生える。
     // 「動きを減らす」設定の人や、同時上限に達している時は画面には出さないが、
     // 来たことに変わりはないので種類は返す=その日の並びからは漏れない
-    spawnRef.current = () => {
-      const cr = newCreature(performance.now())
-      if (!reduceMq.matches && creatures.length < MAX_ON_SCREEN) creatures.push(cr)
-      return cr.kind
+    // (spawned=falseで返し、呼び出し側が並びへの追加を肩代わりする)
+    spawnRef.current = (kind?: number) => {
+      const cr = newCreature(performance.now(), kind)
+      const spawned = !reduceMq.matches && creatures.length < MAX_ON_SCREEN
+      if (spawned) creatures.push(cr)
+      return { kind: cr.kind, spawned }
     }
 
     started = true
@@ -403,34 +409,49 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
   useEffect(() => {
     const first = !announced
     announced = true
+    const supabase = createClient()
+    const ch = supabase.channel('andy-arrivals')
+    // 合図が運ぶのは絵の種類(0..24の整数)ひとつだけ。人数も現在地も、誰の情報も
+    // 乗せない。種類を載せる理由: 送り手の画面と受け手の画面に同じ生きものが
+    // 現れ、リロード後にDBから引く並びとも一致する(2026-08-12)
+    let pendingKind: number | null = null
+    let subscribed = false
+    const trySend = () => {
+      if (subscribed && pendingKind != null) {
+        ch.send({ type: 'broadcast', event: 'arrive', payload: { kind: pendingKind } })
+        pendingKind = null
+      }
+    }
     // 自分の到着。波形の初期化(直前のeffect)を待ってから生やす。
     // 生えた種類だけをdeskの「今日来てくれた人」に残す(誰か・どのページかは送らない)
     const own = first
       ? setTimeout(() => {
-          const kind = spawnRef.current?.()
-          if (kind == null) return
+          const r = spawnRef.current?.()
+          if (!r) return
+          pendingKind = r.kind
+          trySend()
           fetch('/api/arrive', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ kind }),
+            body: JSON.stringify({ kind: r.kind }),
             keepalive: true,
           })
-            .then((r) => {
-              // 記録できた分だけ、いま開いているページの「今日来てくれた人」にも足す。
-              // ページのHTMLは記録より前に描かれているので、これが無いと
-              // 自分の到着が自分の画面に出ない(その日の最初の一人は空のまま)
-              if (r.ok) markArrived(kind)
+            .then((res) => {
+              // 画面に生えなかった場合(動きを減らす設定・同時上限)は、渡り終える
+              // 瞬間が来ないので、記録できた時点で並びに直接足す
+              if (res.ok && !r.spawned) pushFinishedArrival(r.kind, Date.now())
             })
             .catch(() => {}) // 記録できなくても画面の生きものは出ている
         }, 700)
       : undefined
-    const supabase = createClient()
-    const ch = supabase.channel('andy-arrivals')
-    ch.on('broadcast', { event: 'arrive' }, () => spawnRef.current?.())
+    ch.on('broadcast', { event: 'arrive' }, (msg) => {
+      const k = (msg as { payload?: { kind?: unknown } }).payload?.kind
+      spawnRef.current?.(typeof k === 'number' ? k : undefined)
+    })
     ch.subscribe((status) => {
-      // 送るのは空の合図だけ。人数も現在地も、誰の情報も乗せない
-      if (status === 'SUBSCRIBED' && first) {
-        ch.send({ type: 'broadcast', event: 'arrive', payload: {} })
+      if (status === 'SUBSCRIBED') {
+        subscribed = true
+        trySend()
       }
     })
     return () => {
