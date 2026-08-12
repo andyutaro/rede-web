@@ -168,7 +168,20 @@ async function loadFeedXml(
   opts: { light?: boolean } = {}
 ): Promise<ShowFeed | null> {
   try {
-    const res = await fetch(revUrl(feedUrl), { next: { revalidate: 1800 } })
+    // Nextのデータキャッシュ(next.revalidate)は通さない(2026-08-13)。
+    // 8/12 20:00配信の新エピソードが11時間後も/updatesに出ない障害の対応。
+    // 配信直後の76分間(Anchor内側キャッシュが古い間)に取り込んだ古いXMLを、
+    // OpenNext+改変Next16のデータキャッシュ(R2+拠点キャッシュ)が期限(1800s)を
+    // 過ぎても返し続けた(他の層は全て30分以内に切れることをコードで確認済み
+    // =消去法でこの層)。
+    // オプション無しのfetchはこのNextでは「auto no cache」=データキャッシュに
+    // 入らず、ルートの静的性にも影響しない(cache:'no-store'は不可: no-storeを
+    // 1つでも含むルートは動的化する、とISRガイドに明記。/podcast配下のISRが
+    // 毎リクエスト再生成に戻り1102が再来する)。
+    // 取得頻度は自前の2層(インメモリ30分+拠点エッジJSON 30分)が今までどおり
+    // 抑える。実際の反映はAnchor内側キャッシュの都合で配信後最大1〜2時間
+    // (rev=の窓はAnchorの外側しか破れない。x-cache: MISS,HIT,HITで実測確認)
+    const res = await fetch(revUrl(feedUrl))
     if (!res.ok) return null
     return parseFeed(await res.text(), opts)
   } catch {
