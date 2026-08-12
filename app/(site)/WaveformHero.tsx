@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { markArrived } from './arrivalSignal'
 import {
   MAX_ON_SCREEN,
   creatureF,
@@ -371,11 +372,12 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     reduceMq.addEventListener('change', applyMotionPref)
     // 誰かがサイトを開いた合図。上流側の位置に生やして、流れる道のりを持たせる。
     // 「動きを減らす」設定の間は生やさない(止まった生きものが居座ってしまう)
-    // 生やして、その種類を返す(自分の到着は記録に残すため呼び出し側が受け取る)
+    // 生やして、その種類を返す(自分の到着は記録に残すため呼び出し側が受け取る)。
+    // 「動きを減らす」設定の人や、同時上限に達している時は画面には出さないが、
+    // 来たことに変わりはないので種類は返す=その日の並びからは漏れない
     spawnRef.current = () => {
-      if (reduceMq.matches || creatures.length >= MAX_ON_SCREEN) return null
       const cr = newCreature(performance.now())
-      creatures.push(cr)
+      if (!reduceMq.matches && creatures.length < MAX_ON_SCREEN) creatures.push(cr)
       return cr.kind
     }
 
@@ -412,7 +414,14 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ kind }),
             keepalive: true,
-          }).catch(() => {}) // 記録できなくても画面の生きものは出ている
+          })
+            .then((r) => {
+              // 記録できた分だけ、いま開いているページの「今日来てくれた人」にも足す。
+              // ページのHTMLは記録より前に描かれているので、これが無いと
+              // 自分の到着が自分の画面に出ない(その日の最初の一人は空のまま)
+              if (r.ok) markArrived(kind)
+            })
+            .catch(() => {}) // 記録できなくても画面の生きものは出ている
         }, 700)
       : undefined
     const supabase = createClient()

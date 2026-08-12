@@ -7,7 +7,7 @@ import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import DeskPreamble from '../../DeskPreamble'
-import CreatureRow from '../../CreatureRow'
+import ArrivalSection from '../../ArrivalSection'
 import { arrivalsOf } from '@/lib/site/arrivals'
 import ScribeArchive from '../ScribeArchive'
 import SamePeriod from '../../SamePeriod'
@@ -139,16 +139,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         <SamePeriod date={date} excludePrefix="/desk/" />
         {/* その日に波形へ生えた線画を、生えた順に(2026-08-07 Andy指定)。
             過ぎた日なので見出しは「この日」。当日ページ(/live)は「今日」 */}
-        {arrivals.length > 0 && (
-          <section className="section arrival-section">
-            <div className="section-head">
-              <h2>この日に来てくれた人</h2>
-            </div>
-            <div className="section-body">
-              <CreatureRow kinds={arrivals} />
-            </div>
-          </section>
-        )}
+        <ArrivalSection kinds={arrivals} label="この日に来てくれた人" />
         <Pager
           older={pagerLink(prevRes.data?.date as string)}
           newer={newerLink}

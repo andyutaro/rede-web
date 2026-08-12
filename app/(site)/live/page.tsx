@@ -4,7 +4,7 @@ import { todayInTokyo } from '@/lib/scribe/date'
 import { scribeTitle } from '@/lib/site/text'
 import LiveFull from './LiveFull'
 import Pager from '../Pager'
-import CreatureRow from '../CreatureRow'
+import ArrivalSection from '../ArrivalSection'
 import { arrivalsOf } from '@/lib/site/arrivals'
 import { isRecentlyWritten } from '@/lib/site/serverBody'
 import { loadAnnotations } from '@/lib/site/annotations'
@@ -55,17 +55,9 @@ export default async function LivePage() {
         target={{ kind: 'scribe', key: today }}
       />
       {/* 今日ここに来た人の分だけ、波形に生えた線画が生えた順に並ぶ(2026-08-07 Andy指定)。
-          遊びの意匠であって機能ではないので、数字も名前も出さない */}
-      {arrivals.length > 0 && (
-        <section className="section arrival-section">
-          <div className="section-head">
-            <h2>今日来てくれた人</h2>
-          </div>
-          <div className="section-body">
-            <CreatureRow kinds={arrivals} />
-          </div>
-        </section>
-      )}
+          遊びの意匠であって機能ではないので、数字も名前も出さない。
+          live=自分の到着をその場で足す(サーバーが描いた後に記録が走るため) */}
+      <ArrivalSection kinds={arrivals} label="今日来てくれた人" live />
       {/* 当日の画面にも前日と一覧への行き先を置く(2026-08-01 Andy指定)。
           「次」は無い: 今日が最新なので、進む先はまだ生まれていない */}
       <Pager

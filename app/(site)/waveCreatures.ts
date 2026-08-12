@@ -4,7 +4,7 @@
 // たびに一つだけ波形から生え、波形と同じ速度で流れ、一往復して消える。溜めない
 // (誰もいない時間まで賑やかに見せない=Away表示を正直に出す作法と同じ)。
 //
-// 絵柄は番組由来の10種(Andyが50候補から絞り込み)。すべて波形と同じ線幅・同じ色で
+// 絵柄は番組由来の25種(Andyが50候補から10種を選び、2026-08-12に15種を増補)。すべて波形と同じ線幅・同じ色で
 // 描き、上に貼られたステッカーではなく「線が一瞬その形になった」ように見せる。
 // 座標系は寸法体系で統一: 原点=波形の線上、上が-y、1単位=SIZE px。
 // 原点が線上にあるので、scale 0→1 の一様拡大がそのまま「生えてくる」動きになる。
@@ -176,6 +176,285 @@ function bubbles(c: Ctx) {
   c.arc(0.34, -0.2, 0.1, 0, Math.PI * 2)
 }
 
+// --- 増補15種(2026-08-12 Andy承認)。森と北海道を厚くし、動きの種類を増やす ---
+
+// 11. かに(女川)。既存に無い「関節のある形」。左右対称なので進行方向を持たない
+function crab(c: Ctx) {
+  c.moveTo(-0.52, -0.34)
+  c.quadraticCurveTo(0, -0.64, 0.52, -0.34)
+  c.quadraticCurveTo(0, -0.06, -0.52, -0.34)
+  c.moveTo(-0.2, -0.5)
+  c.lineTo(-0.2, -0.66)
+  c.moveTo(0.2, -0.5)
+  c.lineTo(0.2, -0.66)
+  // 鋏。先を割って「はさみ」だと分かるようにする
+  for (const s of [-1, 1]) {
+    c.moveTo(0.5 * s, -0.4)
+    c.quadraticCurveTo(0.84 * s, -0.5, 0.8 * s, -0.76)
+    c.lineTo(0.92 * s, -0.62)
+  }
+  // 脚は片側3本。下へ広げて甲羅を持ち上げる
+  for (const s of [-1, 1]) {
+    for (const [x0, x1, y1] of [
+      [0.3, 0.62, 0.04],
+      [0.44, 0.76, -0.08],
+      [0.5, 0.82, -0.22],
+    ] as const) {
+      c.moveTo(x0 * s, -0.28)
+      c.lineTo(x1 * s, y1)
+    }
+  }
+}
+
+// 12. いるか。唯一の「跳ねる」枠。線のすぐ上に置くと水面から出た姿になる
+function dolphin(c: Ctx) {
+  c.moveTo(-0.86, 0.28)
+  c.bezierCurveTo(-0.4, -0.46, 0.36, -0.6, 0.9, -0.22)
+  c.bezierCurveTo(0.4, -0.08, -0.1, 0.08, -0.62, 0.44)
+  c.lineTo(-0.86, 0.28)
+  // 尾びれ(上下に割る)
+  c.moveTo(-0.86, 0.28)
+  c.lineTo(-1.08, 0.1)
+  c.moveTo(-0.62, 0.44)
+  c.lineTo(-1.0, 0.5)
+  // 背びれ。これが無いと魚に見える
+  c.moveTo(-0.02, -0.52)
+  c.lineTo(-0.18, -0.86)
+  c.lineTo(0.24, -0.58)
+  // 口
+  c.moveTo(0.9, -0.22)
+  c.lineTo(0.62, -0.16)
+}
+
+// 13. もみの木(北海道)。縦の三角。芽・きのこと背丈で対になる
+function conifer(c: Ctx) {
+  c.moveTo(0, 0)
+  c.lineTo(0, -0.26)
+  c.moveTo(-0.46, -0.24)
+  c.lineTo(0, -0.58)
+  c.lineTo(0.46, -0.24)
+  c.moveTo(-0.36, -0.52)
+  c.lineTo(0, -0.86)
+  c.lineTo(0.36, -0.52)
+  c.moveTo(-0.24, -0.8)
+  c.lineTo(0, -1.14)
+  c.lineTo(0.24, -0.8)
+}
+
+// 14. ふぐ。丸+棘。同じ「魚」でも輪郭が全く別物になる
+function puffer(c: Ctx) {
+  c.moveTo(0.44, 0)
+  c.arc(0, 0, 0.44, 0, Math.PI * 2)
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + 0.25
+    c.moveTo(Math.cos(a) * 0.44, Math.sin(a) * 0.44)
+    c.lineTo(Math.cos(a) * 0.64, Math.sin(a) * 0.64)
+  }
+  c.moveTo(-0.42, -0.14)
+  c.lineTo(-0.78, -0.32)
+  c.lineTo(-0.72, 0.04)
+  c.lineTo(-0.42, 0.14)
+  c.moveTo(0.29, -0.14)
+  c.arc(0.24, -0.14, 0.05, 0, Math.PI * 2)
+}
+
+// 15. はね。全種で最も軽い。落ちてくる動きは他と被らない
+function feather(c: Ctx) {
+  c.moveTo(0.5, -0.86)
+  c.bezierCurveTo(0.08, -0.58, -0.2, -0.18, -0.42, 0.3)
+  c.bezierCurveTo(-0.04, -0.04, 0.28, -0.3, 0.5, -0.86)
+  c.moveTo(0.5, -0.86)
+  c.lineTo(-0.54, 0.42)
+  // 先の割れ(羽らしさはここで出る)
+  c.moveTo(-0.08, -0.16)
+  c.lineTo(-0.26, -0.02)
+  c.moveTo(0.1, -0.4)
+  c.lineTo(-0.08, -0.26)
+}
+
+// 16. かも。線の上に浮かぶ(舟と同じ枠の、生きているもの版)
+function duck(c: Ctx) {
+  c.moveTo(-0.62, -0.16)
+  c.quadraticCurveTo(-0.52, -0.56, 0.02, -0.5)
+  c.quadraticCurveTo(0.5, -0.45, 0.44, -0.12)
+  c.quadraticCurveTo(0, 0.06, -0.62, -0.16)
+  c.moveTo(0.26, -0.47)
+  c.quadraticCurveTo(0.3, -0.82, 0.56, -0.84)
+  c.quadraticCurveTo(0.78, -0.86, 0.76, -0.66)
+  c.quadraticCurveTo(0.74, -0.5, 0.5, -0.44)
+  c.moveTo(0.76, -0.72)
+  c.lineTo(1.0, -0.67)
+  c.lineTo(0.74, -0.6)
+  c.moveTo(-0.62, -0.16)
+  c.lineTo(-0.88, -0.34)
+  c.moveTo(0.69, -0.74)
+  c.arc(0.655, -0.74, 0.035, 0, Math.PI * 2)
+}
+
+// 17. どんぐり。最小のシルエット。寸法に変化がつく
+function acorn(c: Ctx) {
+  c.moveTo(-0.3, -0.42)
+  c.bezierCurveTo(-0.34, 0.06, 0.34, 0.06, 0.3, -0.42)
+  c.moveTo(-0.36, -0.42)
+  c.quadraticCurveTo(0, -0.28, 0.36, -0.42)
+  c.quadraticCurveTo(0.3, -0.68, 0, -0.68)
+  c.quadraticCurveTo(-0.3, -0.68, -0.36, -0.42)
+  c.moveTo(0, -0.68)
+  c.lineTo(0.05, -0.86)
+}
+
+// 18. かめ。甲羅のドーム+ひれ。ゆっくり泳ぐ形が空いていた
+function turtle(c: Ctx) {
+  c.moveTo(-0.56, -0.1)
+  c.quadraticCurveTo(-0.5, -0.64, 0, -0.64)
+  c.quadraticCurveTo(0.5, -0.64, 0.56, -0.1)
+  c.lineTo(-0.56, -0.1)
+  c.moveTo(-0.2, -0.12)
+  c.lineTo(-0.16, -0.54)
+  c.moveTo(0.2, -0.12)
+  c.lineTo(0.16, -0.54)
+  c.moveTo(0.56, -0.24)
+  c.quadraticCurveTo(0.86, -0.3, 0.88, -0.12)
+  c.quadraticCurveTo(0.88, 0, 0.66, -0.04)
+  c.moveTo(0.34, -0.1)
+  c.quadraticCurveTo(0.52, 0.22, 0.22, 0.26)
+  c.moveTo(-0.34, -0.1)
+  c.quadraticCurveTo(-0.58, 0.16, -0.8, 0.04)
+}
+
+// 19. ふくろう(森の夜)。丸い頭に耳の突起。鳥とは別の輪郭になる
+function owl(c: Ctx) {
+  c.moveTo(-0.44, -0.5)
+  c.quadraticCurveTo(-0.5, -1.0, 0, -1.0)
+  c.quadraticCurveTo(0.5, -1.0, 0.44, -0.5)
+  c.quadraticCurveTo(0.4, -0.06, 0, -0.06)
+  c.quadraticCurveTo(-0.4, -0.06, -0.44, -0.5)
+  c.moveTo(-0.36, -0.86)
+  c.lineTo(-0.46, -1.14)
+  c.lineTo(-0.18, -0.98)
+  c.moveTo(0.36, -0.86)
+  c.lineTo(0.46, -1.14)
+  c.lineTo(0.18, -0.98)
+  c.moveTo(-0.09, -0.74)
+  c.arc(-0.18, -0.74, 0.09, 0, Math.PI * 2)
+  c.moveTo(0.27, -0.74)
+  c.arc(0.18, -0.74, 0.09, 0, Math.PI * 2)
+  c.moveTo(0, -0.68)
+  c.lineTo(-0.07, -0.56)
+  c.lineTo(0.07, -0.56)
+  c.lineTo(0, -0.68)
+}
+
+// 20. くじら。潮の縦線があるので魚と読み違えない
+function whale(c: Ctx) {
+  c.moveTo(-0.86, -0.18)
+  c.bezierCurveTo(-0.5, -0.68, 0.5, -0.7, 0.92, -0.26)
+  c.bezierCurveTo(0.6, 0.12, -0.3, 0.2, -0.86, -0.18)
+  c.moveTo(-0.86, -0.18)
+  c.lineTo(-1.18, -0.46)
+  c.quadraticCurveTo(-1.0, -0.16, -1.16, 0.12)
+  c.lineTo(-0.86, -0.18)
+  // 潮
+  c.moveTo(0.42, -0.64)
+  c.quadraticCurveTo(0.32, -0.94, 0.16, -1.06)
+  c.moveTo(0.42, -0.64)
+  c.quadraticCurveTo(0.52, -0.94, 0.64, -1.06)
+  c.moveTo(0.73, -0.3)
+  c.arc(0.69, -0.3, 0.04, 0, Math.PI * 2)
+  c.moveTo(0.92, -0.26)
+  c.quadraticCurveTo(0.72, -0.12, 0.5, -0.1)
+}
+
+// 21. えび(女川)。丸まった胴と長い触角。小さいと烏賊に近づくので触角で離す
+function shrimp(c: Ctx) {
+  c.moveTo(0.62, -0.28)
+  c.bezierCurveTo(0.2, -0.82, -0.5, -0.68, -0.6, -0.16)
+  c.bezierCurveTo(-0.3, -0.34, 0.2, -0.36, 0.62, -0.28)
+  for (const [x, y, x2, y2] of [
+    [0.3, -0.54, 0.24, -0.34],
+    [0.05, -0.64, -0.01, -0.42],
+    [-0.22, -0.6, -0.26, -0.4],
+  ] as const) {
+    c.moveTo(x, y)
+    c.lineTo(x2, y2)
+  }
+  c.moveTo(-0.6, -0.16)
+  c.lineTo(-0.92, -0.04)
+  c.moveTo(-0.6, -0.16)
+  c.lineTo(-0.84, -0.36)
+  c.moveTo(0.62, -0.28)
+  c.quadraticCurveTo(0.92, -0.5, 1.04, -0.88)
+  c.moveTo(0.62, -0.28)
+  c.quadraticCurveTo(0.98, -0.28, 1.12, -0.5)
+  c.moveTo(0.59, -0.38)
+  c.arc(0.55, -0.38, 0.04, 0, Math.PI * 2)
+}
+
+// 22. マイク。はっきり「ポッドキャスト」と言う唯一の一つ。線から生えて立つ
+function mic(c: Ctx) {
+  c.moveTo(-0.26, -0.62)
+  c.quadraticCurveTo(-0.26, -1.04, 0, -1.04)
+  c.quadraticCurveTo(0.26, -1.04, 0.26, -0.62)
+  c.quadraticCurveTo(0.26, -0.44, 0, -0.44)
+  c.quadraticCurveTo(-0.26, -0.44, -0.26, -0.62)
+  c.moveTo(-0.24, -0.74)
+  c.lineTo(0.24, -0.74)
+  c.moveTo(-0.24, -0.88)
+  c.lineTo(0.24, -0.88)
+  c.moveTo(0, -0.44)
+  c.lineTo(0, -0.14)
+  c.moveTo(-0.3, -0.02)
+  c.quadraticCurveTo(0, -0.22, 0.3, -0.02)
+}
+
+// 23. 花。丸い花弁。芽と同じ植物枠だが、輪郭は円の集合で別物になる
+function flower(c: Ctx) {
+  const cy = -0.72
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i / 5) * Math.PI * 2
+    const px = Math.cos(a) * 0.32
+    const py = cy + Math.sin(a) * 0.32
+    c.moveTo(px + 0.2, py)
+    c.arc(px, py, 0.2, 0, Math.PI * 2)
+  }
+  c.moveTo(0.09, cy)
+  c.arc(0, cy, 0.09, 0, Math.PI * 2)
+  c.moveTo(0, cy + 0.34)
+  c.lineTo(0, 0)
+  c.moveTo(0, -0.22)
+  c.quadraticCurveTo(0.32, -0.32, 0.36, -0.06)
+}
+
+// 24. あざらし(北海道)。丸い塊なので、ひげと前びれで亀・くじらから離す
+function seal(c: Ctx) {
+  c.moveTo(-0.9, -0.2)
+  c.bezierCurveTo(-0.6, -0.52, -0.1, -0.5, 0.28, -0.66)
+  c.quadraticCurveTo(0.6, -0.82, 0.78, -0.56)
+  c.quadraticCurveTo(0.9, -0.36, 0.62, -0.3)
+  c.bezierCurveTo(0.2, -0.16, -0.4, -0.02, -0.9, -0.2)
+  c.moveTo(-0.9, -0.2)
+  c.lineTo(-1.16, -0.42)
+  c.moveTo(-0.9, -0.2)
+  c.lineTo(-1.1, 0.02)
+  c.moveTo(0.1, -0.3)
+  c.quadraticCurveTo(0.02, 0.08, -0.28, 0.08)
+  c.moveTo(0.61, -0.6)
+  c.arc(0.575, -0.6, 0.035, 0, Math.PI * 2)
+  c.moveTo(0.78, -0.46)
+  c.lineTo(0.98, -0.42)
+}
+
+// 25. 雷(2026-08-12 Andy追加)。角ばった形は全種の中で完全に独立している
+function bolt(c: Ctx) {
+  c.moveTo(0.24, -1.12)
+  c.lineTo(-0.34, -0.42)
+  c.lineTo(0.02, -0.42)
+  c.lineTo(-0.26, 0.06)
+  c.lineTo(0.36, -0.6)
+  c.lineTo(0.0, -0.6)
+  c.closePath()
+}
+
 // 順序はAndyの優先順位ランキング(1位=魚)。sizeは寸法体系の中での相対倍率
 const SHAPES: ((c: Ctx) => void)[] = [
   fish,
@@ -188,8 +467,28 @@ const SHAPES: ((c: Ctx) => void)[] = [
   plane,
   squid,
   bubbles,
+  // 増補15種(2026-08-12)
+  crab,
+  dolphin,
+  conifer,
+  puffer,
+  feather,
+  duck,
+  acorn,
+  turtle,
+  owl,
+  whale,
+  shrimp,
+  mic,
+  flower,
+  seal,
+  bolt,
 ]
-const SIZE_MUL = [1.15, 0.95, 1.0, 0.9, 0.85, 0.9, 0.95, 1.05, 1.0, 0.85]
+const SIZE_MUL = [
+  1.15, 0.95, 1.0, 0.9, 0.85, 0.9, 0.95, 1.05, 1.0, 0.85,
+  // どんぐりは最小、くじらは最大。寸法に幅を持たせて並びを単調にしない
+  0.95, 1.1, 0.95, 0.9, 0.9, 0.95, 0.72, 0.95, 0.85, 1.15, 1.0, 0.85, 0.8, 1.05, 0.85,
+]
 
 // 各絵の縦の広がり[上端, 下端](ローカル単位、上が負)。線から逃がす量の計算に使う
 const EXT: [number, number][] = [
@@ -203,15 +502,38 @@ const EXT: [number, number][] = [
   [-0.6, 0.6], // 飛行機
   [-1.05, 0.04], // 烏賊
   [-0.88, -0.08], // 泡
+  [-0.78, 0.06], // かに
+  [-0.86, 0.5], // いるか
+  [-1.14, 0], // もみの木
+  [-0.64, 0.64], // ふぐ
+  [-0.86, 0.42], // はね
+  [-0.86, 0.06], // かも
+  [-0.86, 0.06], // どんぐり
+  [-0.64, 0.28], // かめ
+  [-1.14, -0.04], // ふくろう
+  [-1.06, 0.2], // くじら
+  [-0.88, -0.04], // えび
+  [-1.04, -0.02], // マイク
+  [-1.24, 0], // 花
+  [-0.82, 0.08], // あざらし
+  [-1.12, 0.06], // 雷
 ]
 
 // 線を水面・地面と見立てて上下に振り分ける(2026-08-07 Andy指定)。
 // 生えるもの・浮かぶもの・飛ぶものは線の上、水の生きものは線の下。
 // 偏りは問題にしない(上6・下4)
-const ABOVE = [false, true, false, true, true, true, true, true, false, false]
+const ABOVE = [
+  false, true, false, true, true, true, true, true, false, false,
+  // かに/ふぐ/かめ/くじら/えび/あざらしは水の中、いるかは跳ねるので水面の上
+  false, true, true, false, true, true, true, false, true, false, false, true, true, false, true,
+]
 
 // 空を行くものは線からさらに離す(地平線の上を飛んでいる高さを出す)
-const EXTRA = [0.15, 0, 0.2, 0, 0, 0.55, 0, 0.75, 0.25, 0.1]
+const EXTRA = [
+  0.15, 0, 0.2, 0, 0, 0.55, 0, 0.75, 0.25, 0.1,
+  // いるかは水面すぐ上(離しすぎると跳ねて見えない)。はねと雷は空の高み
+  0.1, 0.3, 0, 0.2, 0.6, 0, 0, 0.15, 0.1, 0.25, 0.15, 0, 0, 0.2, 0.7,
+]
 
 export const KINDS = SHAPES.length
 
