@@ -1464,6 +1464,20 @@ html[data-theme='dark'] .contact-pill:hover {
 .creature-row {
   display: block;
   width: 100%;
+  cursor: pointer;
+}
+
+/* 1体の拡大表示(2026-08-12 Andy指定)。写真のライトボックス(暗幕)ではなく
+   紙色の面に大きく描く=線画は紙の上にあるべきもの。どこを押しても閉じる */
+.creature-pop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 /* ---- 番組ページ ---- */
