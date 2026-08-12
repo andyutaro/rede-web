@@ -1459,6 +1459,13 @@ html[data-theme='dark'] .contact-pill:hover {
   margin-top: 70px;
 }
 
+/* 「今日来てくれた人」(2026-08-07)。その日に波形へ生えた線画を生えた順に並べる。
+   遊びの意匠なので、罫も枠も数字も持たせない */
+.creature-row {
+  display: block;
+  width: 100%;
+}
+
 /* ---- 番組ページ ---- */
 .show-header {
   text-align: center;

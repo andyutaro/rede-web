@@ -7,6 +7,8 @@ import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import DeskPreamble from '../../DeskPreamble'
+import CreatureRow from '../../CreatureRow'
+import { arrivalsOf } from '@/lib/site/arrivals'
 import ScribeArchive from '../ScribeArchive'
 import SamePeriod from '../../SamePeriod'
 import { loadAnnotations } from '@/lib/site/annotations'
@@ -101,9 +103,10 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
 
   // 注釈(2026-07-28): 本文とは別レイヤー。ログイン中なら自分のサイトを普通に
   // 見ている画面から、ドラッグして直接足せる(書き込みの可否はAPI側で再検証する)
-  const [annotations, canEdit] = await Promise.all([
+  const [annotations, canEdit, arrivals] = await Promise.all([
     loadAnnotations({ kind: 'scribe', key: date }),
     isEditor(),
+    arrivalsOf(date),
   ])
 
   return (
@@ -134,6 +137,18 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         {/* 同じ頃(2026-07-28): この日の前後7日に生まれた他の仕事。
             scribe同士の行き来はPagerの担当なので/scribe/は除く */}
         <SamePeriod date={date} excludePrefix="/desk/" />
+        {/* その日に波形へ生えた線画を、生えた順に(2026-08-07 Andy指定)。
+            過ぎた日なので見出しは「この日」。当日ページ(/live)は「今日」 */}
+        {arrivals.length > 0 && (
+          <section className="section arrival-section">
+            <div className="section-head">
+              <h2>この日に来てくれた人</h2>
+            </div>
+            <div className="section-body">
+              <CreatureRow kinds={arrivals} />
+            </div>
+          </section>
+        )}
         <Pager
           older={pagerLink(prevRes.data?.date as string)}
           newer={newerLink}

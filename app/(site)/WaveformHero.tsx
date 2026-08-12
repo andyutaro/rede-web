@@ -3,6 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import {
+  MAX_ON_SCREEN,
+  creatureF,
+  newCreature,
+  paintCreature,
+  type Creature,
+} from './waveCreatures'
 
 // 背景波形 + PODCAST連続再生(2026-07-19。※「ラジオ」という語はAndyが忌避、表記禁止)。
 // - 波形は固定背景、コンテンツの背後。PODCASTピルを押すと放送に「合流」する:
@@ -68,6 +76,13 @@ function makePeaks(n: number, seed: number): number[] {
 const FADE_MS = 1200
 const fadeRafBox = { current: 0 } // 波形ヒーローは1ページ1個なのでモジュール共有でよい
 
+// 到着を知らせるのはタブ1枚につき1回だけ(2026-08-07)。
+// layoutの<Suspense fallback={<WaveformHero episodes={null}/>}>のせいで、
+// RSSの解決を待つ間に一度マウントされ、解決後にもう一度マウントされる=
+// このコンポーネントのマウント回数はセッション数と一致しない。モジュール変数は
+// ドキュメント(タブ)と寿命が同じなので、ここで一度きりに畳む
+let announced = false
+
 function fadeInAudio(a: HTMLAudioElement, rafBox: { current: number }) {
   cancelAnimationFrame(rafBox.current)
   const t0 = performance.now()
@@ -88,6 +103,9 @@ function fadeInAudio(a: HTMLAudioElement, rafBox: { current: number }) {
 export default function WaveformHero({ episodes }: { episodes: Episode[] | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
+  // 到着で生きものを一つ生やし、その種類を返す(上限に達していたらnull)。
+  // 実体は波形アニメーションのeffectが入れる
+  const spawnRef = useRef<(() => number | null) | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
   // 再生キュー: 初期値はlayoutの全番組キュー。番組ページの「この番組を連続再生」が
@@ -157,6 +175,9 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     let phase = 0
     // drawを定義し終えるまではresize()から呼べない(const宣言のTDZ)。この旗が立ってから呼ぶ
     let started = false
+    // 波形の上の生きもの(2026-08-07)。進み具合pだけを持ち、画面上の位置は
+    // 描画時にその時の形(直線か円弧か)から引く
+    const creatures: Creature[] = []
 
     // 「動きを減らす」設定(2026-07-23): 波形はcanvasなのでCSSでは止まらない。
     // 流れを止めて静止した一本の波形として一度だけ描く(存在は残す)
@@ -222,6 +243,13 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
         return (peaks[i0] * (1 - frac) + peaks[(i0 + 1) % n] * frac - 0.5) * 2
       }
 
+      // 生きものを乗せるために弧の諸元を外へ出す(値も式も従来のまま=線は1pxも動かない)
+      let arcCx = 0
+      let arcR = 0
+      let arcThB = 0
+      let arcDir = 1
+      const arcSweep = Math.PI * 1.1
+
       ctx.beginPath()
       if (br && !onMidLine) {
         // ---- 円弧(スマホ) ----
@@ -236,7 +264,11 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
         const r = cx - xL
         const thB = Math.atan2(d, bx - cx)
         const dir = d >= 0 ? 1 : -1
-        const sweep = Math.PI * 1.1 // 画面外へ抜けきる長さ
+        const sweep = arcSweep // 画面外へ抜けきる長さ
+        arcCx = cx
+        arcR = r
+        arcThB = thB
+        arcDir = dir
         const steps = Math.max(120, Math.round((r * sweep) / 3.5))
         for (let i = 0; i <= steps; i++) {
           const f = i / steps
@@ -267,6 +299,48 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       ctx.lineJoin = 'round'
       ctx.lineCap = 'round'
       ctx.stroke()
+
+      // ---- 波形の上の生きもの(2026-08-07) ----
+      // 誰かがサイトを開くたびに一つ生え、波形と同じ速さで流れて消える。
+      // 線の色・太さ・透明度は波形と共通=「線が一瞬その形になった」ように見せる。
+      const arc = Boolean(br) && !onMidLine
+      // 位置f(0..1)における線上の点と、接線T・外向き法線N。
+      // 波形の描画と同じ式から引くので、生きものは必ず線の上に乗る
+      const frameAt = (f: number) => {
+        if (arc) {
+          const grow = Math.min(1, (f * arcSweep * arcR) / 110)
+          const rr = arcR + waveAt(1 - f) * amp * grow
+          const th = arcThB + arcDir * f * arcSweep
+          const cos = Math.cos(th)
+          const sin = Math.sin(th)
+          // 法線は円の外向き(=線から離れる向き)。接線は掃引の向き
+          return {
+            px: arcCx + rr * cos,
+            py: cyMid + rr * sin,
+            tx: -sin * arcDir,
+            ty: cos * arcDir,
+            nx: cos,
+            ny: sin,
+          }
+        }
+        const x = f * endX
+        const taper = Math.min(1, Math.min(x, endX - x) / 90)
+        return {
+          px: x,
+          py: cyMid + waveAt(f) * amp * taper,
+          // 直線では模様は右から左へ流れる。接線は進行方向に取る(2026-08-07 Andy指摘:
+          // 魚や飛行機が進行方向と逆を向いていた)。傾きは付けない=絵は左右反転するだけで、
+          // 極小の線画が斜めになって崩れることもない
+          tx: -1,
+          ty: 0,
+          nx: 0,
+          ny: -1,
+        }
+      }
+      for (const cr of creatures) {
+        const p = frameAt(creatureF(cr, arc))
+        paintCreature(ctx, cr, t, p.px, p.py, p.tx, p.ty, p.nx, p.ny)
+      }
       ctx.globalAlpha = 1
     }
 
@@ -275,7 +349,15 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
         // 間引かれた分は捨てる(上限64ms)。復帰時に模様がワープしない
         const dt = Math.min(64, t - last)
         last = t
-        phase += dt * (playingRef.current ? CFG.speedP : CFG.speed)
+        const step = dt * (playingRef.current ? CFG.speedP : CFG.speed)
+        phase += step
+        // 生きものは模様と同じ速さで進む(phaseの1目盛り=配列1つ分ずれる)。
+        // 向きは持たせず、描画時にpから位置を引く(creatureF)
+        const df = step / (CFG.n - 1)
+        for (let i = creatures.length - 1; i >= 0; i--) {
+          creatures[i].p += df
+          if (creatures[i].p > 1) creatures.splice(i, 1) // 一往復したら消える(溜めない)
+        }
         draw(t)
       } // ~30fps
       raf = requestAnimationFrame(loop)
@@ -287,6 +369,16 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       else raf = requestAnimationFrame(loop)
     }
     reduceMq.addEventListener('change', applyMotionPref)
+    // 誰かがサイトを開いた合図。上流側の位置に生やして、流れる道のりを持たせる。
+    // 「動きを減らす」設定の間は生やさない(止まった生きものが居座ってしまう)
+    // 生やして、その種類を返す(自分の到着は記録に残すため呼び出し側が受け取る)
+    spawnRef.current = () => {
+      if (reduceMq.matches || creatures.length >= MAX_ON_SCREEN) return null
+      const cr = newCreature(performance.now())
+      creatures.push(cr)
+      return cr.kind
+    }
+
     started = true
     resize() // 初回の寸法計測(この中で1枚描くので、ループが回る前も空白にならない)
     applyMotionPref()
@@ -296,6 +388,45 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       window.removeEventListener('resize', resize)
       reduceMq.removeEventListener('change', applyMotionPref)
       themeObs.disconnect()
+      spawnRef.current = null
+    }
+  }, [])
+
+  // ---- 到着(2026-08-07 Andy承認) ----
+  // 波形は(site)レイアウトに常駐しているので、このマウントはタブ1枚につき1回。
+  // サイト内を回遊してもアンマウントされない=「開く→回遊→閉じる」がそのまま
+  // 1セッションになり、到着の単位と一致する(セッションIDを持つ必要がない)。
+  // 自分の到着でも必ず一つ生やすのが肝: この規則を自分の体で覚えるので、
+  // あとで何もしていないのに次の一つが現れたとき「誰か来た」が言葉なしで伝わる。
+  useEffect(() => {
+    const first = !announced
+    announced = true
+    // 自分の到着。波形の初期化(直前のeffect)を待ってから生やす。
+    // 生えた種類だけをdeskの「今日来てくれた人」に残す(誰か・どのページかは送らない)
+    const own = first
+      ? setTimeout(() => {
+          const kind = spawnRef.current?.()
+          if (kind == null) return
+          fetch('/api/arrive', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ kind }),
+            keepalive: true,
+          }).catch(() => {}) // 記録できなくても画面の生きものは出ている
+        }, 700)
+      : undefined
+    const supabase = createClient()
+    const ch = supabase.channel('andy-arrivals')
+    ch.on('broadcast', { event: 'arrive' }, () => spawnRef.current?.())
+    ch.subscribe((status) => {
+      // 送るのは空の合図だけ。人数も現在地も、誰の情報も乗せない
+      if (status === 'SUBSCRIBED' && first) {
+        ch.send({ type: 'broadcast', event: 'arrive', payload: {} })
+      }
+    })
+    return () => {
+      clearTimeout(own)
+      supabase.removeChannel(ch)
     }
   }, [])
 
