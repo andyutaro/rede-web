@@ -576,7 +576,10 @@ export function paintShapeCentered(
 }
 
 // 波形上の一点(px, py)と、その点での接線T・外向き法線Nを与えて1体描く。
-// ローカル系: x=接線方向、-y=法線方向(=線から生える向き)
+// ローカル系: x=接線方向、-y=法線方向(=線から生える向き)。
+// inward=true(スマホの円弧)では全種を弧の内側(画面中心側)に置き、体の上も
+// 内側へ向ける(2026-08-12 Andy指定: 外側は画面端で見切れて見にくい)。
+// 弧の線を地面に、内側の空間へ生える・泳ぐ、という見立てになる
 export function paintCreature(
   ctx: Ctx,
   cr: Creature,
@@ -586,7 +589,8 @@ export function paintCreature(
   tx: number,
   ty: number,
   nx: number,
-  ny: number
+  ny: number,
+  inward = false
 ) {
   const age = now - cr.born
   // 生え際は速く、終わりはゆっくり(easeOut)。線から立ち上がる感じを出す
@@ -594,14 +598,18 @@ export function paintCreature(
   if (g <= 0.001) return
   const s = cr.size * g
   ctx.save()
-  // 列ベクトル: x軸=T(進行方向)、y軸=-N(ローカルの上が線から離れる向き)
-  ctx.transform(tx, ty, -nx, -ny, px, py)
+  // 列ベクトル: x軸=T(進行方向)、y軸=-N(ローカルの上が線から離れる向き)。
+  // inwardでは上を-N(弧の内側)に向ける=局所系の縦を反転する。接線は不変なので
+  // 進行方向は保たれ、絵は縦鏡像になるだけ(全種、縦鏡像でも形は読める)
+  ctx.transform(tx, ty, inward ? nx : -nx, inward ? ny : -ny, px, py)
   ctx.scale(s, s)
   // 線と重ならない位置へ寄せる。上に置くなら絵の下端を、下に置くなら上端を、
-  // 線からGAPだけ離す。拡大と一緒に効くので、線から生えて離れていく動きになる
+  // 線からGAPだけ離す。拡大と一緒に効くので、線から生えて離れていく動きになる。
+  // inwardでは全種を上側(=内側)に置く
   const [top, bottom] = EXT[cr.kind]
   const extra = EXTRA[cr.kind]
-  ctx.translate(0, ABOVE[cr.kind] ? -GAP - bottom - extra : GAP - top + extra)
+  const above = inward || ABOVE[cr.kind]
+  ctx.translate(0, above ? -GAP - bottom - extra : GAP - top + extra)
   ctx.beginPath()
   SHAPES[cr.kind](ctx)
   // 変換を戻してからstrokeする。パスは既に画面座標で確定しているので形はそのまま、

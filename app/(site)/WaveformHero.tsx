@@ -340,7 +340,8 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
       }
       for (const cr of creatures) {
         const p = frameAt(creatureF(cr, arc))
-        paintCreature(ctx, cr, t, p.px, p.py, p.tx, p.ty, p.nx, p.ny)
+        // 円弧では全種を内側に(外側は画面端で見切れる。2026-08-12 Andy指定)
+        paintCreature(ctx, cr, t, p.px, p.py, p.tx, p.ty, p.nx, p.ny, arc)
       }
       ctx.globalAlpha = 1
     }
