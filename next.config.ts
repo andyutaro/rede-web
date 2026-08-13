@@ -146,6 +146,10 @@ const nextConfig: NextConfig = {
       // 旧URLは永続リダイレクトで受ける(IDは同じarticlesのUUIDなのでそのまま渡せる)
       { source: "/events", destination: "/physical", permanent: true },
       { source: "/events/:id", destination: "/physical/:id", permanent: true },
+      // /contact → /mail(2026-08-13 Andy指定)。「contact」の語は仕事の相談の
+      // 窓口に見え、おたよりが送りにくい。ナビの表記(Mail)ともこれで一致する。
+      // ?mode=otayori等のクエリはNextのリダイレクトが自動で引き継ぐ
+      { source: "/contact", destination: "/mail", permanent: true },
     ];
   },
 };

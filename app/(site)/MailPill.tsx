@@ -21,7 +21,7 @@ export default function MailPill() {
 
   return (
     <Link
-      href="/contact"
+      href="/mail"
       className="contact-pill"
       aria-label="Contact & Otayori — お仕事のご相談・番組へのおたより"
     >

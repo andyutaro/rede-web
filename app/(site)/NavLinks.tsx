@@ -8,7 +8,7 @@ import { NAV } from './nav'
 // フッターは全項目(includeContact=true)。
 export default function NavLinks({ includeContact = true }: { includeContact?: boolean }) {
   const pathname = usePathname()
-  const items = includeContact ? NAV : NAV.filter((n) => n.href !== '/contact')
+  const items = includeContact ? NAV : NAV.filter((n) => n.href !== '/mail')
   return (
     <nav className="site-nav">
       {items.map(({ label, href }) => (

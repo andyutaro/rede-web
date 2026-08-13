@@ -212,11 +212,11 @@ export default async function AboutPage() {
         </div>
         <p className="about-mail-note">お仕事のご相談も、番組へのおたよりも、ここから。</p>
         <div className="mail-modes about-mail-modes">
-          <Link href="/contact" className="mail-mode">
+          <Link href="/mail" className="mail-mode">
             <span className="mm-en">FOR CLIENT</span>
             <span className="mm-ja">お仕事のご相談</span>
           </Link>
-          <Link href="/contact?mode=otayori" className="mail-mode">
+          <Link href="/mail?mode=otayori" className="mail-mode">
             <span className="mm-en">FOR LISTENER</span>
             <span className="mm-ja">番組へのおたより</span>
           </Link>

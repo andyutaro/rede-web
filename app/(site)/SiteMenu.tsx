@@ -11,7 +11,7 @@ import { NAV } from './nav'
 export default function SiteMenu() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const items = NAV.filter((n) => n.href !== '/contact')
+  const items = NAV.filter((n) => n.href !== '/mail')
 
   // ページ遷移で閉じる(戻る/進む等、リンク以外の遷移も拾う安全網)
   useEffect(() => {

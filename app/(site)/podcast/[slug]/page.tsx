@@ -289,7 +289,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
         <div className="show-actions">
           <ShowPlayAll episodes={playable} label="第1回から作業用まとめ聞き" />
           {isOriginal && !show.ended && !show.otayoriUrl && (
-            <Link className="ep-letter" href={`/contact?show=${show.slug}`}>
+            <Link className="ep-letter" href={`/mail?show=${show.slug}`}>
               番組へのおたよりを送る →
             </Link>
           )}

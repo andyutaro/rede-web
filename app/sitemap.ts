@@ -26,7 +26,7 @@ const STATIC_PATHS = [
   '/photography',
   '/physical',
   '/membership',
-  '/contact',
+  '/mail',
   '/privacy',
 ] as const
 

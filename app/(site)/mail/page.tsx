@@ -13,7 +13,7 @@ export const revalidate = 1800
 export const metadata: Metadata = {
   title: 'Contact & Otayori',
   description: 'お仕事のご相談と、番組へのおたよりの窓口。',
-  alternates: { canonical: 'https://andyutaro.com/contact' },
+  alternates: { canonical: 'https://andyutaro.com/mail' },
 }
 
 // CONTACT & OTAYORIページ(2026-07-20再編、旧Contact)。

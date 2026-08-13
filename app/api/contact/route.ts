@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createService } from '@/lib/supabase/service'
-import { TOPICS } from '@/app/(site)/contact/content'
+import { TOPICS } from '@/app/(site)/mail/content'
 import { otayoriLabels } from '@/lib/site/shows'
 import { judgeSpam } from '@/lib/site/spamFilter'
 
