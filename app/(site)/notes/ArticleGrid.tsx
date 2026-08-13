@@ -18,13 +18,16 @@ export type GridItem = {
 }
 
 // PHOTOGRAPHYタブは独立棚(/photography)への格上げに伴い廃止(2026-07-10)
-const TABS = ['ALL', 'ARTICLE', 'DESK'] as const
+// ARTICLE→BLOG(2026-08-13 Andy指定:「article」の語が高品質を強要して書きにくい)
+const TABS = ['ALL', 'BLOG', 'DESK'] as const
 
-// 内側の呼び名(kind)は'scribe'のまま——DBのテーブル名・注釈の対象種別・
-// APIの経路が全部その名前で動いているので触らない。
-// **見える名前だけ**をDESKにする(2026-07-30 scribe→deskの改名)
+// 内側の呼び名(kind)は'scribe'・'article'のまま——DBのテーブル名・type・
+// 注釈の対象種別・APIの経路が全部その名前で動いているので触らない。
+// **見える名前だけ**をDESK/BLOGにする(scribe→desk 2026-07-30、article→blog 2026-08-13)
 function kindLabel(kind: string): string {
-  return kind === 'scribe' || kind === 'live' ? 'DESK' : kind.toUpperCase()
+  if (kind === 'scribe' || kind === 'live') return 'DESK'
+  if (kind === 'article') return 'BLOG'
+  return kind.toUpperCase()
 }
 type Tab = (typeof TABS)[number]
 
@@ -32,7 +35,7 @@ function visible(item: GridItem, tab: Tab): boolean {
   switch (tab) {
     case 'ALL':
       return true
-    case 'ARTICLE':
+    case 'BLOG':
       return item.kind === 'article'
     case 'DESK':
       // LIVEセルはALL/SCRIBEタブでのみ表示(§6)

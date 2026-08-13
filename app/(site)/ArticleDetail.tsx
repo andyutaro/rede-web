@@ -107,7 +107,8 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
       <article className="section">
         <div className="section-head">
           {/* 下位区分を種別として掲げる: photographyはARTWORK/PHOTOLOG(2026-07-11)、
-              physical棚はOBJECT/EVENT(2026-08-07)。notesはARTICLE */}
+              physical棚はOBJECT/EVENT(2026-08-07)。notesはBLOG
+              (ARTICLE→BLOG 2026-08-13 Andy指定。DBのtype='article'は不変) */}
           <h2>
             {a.type === 'photography'
               ? ((a.photo_kind as string | null) ?? 'photolog').toUpperCase()
@@ -115,7 +116,7 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
                 ? 'OBJECT'
                 : a.type === 'event'
                   ? 'EVENT'
-                  : 'ARTICLE'}
+                  : 'BLOG'}
           </h2>
           {date && <span className="article-date">{dateDots(date)}</span>}
         </div>

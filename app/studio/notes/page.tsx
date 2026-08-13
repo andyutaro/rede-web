@@ -15,7 +15,8 @@ export const dynamic = 'force-dynamic'
 // 各一覧行にはサムネイルの実物と出所バッジ(専用/本文/充当/なし)を出す
 // =「自前サムネの無い記事」を探す手間をなくす(2026-07-17 Andy要望)。
 const TABS = [
-  { key: 'article', label: 'ARTICLE' },
+  // ARTICLE→BLOG(2026-08-13 Andy指定。keyはDBのtypeなので不変)
+  { key: 'article', label: 'BLOG' },
   { key: 'scribe', label: 'DESK' },
   { key: 'physical', label: 'PHYSICAL' },
   { key: 'event', label: 'EVENTS' },
@@ -148,7 +149,7 @@ export default async function StudioNotes({
       items.push({
         target: 'article',
         id: a.id as string,
-        title: `${(a.type as string) === 'article' ? 'ARTICLE' : (a.type as string).toUpperCase()} — ${((a.title as string) || '').trim() || '(無題)'}`,
+        title: `${(a.type as string) === 'article' ? 'BLOG' : (a.type as string).toUpperCase()} — ${((a.title as string) || '').trim() || '(無題)'}`,
         thumb:
           a.thumbnail_source === 'manual'
             ? (a.thumbnail_url as string)
@@ -202,7 +203,7 @@ export default async function StudioNotes({
     body = (
       <>
         <div className="studio-trash-section">
-          <div className="studio-trash-head">ARTICLE</div>
+          <div className="studio-trash-head">BLOG</div>
           <SelectTable rows={articleRows(articles ?? [], null)} mode="trash" endpoint="/api/article/delete" emptyText="ゴミ箱は空です" />
         </div>
         <div className="studio-trash-section">
