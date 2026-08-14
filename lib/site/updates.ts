@@ -2,7 +2,7 @@ import { createService } from '@/lib/supabase/service'
 import { scribeTitle, htmlToPlainText, tokyoYmd } from './text'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { SHOWS } from './shows'
-import { fetchShowFeed } from './podcastFeed'
+import { fetchShowFeedLight } from './podcastFeed'
 
 // 更新リストの1行: 日付+ラベル+タイトル。
 // scribeはタイトル=日付導出(20260706)、Podcastはラベル=番組名/タイトル=『…』配信、
@@ -63,9 +63,14 @@ export async function recentUpdates(
       .select('date, label, body, href, deleted_at')
       .order('date', { ascending: false })
       .limit(limit + 10),
-    // 各番組の直近エピソード(RSS)。フィードは番組ページ等と共有キャッシュ
+    // 各番組の直近エピソード(RSS)。**軽量版**で引く(2026-08-14、1102対策):
+    // ここで使うのはタイトル・日付・IDだけで、概要欄は一切読まない。
+    // フル版だと概要欄(容量の約9割)まで解析する代金を、Homeと/updatesが
+    // 毎回払っていた(実測: 5番組でfull 24.0ms / light 14.3ms、ローカルMac)。
+    // 加えて全ページ共通の波形キュー(layout)と**同じ軽量キャッシュを共有**できる
+    // ので、拠点キャッシュの命中率そのものが上がる=パースの回数が減る
     Promise.all(
-      SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))
+      SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : Promise.resolve(null)))
     ),
   ])
 
