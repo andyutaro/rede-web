@@ -2,7 +2,7 @@ import { createService } from '@/lib/supabase/service'
 import { cachedJson } from '@/lib/site/edgeCache'
 import { assignedOf, listAllImages, shelfPathForType } from '@/lib/site/photos'
 import { SHOWS } from './shows'
-import { fetchShowFeed } from './podcastFeed'
+import { fetchShowFeedLight } from './podcastFeed'
 import { firstImageSrc, scribeTitle, tokyoYmd } from './text'
 
 // 「同じ頃の作品」(2026-07-28 Andy指定): 日付を鍵に、全ページを横断で結ぶ。
@@ -72,7 +72,13 @@ async function buildIndex(): Promise<SamePeriodItem[]> {
       .select('id, title, type, html, thumbnail_url, thumbnail_source, published_at, deleted_at')
       .eq('status', 'published'),
     service.from('manual_updates').select('date, label, body, href, deleted_at'),
-    Promise.all(SHOWS.map((s) => (s.feed ? fetchShowFeed(s.feed, s.since) : Promise.resolve(null)))),
+    // 軽量版で引く(2026-08-14、1102対策)。ここで使うのは日付・タイトル・ID・
+    // エピソード画像だけで、概要欄は読まない(画像は軽量版でも同じ式で拾っている)。
+    // Home/updatesの波形キューと同じ軽量キャッシュを共有するので、
+    // パースの回数そのものが減る
+    Promise.all(
+      SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : Promise.resolve(null)))
+    ),
     listAllImages(),
   ])
 
