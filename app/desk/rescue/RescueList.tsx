@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
 // 端末に残っている下書き(scribe-draft-*)と置換退避(scribe-rescue-*)を一覧する。
 // **この画面は何も消さない**(deskの起動時掃除と違い、古い鍵もそのまま残す)。
@@ -17,7 +17,7 @@ const FONT = '-apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif'
 type Entry = {
   key: string
   date: string
-  kind: '下書き' | '置換退避' | '他端末の本文'
+  kind: '下書き' | '置換退避' | '他端末の本文' | 'サーバーの直前の版'
   html: string
   chars: number
   ts: number | null
@@ -88,9 +88,43 @@ const noSubscribe = () => () => {}
 
 export default function RescueList() {
   // 端末のlocalStorage=Reactの外の系。サーバー側は空(null)を返して読み込み中を出す
-  const entries = useSyncExternalStore<Entry[] | null>(noSubscribe, readEntries, () => null)
+  const local = useSyncExternalStore<Entry[] | null>(noSubscribe, readEntries, () => null)
+  const [remote, setRemote] = useState<Entry[]>([])
   const [open, setOpen] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+
+  // サーバー側に残っている直前の版(本文が大きく縮む保存のたびにDBのトリガが残す)。
+  // 端末を触れない状況でもここから戻せる
+  useEffect(() => {
+    let alive = true
+    fetch('/api/scribe/versions')
+      .then((r) => (r.ok ? r.json() : { versions: [] }))
+      .then((d: { versions?: { id: number; date: string; html: string; saved_at: string }[] }) => {
+        if (!alive) return
+        setRemote(
+          (d.versions ?? []).map((v) => ({
+            key: `server-${v.id}`,
+            date: v.date,
+            kind: 'サーバーの直前の版' as const,
+            html: v.html,
+            chars: plainChars(v.html),
+            ts: Date.parse(v.saved_at) || null,
+            dirty: null,
+          }))
+        )
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const entries =
+    local === null
+      ? null
+      : [...local, ...remote].sort((a, b) =>
+          a.date < b.date ? 1 : a.date > b.date ? -1 : (b.ts ?? 0) - (a.ts ?? 0)
+        )
 
   async function restore(e: Entry) {
     if (!confirm(`${e.date} のサーバー側の本文を、この内容(${e.chars}字)で上書きします。よろしいですか。`))
