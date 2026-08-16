@@ -395,6 +395,15 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
                   location.href = '/studio'
                 },
               },
+              {
+                // 端末に残っている本文の取り出し口(2026-08-16 Andy指定で常設化)。
+                // 他端末の上書きで本文が消えたとき、ここからしか救えない
+                label: '端末に残っている本文',
+                onClick: () => {
+                  flushRef.current?.()
+                  location.href = '/desk/rescue'
+                },
+              },
             ]}
           />
         </div>
