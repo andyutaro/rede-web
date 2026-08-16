@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import HtmlEditor, { type HtmlEditorController } from '@/components/HtmlEditor'
+import DeskSwitch from '../DeskSwitch'
 
 // deskのprivate。タブを好きなだけ増やして、外に出ない文章を書く。
 //
@@ -201,8 +202,9 @@ export default function PrivateNotes({ initial }: { initial: Note[] }) {
           overflowX: 'auto',
         }}
       >
-        <span style={{ fontSize: 10, letterSpacing: '0.24em', color: MUTED, marginRight: 8, flex: 'none' }}>
-          PRIVATE
+        {/* 放送卓へ1タップ(2026-08-16)。書きかけを送り切ってから移る */}
+        <span style={{ flex: 'none', marginRight: 4 }}>
+          <DeskSwitch current="private" onLeave={flush} />
         </span>
         {notes.map((n) => (
           <button
@@ -259,16 +261,7 @@ export default function PrivateNotes({ initial }: { initial: Note[] }) {
               surfaceStyle={{ fontSize: 17, padding: 0 }}
               onChange={onEdit}
               onError={setStatus}
-              menuActions={[
-                { label: 'このメモをゴミ箱へ', onClick: trashActive },
-                {
-                  label: '放送卓(desk)へ戻る',
-                  onClick: () => {
-                    flush()
-                    location.href = '/desk'
-                  },
-                },
-              ]}
+              menuActions={[{ label: 'このメモをゴミ箱へ', onClick: trashActive }]}
             />
           ) : (
             <p style={{ fontSize: 13, color: MUTED, lineHeight: 2 }}>

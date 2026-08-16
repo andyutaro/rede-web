@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { todayInTokyo } from '@/lib/scribe/date'
 import HtmlEditor, { type HtmlEditorController } from '@/components/HtmlEditor'
+import DeskSwitch from './DeskSwitch'
 
 const SAVE_DELAY = 1500
 
@@ -351,6 +352,11 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
         fontFamily: '-apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif',
       }}
     >
+      {/* 左上: privateへ1タップ(2026-08-16 Andy指定)。往復がメニュー経由で重かった。
+          押す前にflushして、デバウンス待ちの数秒ぶんを送り切る */}
+      <div style={{ position: 'fixed', top: 14, left: 18, zIndex: 10 }}>
+        <DeskSwitch current="desk" onLeave={() => flushRef.current?.()} />
+      </div>
       <div
         style={{
           position: 'fixed',
@@ -416,15 +422,6 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
                 onClick: () => {
                   flushRef.current?.()
                   location.href = '/studio'
-                },
-              },
-              {
-                // 非公開メモ(2026-08-16 Andy指定)。スティッキーズの置き換え。
-                // 別ルート=中継への配線が無い側へ渡す
-                label: 'private(非公開メモ)',
-                onClick: () => {
-                  flushRef.current?.()
-                  location.href = '/desk/private'
                 },
               },
               {
