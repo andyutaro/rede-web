@@ -419,6 +419,15 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
                 },
               },
               {
+                // 非公開メモ(2026-08-16 Andy指定)。スティッキーズの置き換え。
+                // 別ルート=中継への配線が無い側へ渡す
+                label: 'private(非公開メモ)',
+                onClick: () => {
+                  flushRef.current?.()
+                  location.href = '/desk/private'
+                },
+              },
+              {
                 // 端末に残っている本文の取り出し口(2026-08-16 Andy指定で常設化)。
                 // 他端末の上書きで本文が消えたとき、ここからしか救えない
                 label: '端末に残っている本文',
