@@ -17,12 +17,16 @@ const FONT = '-apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif'
 type Entry = {
   key: string
   date: string
-  kind: '下書き' | '置換退避'
+  kind: '下書き' | '置換退避' | '他端末の本文'
   html: string
   chars: number
   ts: number | null
   dirty: boolean | null
 }
+
+// 鍵の形: scribe-draft-<日付> / scribe-rescue-<日付> / scribe-rescue-<日付>-remote
+// (-remote = この端末が上書きしたときに退避した、他端末側の本文)
+const KEY_RE = /^scribe-(draft|rescue)-(\d{4}-\d{2}-\d{2})(-remote)?$/
 
 function plainChars(html: string): number {
   return html
@@ -54,16 +58,15 @@ function readEntries(): Entry[] {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
       if (!k) continue
-      const isDraft = k.startsWith('scribe-draft-')
-      const isRescue = k.startsWith('scribe-rescue-')
-      if (!isDraft && !isRescue) continue
+      const m = k.match(KEY_RE)
+      if (!m) continue
       try {
         const v = JSON.parse(localStorage.getItem(k) ?? '{}')
         const html = typeof v.html === 'string' ? v.html : ''
         out.push({
           key: k,
-          date: k.replace(/^scribe-(draft|rescue)-/, ''),
-          kind: isDraft ? '下書き' : '置換退避',
+          date: m[2],
+          kind: m[3] ? '他端末の本文' : m[1] === 'draft' ? '下書き' : '置換退避',
           html,
           chars: plainChars(html),
           ts: typeof v.ts === 'number' ? v.ts : null,

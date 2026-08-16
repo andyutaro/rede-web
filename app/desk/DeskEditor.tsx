@@ -45,7 +45,11 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
     let lastInputAt = 0
     const ACTIVE_TYPING_MS = 2 * 60 * 1000
     const DRAFT_KEY = `scribe-draft-${openedDate}`
+    // この端末の本文が置き換えられるとき、消える側を退避する鍵
     const RESCUE_KEY = `scribe-rescue-${openedDate}`
+    // 逆向きの退避(2026-08-16): この端末が他端末の内容を上書きするとき、
+    // 消えるのは「サーバーにあった他端末の本文」。そちらも必ず残す
+    const REMOTE_KEY = `scribe-rescue-${openedDate}-remote`
 
     function writeDraft() {
       try {
@@ -84,6 +88,19 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
       setStatus(message)
     }
 
+    // この端末が他端末の本文を上書きする直前に、消える側を退避しておく。
+    // applyRemote(取り込む向き)には元からある保険を、上書きする向きにも張る
+    // (2026-08-16のテキスト消失では、たまたま取り込む向きの退避だけが命綱になった)
+    function stashRemote(html: string | null | undefined) {
+      const current = controllerRef.current?.getSaveableHtml() ?? saveableHtmlRef.current
+      if (!html || html === current) return
+      try {
+        localStorage.setItem(REMOTE_KEY, JSON.stringify({ html, ts: Date.now() }))
+      } catch {
+        // localStorage不可なら退避なしで進む
+      }
+    }
+
     async function doSave(dateOverride?: string, finalize?: boolean) {
       const date = dateOverride ?? openedDate
       const body = JSON.stringify({ date, html: saveableHtmlRef.current, finalize, baseUpdatedAt })
@@ -91,17 +108,23 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
         const res = await fetch('/api/scribe/save', { method: 'POST', body })
         if (res.status === 409) {
           const { latest } = await res.json()
-          if (offlinePending || Date.now() - lastInputAt < ACTIVE_TYPING_MS) {
-            // オフライン執筆との衝突、またはこの端末でいま執筆中の衝突は、
-            // 直近に身体が書いた方(この端末)を正とし、新しいbaseで書き込み直す。
-            // 単独著者システムでは「執筆中の端末」が常に最新の意図(2026-07-14修正:
-            // 従来は執筆中でもサーバー側で置換され、直前の入力が消えていた)
+          // dirty=この端末にまだサーバーへ届いていない本文がある。その本文は
+          // **この端末にしか存在しない**ので、何分前に打ったかに関係なく捨てない。
+          //
+          // 2026-08-16のテキスト消失の修正: 判定がofflinePending(=前回の通信が
+          // 例外で落ちたか)だけだったため、電波が悪くて「遅れて409が返ってきた」
+          // 場合に守られなかった。catchを通らないのでofflinePendingはfalse、
+          // 遅延の間に最後の打鍵から2分を超え、両方の条件を外して下のapplyRemoteに
+          // 落ち、スマホが自分の未送信の本文を捨ててPCの古い内容を取り込んだ。
+          if (dirty || offlinePending || Date.now() - lastInputAt < ACTIVE_TYPING_MS) {
+            // 消える側(サーバーにあった他端末の本文)を必ず退避してから書き直す
+            stashRemote(latest?.html)
             baseUpdatedAt = latest?.updated_at ?? null
             offlinePending = false
             await doSave(dateOverride, finalize)
             return
           }
-          // 放置タブの衝突: このタブの内容は古い土台の上にあるので、上書きせず最新を取り込む
+          // 未送信の本文が無いタブの衝突: 失うものが無いので最新を取り込む
           applyRemote(latest, '他の端末の更新を読み込みました(保存競合)')
           return
         }
