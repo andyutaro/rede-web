@@ -150,6 +150,15 @@ const nextConfig: NextConfig = {
       // 窓口に見え、おたよりが送りにくい。ナビの表記(Mail)ともこれで一致する。
       // ?mode=otayori等のクエリはNextのリダイレクトが自動で引き継ぐ
       { source: "/contact", destination: "/mail", permanent: true },
+      // 番組名を直接打つ/貼る人を番組ページへ(2026-08-16)。
+      // Search Consoleの404に /sakanakaigi が挙がっていた(8/11クロール)。
+      // 配信中の5番組だけを対象にする: 未配信(ガイロン・オルタナ)は番組ページ自体が
+      // 404なので、恒久リダイレクトで404へ送るとその対応が長く記憶されてしまう
+      { source: "/sakanakaigi", destination: "/podcast/sakanakaigi", permanent: true },
+      { source: "/mimoriradio", destination: "/podcast/mimoriradio", permanent: true },
+      { source: "/longpost", destination: "/podcast/longpost", permanent: true },
+      { source: "/onairdo", destination: "/podcast/onairdo", permanent: true },
+      { source: "/brandshift", destination: "/podcast/brandshift", permanent: true },
     ];
   },
 };
