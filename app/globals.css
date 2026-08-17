@@ -28,6 +28,9 @@
    地は#131a17から#1d2420へ(2026-07-14 Andy指摘「黒すぎる、特にスマホで顕著」。
    humbleな炭色に持ち上げ、罫線・波形など暗部の階調も同じ幅だけ追従) */
 html[data-theme='dark'] {
+  /* スクロールバー・フォーム部品もダークにする(2026-08-17)。既定がダークに
+     なったので、OSがライトの読者にも暗い地の上に明るい入力欄が出てしまう */
+  color-scheme: dark;
   --bg: #1d2420;
   --ink: #dfe7e2;
   --body: #b9c3bd;
@@ -85,8 +88,9 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}
+/* color-schemeはOSではなく「その画面が実際に何色か」で決める(2026-08-17)。
+   以前はOSがダークの時だけhtmlに付けていたが、これは両方向にずれていた:
+   サイトでライトを選んだ読者(OSはダーク)には紙の上に暗いスクロールバーが出て、
+   逆に常時ダークのstudio/desk/loginはOSがライトの読者に明るい部品を出していた
+   (studio.cssのdateピッカーへの個別指定はその穴を塞ぐための対処だった)。
+   サイトはhtml[data-theme='dark']が、道具側は各画面が自分で宣言する。 */

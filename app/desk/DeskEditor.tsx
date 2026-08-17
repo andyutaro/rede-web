@@ -349,6 +349,8 @@ export default function DeskEditor({ initialDate, initialHtml, initialUpdatedAt 
         minHeight: '100vh',
         background: '#1a1a1a',
         color: '#e8e6e0',
+        // 常時ダークの画面なので部品もダークで宣言する(OSの配色には従わせない)
+        colorScheme: 'dark',
         fontFamily: '-apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif',
       }}
     >

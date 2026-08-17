@@ -5,6 +5,9 @@
   min-height: 100vh;
   background: #1a1a1a;
   color: #e8e6e0;
+  /* 常時ダークの作業画面なので、スクロールバーや入力部品もダークで宣言する
+     (OSの配色設定には従わせない) */
+  color-scheme: dark;
   font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
   display: flex;
   flex-direction: column;

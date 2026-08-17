@@ -34,8 +34,10 @@ export const metadata: Metadata = {
 }
 
 // テーマの初期適用はペイント前にインラインスクリプトで行う(FOUC防止)。
-// キーはandy-theme("dark"/"light")、既定はライト。
-const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}`
+// キーはandy-theme("dark"/"light")、既定はダーク(2026-08-17 Andy指定。既定は
+// 長らくライトだった)。OSの配色設定は見ない=初見は全員ダークで、ライトは手動選択。
+// localStorageが読めない環境でも既定に落ちるよう、tryの外で判定する。
+const THEME_INIT = `var t;try{t=localStorage.getItem('andy-theme')}catch(e){}if(t!=='light')document.documentElement.dataset.theme='dark'`
 
 // Cloudflare Web Analytics(2026-07-21): cookieなし・bot除外の訪問計測。
 // 運用ルール: 数字はAndyに見せない(月1でClaudeが読み、改善の助言だけ渡す)。
