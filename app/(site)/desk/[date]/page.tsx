@@ -47,7 +47,12 @@ export async function generateMetadata({
     ...ogpImage(title, thumb, { large: true }),
     // description: その日の書き出し(Andy自身の言葉)から抜粋(2026-07-25)
     description: plainExcerpt(data.html as string) || undefined,
-    alternates: { canonical: `https://andyutaro.com/scribe/${date}` },
+    // 2026-07-30のscribe→desk改名でここだけ旧パスが残っていた(2026-08-16修正)。
+    // /scribe/<date>は/desk/<date>へ308で戻るので、「正典は自分へリダイレクトして
+    // くる別URLだ」という矛盾した申告になり、Googleが宣言を無視して
+    // 「重複しています。ユーザーにより、正規ページとして選択されていません」に
+    // 落としていた。sitemapは最初から/desk/を出しており、ここだけの取り残し
+    alternates: { canonical: `https://andyutaro.com/desk/${date}` },
   }
 }
 
