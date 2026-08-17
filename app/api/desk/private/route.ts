@@ -85,6 +85,32 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true, updatedAt: data?.updated_at ?? null })
 }
 
+// 並び順の更新: { id, sortOrder }。sort_orderはdoubleなので、隣り合う2枚の
+// 中間値を入れれば全体を振り直さずに1枚だけ動かせる
+export async function PATCH(request: Request) {
+  const supabase = await session()
+  if (!supabase) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
+  let body: { id?: string; sortOrder?: number }
+  try {
+    body = JSON.parse(await request.text())
+  } catch {
+    return NextResponse.json({ error: 'invalid body' }, { status: 400 })
+  }
+  const { id, sortOrder } = body
+  if (!id || !UUID_RE.test(id) || typeof sortOrder !== 'number' || !Number.isFinite(sortOrder)) {
+    return NextResponse.json({ error: 'invalid id/sortOrder' }, { status: 400 })
+  }
+
+  const { error } = await supabase
+    .from('desk_private_notes')
+    .update({ sort_order: sortOrder })
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 // ゴミ箱へ / 復帰: { id, restore? }。書いたものは即座には消さない(他の棚と同じ)
 export async function DELETE(request: Request) {
   const supabase = await session()

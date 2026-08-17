@@ -167,10 +167,57 @@ export default function PrivateNotes({ initial }: { initial: Note[] }) {
     }
   }
 
+  // ドラッグで並び替える(サイドバーのみ)。sort_orderはdoubleなので、
+  // 落とした位置の前後の中間値を入れれば全体を振り直さずに1枚だけ動かせる
+  const dragId = useRef<string | null>(null)
+
+  async function dropOn(targetId: string) {
+    const from = dragId.current
+    dragId.current = null
+    if (!from || from === targetId) return
+    const list = notes.filter((n) => n.id !== from)
+    const at = list.findIndex((n) => n.id === targetId)
+    if (at < 0) return
+    const before = list[at - 1]?.sort_order
+    const after = list[at].sort_order
+    // 先頭へ落としたら「最初の値-1」、それ以外は前後の中間
+    const next = before === undefined ? after - 1 : (before + after) / 2
+    setNotes(
+      [...notes.map((n) => (n.id === from ? { ...n, sort_order: next } : n))].sort(
+        (a, b) => a.sort_order - b.sort_order
+      )
+    )
+    try {
+      await fetch('/api/desk/private', {
+        method: 'PATCH',
+        body: JSON.stringify({ id: from, sortOrder: next }),
+      })
+    } catch {
+      setStatus('並び替えを保存できませんでした')
+    }
+  }
+
   const active = notes.find((n) => n.id === activeId) ?? null
 
+  const listItems = notes.map((n) => ({ id: n.id, label: tabLabel(n.html) }))
+
   return (
-    <main style={{ minHeight: '100vh', background: BG, color: INK, fontFamily: FONT }}>
+    <main className="pv-root" style={{ minHeight: '100vh', background: BG, color: INK, fontFamily: FONT }}>
+      {/* 幅で形を変える(2026-08-16 Andy相談): 広い画面は左サイドバーに縦一列
+          (枚数が増えても探せる・タイトルが切れない・縦ドラッグで並び替えられる)。
+          狭い画面は従来の横帯のまま=スマホに固定の柱を立てて本文幅を削らない */}
+      <style>{`
+        .pv-side { display: none; }
+        .pv-tabs { display: flex; }
+        .pv-main { padding: 38px 0 60vh; }
+        @media (min-width: 900px) {
+          .pv-side { display: flex; }
+          .pv-tabs { display: none; }
+          .pv-main { padding: 38px 0 60vh; margin-left: 232px; }
+        }
+        .pv-item.drag-over { border-color: rgba(232,230,224,0.55); }
+      `}</style>
+
       {/* 右上: 状態表示(放送卓と同じ位置・同じ調子) */}
       <div
         style={{
@@ -187,36 +234,116 @@ export default function PrivateNotes({ initial }: { initial: Note[] }) {
         {status}
       </div>
 
-      {/* タブ帯 */}
+      {/* 左サイドバー(広い画面) */}
       <div
+        className="pv-side"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: 232,
+          flexDirection: 'column',
+          gap: 4,
+          padding: '14px 12px',
+          borderRight: '1px solid rgba(232,230,224,0.14)',
+          background: BG,
+          overflowY: 'auto',
+          zIndex: 5,
+        }}
+      >
+        <div style={{ marginBottom: 10 }}>
+          <DeskSwitch current="private" onLeave={flush} />
+        </div>
+        {listItems.map((it) => (
+          <button
+            key={it.id}
+            type="button"
+            className="pv-item"
+            draggable
+            onDragStart={() => {
+              dragId.current = it.id
+            }}
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.add('drag-over')
+            }}
+            onDragLeave={(e) => e.currentTarget.classList.remove('drag-over')}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.remove('drag-over')
+              void dropOn(it.id)
+            }}
+            onClick={() => switchTo(it.id)}
+            style={{
+              textAlign: 'left',
+              background: it.id === activeId ? 'rgba(232,230,224,0.10)' : 'none',
+              border: '1px solid transparent',
+              borderRadius: 6,
+              color: it.id === activeId ? INK : MUTED,
+              fontSize: 12.5,
+              lineHeight: 1.7,
+              padding: '7px 10px',
+              cursor: 'pointer',
+              fontFamily: FONT,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {it.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={addNote}
+          title="新しいメモ"
+          style={{
+            marginTop: 6,
+            textAlign: 'left',
+            background: 'none',
+            border: '1px dashed rgba(232,230,224,0.22)',
+            borderRadius: 6,
+            color: MUTED,
+            fontSize: 12.5,
+            padding: '7px 10px',
+            cursor: 'pointer',
+            fontFamily: FONT,
+          }}
+        >
+          ＋ 新しいメモ
+        </button>
+      </div>
+
+      {/* 横帯(狭い画面) */}
+      <div
+        className="pv-tabs"
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 5,
           background: BG,
           borderBottom: '1px solid rgba(232,230,224,0.14)',
-          display: 'flex',
           alignItems: 'center',
           gap: 6,
           padding: '12px 18px',
           overflowX: 'auto',
         }}
       >
-        {/* 放送卓へ1タップ(2026-08-16)。書きかけを送り切ってから移る */}
         <span style={{ flex: 'none', marginRight: 4 }}>
           <DeskSwitch current="private" onLeave={flush} />
         </span>
-        {notes.map((n) => (
+        {listItems.map((it) => (
           <button
-            key={n.id}
+            key={it.id}
             type="button"
-            onClick={() => switchTo(n.id)}
+            onClick={() => switchTo(it.id)}
             style={{
               flex: 'none',
-              background: n.id === activeId ? 'rgba(232,230,224,0.10)' : 'none',
+              background: it.id === activeId ? 'rgba(232,230,224,0.10)' : 'none',
               border: '1px solid rgba(232,230,224,0.20)',
               borderRadius: 999,
-              color: n.id === activeId ? INK : MUTED,
+              color: it.id === activeId ? INK : MUTED,
               fontSize: 12,
               padding: '5px 13px',
               cursor: 'pointer',
@@ -224,7 +351,7 @@ export default function PrivateNotes({ initial }: { initial: Note[] }) {
               whiteSpace: 'nowrap',
             }}
           >
-            {tabLabel(n.html)}
+            {it.label}
           </button>
         ))}
         <button
@@ -247,7 +374,7 @@ export default function PrivateNotes({ initial }: { initial: Note[] }) {
         </button>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '38px 0 60vh' }}>
+      <div className="pv-main" style={{ display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 720, padding: '0 28px' }}>
           {active ? (
             <HtmlEditor
@@ -265,7 +392,7 @@ export default function PrivateNotes({ initial }: { initial: Note[] }) {
             />
           ) : (
             <p style={{ fontSize: 13, color: MUTED, lineHeight: 2 }}>
-              メモがありません。右上の ＋ で新しいタブを作ってください。
+              メモがありません。＋ で新しいタブを作ってください。
             </p>
           )}
         </div>
