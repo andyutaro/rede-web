@@ -8,6 +8,7 @@ import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import DeskPreamble from '../../DeskPreamble'
 import ArrivalSection from '../../ArrivalSection'
+import CreatureDrift from '../../CreatureDrift'
 import { arrivalsOf } from '@/lib/site/arrivals'
 import ScribeArchive from '../ScribeArchive'
 import SamePeriod from '../../SamePeriod'
@@ -127,6 +128,9 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
           ]),
         }}
       />
+      {/* その日の生きものを背景いっぱいに漂わせる(2026-08-16 Andy指定)。
+          下の「この日に来てくれた人」が記録なら、こちらはその日の気配 */}
+      <CreatureDrift kinds={arrivals} seed={date} />
       <article className="section">
         {/* scribeのタイトルは日付導出(20260706)。日付はdatetimeとして併記 */}
         <div className="section-head">
