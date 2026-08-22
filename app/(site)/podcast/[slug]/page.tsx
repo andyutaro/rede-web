@@ -132,6 +132,8 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
     date: ep.date,
     href: `/podcast/${show.slug}/${ep.id}`,
     searchText: ep.searchText,
+    // 回のアートがあればそれ、無ければ番組カバー(「同じ頃の作品」と同じ落とし方)
+    thumb: ep.image ?? feed?.image ?? null,
   }))
 
   // NEWドット境界(7日前)と「作業用まとめ聞き」のキュー素材。
@@ -348,8 +350,9 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
 
         // 番組から派生して生まれたもの(2026-07-25 → 2026-07-29 Andy指定で改称・統合):
         // 物(Physical)も催し(Events)も「番組から生まれたもの」という一つの事実なので
-        // 節を分けず一続きに並べる。通常の4列より一段深い2列(トップ写真を大きく)、
-        // 正方形とラベルの文法は各棚と共通。並びはshows.tsの宣言順(物→催し)
+        // 節を分けず一続きに並べる。並びと寸法は他の棚(/physical等)と同じ4列。
+        // 2列で大きく出していたが、他ページと揃わず画像だけが目立っていた
+        // (2026-08-19 Andy指摘)。正方形とラベルの文法は元から各棚と共通
         // 行き先はどちらもPhysical棚(2026-08-07にEvents棚を吸収)。
         // ラベルは棚の中の下位区分に揃える(OBJECT / EVENT)
         const expansion = [
@@ -361,7 +364,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             <div className="section-head">
               <h2>EXPANSION — 番組から生まれたもの</h2>
             </div>
-            <div className="section-body grid2">
+            <div className="section-body grid4">
               {expansion.map((item) => (
                 <div key={item.id}>
                   <Link
@@ -372,7 +375,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
                     {item.thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={imgThumb(item.thumb, IMG_W.product)}
+                        src={imgThumb(item.thumb, IMG_W.tile)}
                         alt=""
                         loading="lazy"
                         decoding="async"

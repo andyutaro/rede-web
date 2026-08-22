@@ -1792,7 +1792,8 @@ a.show-cast-name:hover {
   margin-top: 44px;
 }
 
-.ep-search + .ep-index-body {
+.ep-search + .ep-index-body,
+.ep-search + .grid4 {
   margin-top: 44px;
 }
 

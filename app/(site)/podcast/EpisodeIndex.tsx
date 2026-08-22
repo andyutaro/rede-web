@@ -2,18 +2,24 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { dateDots } from '@/lib/site/text'
+import { dateShort } from '@/lib/site/text'
+import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // 番組ページのエピソード索引(2026-07-20)。
 // - 検索: タイトル+概要欄(プレーン化済みテキスト)の部分一致。アプリの検索は
 //   タイトルしか見ないため「あの話どの回だっけ」が引けるのはここだけ
 // - NEWドット: 7日以内の新着回に赤点(彩色は赤のみの原則に整合)
+//
+// 2026-08-19 Andy指摘で**タイル化**。題名だけの行が延々と並び、こだわった
+// サムネイルが一枚も見えていなかった。並びは他の棚(/physical等)と同じ
+// 4列グリッド+3段ラベル=新しい見た目を増やさない。
 export type IndexRow = {
   id: string
   title: string
   date: string // YYYY-MM-DD
   href: string
   searchText: string // タイトル+概要欄のプレーンテキスト(検索用)
+  thumb: string | null // 回のアート。無ければ呼び出し側が番組カバーを入れる
 }
 
 export default function EpisodeIndex({ rows, newSince }: { rows: IndexRow[]; newSince: string }) {
@@ -40,20 +46,29 @@ export default function EpisodeIndex({ rows, newSince }: { rows: IndexRow[]; new
           onChange={(e) => setQ(e.target.value)}
         />
       </div>
-      <div className="section-body ep-index-body">
+      <div className="section-body grid4">
         {shown.map((ep) => (
-          <div className="update-row" key={ep.id}>
-            <Link href={ep.href}>
-              <span className="update-date">{dateDots(ep.date)}</span>
-              <span className="update-excerpt">
+          <div key={ep.id}>
+            {/* サムネイルは装飾でタイトルは兄弟div。リンク名を与える(2026-07-23) */}
+            <Link href={ep.href} className="sq" aria-label={`${ep.title} ${dateShort(ep.date)}`}>
+              {ep.thumb ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imgThumb(ep.thumb, IMG_W.tile)} alt="" loading="lazy" decoding="async" />
+              ) : (
+                <span className="empty-cell" />
+              )}
+            </Link>
+            <div className="ep-cell-label">
+              <span className="ep-title">
                 {ep.title}
                 {ep.date >= newSince && <span className="new-dot" aria-label="新着" />}
               </span>
-            </Link>
+              <span className="ep-date">{dateShort(ep.date)}</span>
+            </div>
           </div>
         ))}
-        {shown.length === 0 && <p className="podcast-ep-empty">該当なし</p>}
       </div>
+      {shown.length === 0 && <p className="podcast-ep-empty">該当なし</p>}
     </section>
   )
 }
