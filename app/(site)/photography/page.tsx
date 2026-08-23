@@ -7,7 +7,7 @@ import PhotoGrid, { type PhotoItem } from './PhotoGrid'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Photography',
+  title: 'Photo',
   description: 'Andyの写真。作品(ARTWORK)と、日々アップした写真の流れ(PHOTOLOG)。',
   alternates: { canonical: 'https://andyutaro.com/photography' },
 }
@@ -47,7 +47,7 @@ export default async function PhotographyPage() {
 
   return (
     <div className="measure">
-      <h1 className="sr-only">Photography</h1>
+      <h1 className="sr-only">Photo</h1>
       <PhotoGrid items={items} photolog={photolog} />
     </div>
   )

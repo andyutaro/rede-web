@@ -114,7 +114,7 @@ export async function recentUpdates(
       const type = a.type as string
       const row =
         type === 'photography'
-          ? { kind: 'Photography' as const, label: 'PHOTOGRAPHY', excerpt: `『${clipped}』`, href: `/photography/${a.id}` }
+          ? { kind: 'Photography' as const, label: 'PHOTO', excerpt: `『${clipped}』`, href: `/photography/${a.id}` }
           : type === 'physical'
             ? { kind: 'Physical' as const, label: 'PHYSICAL', excerpt: `OBJECT『${clipped}』`, href: `/physical/${a.id}` }
             : type === 'event'

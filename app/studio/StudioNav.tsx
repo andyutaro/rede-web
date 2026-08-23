@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation'
 // ARTICLESは公開棚の改名(→Notes)に追従してNOTESへ
 const ROOMS = [
   { href: '/studio/notes', label: 'NOTES' },
-  { href: '/studio/photography', label: 'PHOTOGRAPHY' },
+  { href: '/studio/photography', label: 'PHOTO' },
   { href: '/studio/podcast', label: 'PODCAST INBOX' },
   { href: '/studio/updates', label: 'UPDATES' },
   { href: '/studio/bookmarks', label: 'BOOKMARKS' },

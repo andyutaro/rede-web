@@ -10,7 +10,7 @@ export const NAV = [
   { label: 'Podcast', href: '/podcast' },
   { label: 'Notes', href: '/notes' },
   // Photographyは独立棚(2026-07-10格上げ: Podcast/Notesと並ぶ存在に)
-  { label: 'Photography', href: '/photography' },
+  { label: 'Photo', href: '/photography' },
   // Physical=物理世界にあるもの・あったことの棚(2026-07-12、
   // 2026-08-07にEvents棚を吸収して定義を拡張。中はOBJECT/EVENTのタブ)
   { label: 'Physical', href: '/physical' },

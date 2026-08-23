@@ -4,14 +4,29 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { NAV } from './nav'
+import MenuSearch from './MenuSearch'
 
 // メニュー(2026-07-12): ヘッダーの横並びナビを畳み、右上のMENUボタンに格納。
 // 押すとページがうっすら覆われ、ナビが右上から縦一列にスッと出る。もう一度押すと
 // ボタンの中へ格納される。Contactは専用ピルが担うのでメニューには載せない。
+//
+// 2026-08-23: **エピソード検索をこの中に入れた**(Andy指定)。トップの表面に
+// 検索バーを常設せずに「あの回どれだっけ」を解くため。ボタンの語もMENUとSEARCHで
+// 入れ替える(MAILピルと同じ作法)=中に検索があることが閉じていても伝わる。
+const BUTTON_WORDS = ['MENU', 'SEARCH'] as const
+const BUTTON_INTERVAL = 4400 // ワードマーク3000・MAILピル3600と割り切れない値
 export default function SiteMenu() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [word, setWord] = useState(0)
   const items = NAV.filter((n) => n.href !== '/mail')
+
+  // 閉じている間だけ語を入れ替える(開いている間はCLOSE固定)
+  useEffect(() => {
+    if (open) return
+    const id = setInterval(() => setWord((v) => (v + 1) % BUTTON_WORDS.length), BUTTON_INTERVAL)
+    return () => clearInterval(id)
+  }, [open])
 
   // ページ遷移で閉じる(戻る/進む等、リンク以外の遷移も拾う安全網)
   useEffect(() => {
@@ -48,9 +63,29 @@ export default function SiteMenu() {
           setOpen(!open)
         }}
         aria-expanded={open}
-        aria-label="メニュー"
+        aria-label="メニュー・エピソード検索"
       >
-        {open ? 'CLOSE' : 'MENU'}
+        {open ? (
+          'CLOSE'
+        ) : (
+          // 読み上げはaria-labelが担うので中身は装飾扱い(MAILピルと同じ)。
+          // 横に並べた語をまとめてずらす=窓に次の語が横から入ってくる
+          <span className="cp-roll" aria-hidden="true">
+            <span
+              className="cp-track"
+              style={{
+                width: `${BUTTON_WORDS.length * 100}%`,
+                transform: `translateX(${(-word * 100) / BUTTON_WORDS.length}%)`,
+              }}
+            >
+              {BUTTON_WORDS.map((w) => (
+                <span key={w} className="cp-word" style={{ flexBasis: `${100 / BUTTON_WORDS.length}%` }}>
+                  {w}
+                </span>
+              ))}
+            </span>
+          </span>
+        )}
       </button>
 
       {/* 開閉はインラインで駆動(カスケード依存を避け確実に効かせる)。
@@ -68,6 +103,8 @@ export default function SiteMenu() {
           if (e.target === e.currentTarget) setOpen(false)
         }}
       >
+        {/* ナビ項目の中央に検索(2026-08-23 Andy指定)。開いた瞬間に入口が真ん中にある */}
+        <MenuSearch onNavigate={() => setOpen(false)} />
         <nav className="site-menu-nav">
           {items.map(({ label, href }, i) => (
             <Link

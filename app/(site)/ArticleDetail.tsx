@@ -16,7 +16,7 @@ type Shelf = 'notes' | 'photography' | 'physical'
 
 const SHELF_LABEL: Record<Shelf, string> = {
   notes: 'NOTES',
-  photography: 'PHOTOGRAPHY',
+  photography: 'PHOTO',
   physical: 'PHYSICAL',
 }
 

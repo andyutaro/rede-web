@@ -370,11 +370,14 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
   transition: color 0.2s, border-color 0.2s, background 0.2s ease;
 }
 
-/* ---- CONTACT / OTAYORI の入れ替わり(2026-08-01 Andy指定) ----
-   横に並べた2語を窓で切り、まとめてずらす=次の語が横から入ってくる。
+/* ---- 語の入れ替わり(2026-08-01 Andy指定) ----
+   横に並べた語を窓で切り、まとめてずらす=次の語が横から入ってくる。
    ずらす量はコンポーネントがインラインで与える(カスケード依存を避ける)。
-   1語=窓と同じ幅にしておくと、ずらす量が語数だけで決まり寸法の重複を持たない */
-.contact-pill .cp-roll {
+   1語=窓と同じ幅にしておくと、ずらす量が語数だけで決まり寸法の重複を持たない。
+   MAILピル(CONTACT/OTAYORI)とMENUボタン(MENU/SEARCH)が同じ組版を共有する
+   (2026-08-23: MENU側だけこの定義が無く、2語が並んで「MENUSEARC」と千切れていた) */
+.contact-pill .cp-roll,
+.menu-toggle .cp-roll {
   display: block;
   overflow: hidden;
   width: 100%;
@@ -382,12 +385,14 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 }
 
 /* 幅(語数ぶん)とずらす量はコンポーネントがインラインで与える */
-.contact-pill .cp-track {
+.contact-pill .cp-track,
+.menu-toggle .cp-track {
   display: flex;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.contact-pill .cp-word {
+.contact-pill .cp-word,
+.menu-toggle .cp-word {
   flex-grow: 0;
   flex-shrink: 0;
   height: 14px;
@@ -399,7 +404,8 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
 
 /* 「動きを減らす」設定では入れ替えの移動を消す(語は切り替わる) */
 @media (prefers-reduced-motion: reduce) {
-  .contact-pill .cp-track {
+  .contact-pill .cp-track,
+  .menu-toggle .cp-track {
     transition: none;
   }
 }
@@ -446,6 +452,10 @@ html[data-theme='dark'] .contact-pill:hover {
   font-size: 10px;
   letter-spacing: 0.22em;
   text-indent: 0.22em; /* letter-spacingの右アキ分を中央に寄せ戻す */
+  /* 中の語が入れ替わる窓(.cp-roll)を抱えるのでMAILピルと同じ置き方にする */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   z-index: 40; /* オーバーレイ(30)より前=開いてる間も押せる */
   transition: color 0.2s, background 0.2s, border-color 0.2s;
@@ -477,6 +487,103 @@ html[data-theme='dark'] .contact-pill:hover {
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* MENUの中のエピソード検索(2026-08-23 Andy指定)。
+   ナビの縦一列は右端に立ったまま、検索は画面の中央に置く=開いた瞬間に
+   「探す」が真ん中にある。結果はエピソード索引と同じ正方形タイル。 */
+.menu-search {
+  position: absolute;
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 260px));
+}
+
+/* 巻き取りは**結果が出ている間だけ**(2026-08-23 Andy指摘「結果も出ていないのに
+   スクロールバーが出ているのが邪魔」)。常時 overflow-y:auto にしていたので、
+   入力欄とヒントだけの普段の状態でも数pxはみ出してバーが立っていた。
+   摘みも細く静かに: 一覧の窓(.sound-queue-list)は「動かせる」と伝えるために
+   太く濃くしてあるが、こちらは全画面の幕の上なので同じ強さだと騒がしい */
+.menu-search:has(.menu-search-results) {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dot) transparent;
+}
+
+.menu-search::-webkit-scrollbar {
+  width: 5px;
+}
+
+.menu-search::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu-search::-webkit-scrollbar-thumb {
+  background: var(--dot);
+  border-radius: 999px;
+}
+
+.menu-search-field input {
+  font-size: 15px;
+}
+
+/* ヒント: 何が引けるかを1行だけ静かに見せる。語は重ねて置き、
+   表示中の1つだけを出す=入れ替わっても行が動かない */
+.menu-search-hint {
+  position: relative;
+  margin-top: 18px;
+  height: 1.9em;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+}
+
+.menu-search-hint span {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.menu-search-hint span.on {
+  opacity: 1;
+}
+
+.menu-search-empty {
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.menu-search-results {
+  margin-top: 30px;
+  padding-bottom: 30px;
+}
+
+/* 結果が出ている間だけ幕を濃くする(2026-08-23)。
+   メニューの幕は既定で92%と薄く、背後のカバー群がタイルに透けて重なって読めなかった。
+   ナビだけを見せている普段の見え方は変えない(:hasで結果があるときにだけ効かせる) */
+.site-menu:has(.menu-search-results) {
+  background: var(--bg);
+}
+
+/* 狭い画面: ナビは右端のままなので、検索はその左に収まる幅で中央に置く。
+   固定UIを新設しない原則に沿って、要素そのものは増やしていない */
+@media (max-width: 860px) {
+  .menu-search {
+    top: 132px;
+    left: 22px;
+    right: 150px;
+    width: auto;
+    transform: none;
+  }
+
+  .menu-search:has(.menu-search-results) {
+    max-height: calc(100vh - 170px);
+  }
 }
 
 /* ナビは右上から縦一列。ボタン群の下・右端に揃えて立ち上がる */
@@ -3426,8 +3533,8 @@ a.show-cast-name:hover {
     display: none;
   }
 
-  /* 年を畳んで空いた分から5px戻し、PHOTOGRAPHY(実測79px)が「PHOTOGRA…」と
-     千切れないようにする(2026-07-31)。ラベル列の最長がこれ */
+  /* 年を畳んで空いた分から5px戻す(2026-07-31)。ラベル列が千切れないための幅。
+     最長はPHYSICAL(Photography→Photoに短縮 2026-08-23、以後PHOTOは最長ではない) */
   .update-kind {
     width: 80px;
   }

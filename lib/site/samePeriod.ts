@@ -108,7 +108,7 @@ async function buildIndex(): Promise<SamePeriodItem[]> {
     const shelf = shelfPathForType(type)
     const label =
       type === 'photography'
-        ? 'PHOTOGRAPHY'
+        ? 'PHOTO'
         : type === 'physical'
           ? 'OBJECT'
           : type === 'event'

@@ -26,10 +26,10 @@ export default async function StudioPhotography({
 
   return (
     <>
-      <h1 className="studio-h1">PHOTOGRAPHY</h1>
+      <h1 className="studio-h1">PHOTO</h1>
       <div className="studio-tabs">
         <Link href="/studio/photography" aria-current={!trash ? 'page' : undefined}>
-          PHOTOGRAPHY
+          PHOTO
         </Link>
         <Link href="/studio/photography?tab=trash" aria-current={trash ? 'page' : undefined}>
           TRASH

@@ -125,7 +125,7 @@ export default async function Home() {
       {photo && (
         <section className="section">
           <div className="section-head">
-            <h2>PHOTOGRAPHY</h2>
+            <h2>PHOTO</h2>
           </div>
           <div className="section-body photo-single">
             {/* 掲載ページ(Photography作品/Notes記事/scribe)へのリンクは
