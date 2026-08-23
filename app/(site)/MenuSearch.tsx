@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { dateShort } from '@/lib/site/text'
 import { imgThumb, IMG_W } from '@/lib/site/img'
+import { KINDS, paintShapeCentered } from './waveCreatures'
 import type { EpisodeHit } from '@/lib/site/episodeSearch'
 
 // MENUの中の検索(2026-08-23 Andy指定)。
@@ -24,7 +25,59 @@ const HINTS = [
   'ゲストの名前',
   'ポッドキャスト',
 ] as const
-const HINT_INTERVAL = 4400 // ワードマーク3000・MAILピル3600と割り切れない値にして拍を重ねない
+// 出方は一文字ずつ(2026-08-23 Andy指定「切り替わりがゆっくりすぎる/一文字ずつ
+// 出てくる感じで」)。打って→少し置いて→消して→次、で一連の手つきに見せる。
+// 一語およそ2.4秒=以前の4.4秒から半分。消しは打ちより速い(戻る動作は溜めない)
+const TYPE_MS = 68
+const HOLD_MS = 1500
+const ERASE_MS = 32
+const GAP_MS = 280
+
+// 語の終わりに生きものを1体。波形から生えるあの線画と同じ絵を、同じ色・同じ
+// 線幅で置く(2026-08-23 Andy指定)。語が変わるたびに引き直す=毎回ちがう一体が
+// 顔を出す。サイト全体で線の文法をひとつに保つための共有
+const CREATURE_BOX = 20
+
+function HintCreature({ kind }: { kind: number }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas) return
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width = Math.round(CREATURE_BOX * dpr)
+      canvas.height = Math.round(CREATURE_BOX * dpr)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, CREATURE_BOX, CREATURE_BOX)
+      ctx.strokeStyle =
+        getComputedStyle(document.documentElement).getPropertyValue('--wave').trim() || '#c7c7c1'
+      // 一覧(CreatureRow)は0.55だが、こちらは12pxの文字の隣なので半段濃く。
+      // 大きさの比(絵/箱)は一覧の11/32に合わせる=どこで見ても同じ生きもの
+      ctx.globalAlpha = 0.75
+      ctx.lineWidth = 1.1
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
+      paintShapeCentered(ctx, kind, CREATURE_BOX / 2, CREATURE_BOX / 2, CREATURE_BOX * (11 / 32))
+    }
+    draw()
+    // テーマ切替に追従(波形・一覧と同じ作法)
+    const obs = new MutationObserver(draw)
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => obs.disconnect()
+  }, [kind])
+
+  return (
+    <canvas
+      ref={ref}
+      className="menu-search-creature"
+      style={{ width: CREATURE_BOX, height: CREATURE_BOX }}
+      aria-hidden="true"
+    />
+  )
+}
 
 export default function MenuSearch({ onNavigate }: { onNavigate?: () => void }) {
   const box = useRef<HTMLDivElement>(null)
@@ -33,15 +86,40 @@ export default function MenuSearch({ onNavigate }: { onNavigate?: () => void }) 
   // 描画時に導出する(Reactの規約: 効果の本体で即setStateしない)
   const [result, setResult] = useState<{ q: string; hits: EpisodeHit[] }>({ q: '', hits: [] })
   const [hint, setHint] = useState(0)
+  const [typed, setTyped] = useState(0) // 何文字目まで出したか
+  const [erasing, setErasing] = useState(false)
+  const [creature, setCreature] = useState(0)
   const [hintPaused, setHintPaused] = useState(false)
 
-  // ヒントの巡回。読もう/触ろうとした瞬間に消えるのは苛立つので、
-  // その領域に入ったら止める(hintPaused)
+  // ヒントの巡回。打つ→置く→消す→次、を一つの効果で回す。
+  // 読もう/触ろうとした瞬間に消えるのは苛立つので、その領域に入ったら止める。
+  // ただし打ちかけで固まると中途半端な文字列が残るので、最後まで出してから止める
   useEffect(() => {
-    if (hintPaused) return
-    const id = setInterval(() => setHint((v) => (v + 1) % HINTS.length), HINT_INTERVAL)
-    return () => clearInterval(id)
-  }, [hintPaused])
+    const word = HINTS[hint]
+    if (hintPaused) {
+      if (erasing || typed >= word.length) return
+      const id = setTimeout(() => setTyped(word.length), TYPE_MS)
+      return () => clearTimeout(id)
+    }
+    if (!erasing && typed < word.length) {
+      const id = setTimeout(() => setTyped(typed + 1), TYPE_MS)
+      return () => clearTimeout(id)
+    }
+    if (!erasing) {
+      const id = setTimeout(() => setErasing(true), HOLD_MS)
+      return () => clearTimeout(id)
+    }
+    if (typed > 0) {
+      const id = setTimeout(() => setTyped(typed - 1), ERASE_MS)
+      return () => clearTimeout(id)
+    }
+    const id = setTimeout(() => {
+      setErasing(false)
+      setHint((v) => (v + 1) % HINTS.length)
+      setCreature(Math.floor(Math.random() * KINDS))
+    }, GAP_MS)
+    return () => clearTimeout(id)
+  }, [hint, typed, erasing, hintPaused])
 
   // スマホのソフトキーボードが覆う高さを測って--kbに入れる(2026-08-23 Andy指摘
   // 「キーボードがかぶってとても見えづらい」)。キーボードが出ても画面(100vh)は
@@ -109,11 +187,13 @@ export default function MenuSearch({ onNavigate }: { onNavigate?: () => void }) 
           onMouseLeave={() => setHintPaused(false)}
           onTouchStart={() => setHintPaused(true)}
         >
-          {HINTS.map((h, i) => (
-            <span key={h} className={i === hint ? 'on' : undefined} aria-hidden={i !== hint}>
-              {h}
-            </span>
-          ))}
+          {/* 一字ずつ変わる部分は読み上げから外す(一文字ごとに読み直されてしまう)。
+              代わりに全部の語を静かな一行として置いておく */}
+          <span className="sr-only">例: {HINTS.join('、')}</span>
+          <span aria-hidden="true">{HINTS[hint].slice(0, typed)}</span>
+          {/* 生きものは語が出揃っている間だけ。打ちかけの隣に置くと、
+              文字が伸びるたび押し出されて落ち着かない */}
+          {!erasing && typed === HINTS[hint].length && <HintCreature kind={creature} />}
         </p>
       )}
 

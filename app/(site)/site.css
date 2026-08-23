@@ -563,24 +563,39 @@ html[data-theme='dark'] .contact-pill:hover {
 
 /* ヒント: 何が引けるかを1行だけ静かに見せる。語は重ねて置き、
    表示中の1つだけを出す=入れ替わっても行が動かない */
+/* 一文字ずつ出す(2026-08-23 Andy指定)ので、重ねて透過を入れ替える組みはやめた。
+   高さだけは固定して、語が入れ替わっても下の行が動かないようにする */
 .menu-search-hint {
-  position: relative;
   margin-top: 18px;
   height: 1.9em;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--mut);
 }
 
-.menu-search-hint span {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.9s ease;
+/* 語の終わりの生きもの。文字が出揃った瞬間にふっと現れる */
+.menu-search-creature {
+  flex: none;
+  animation: hint-creature-in 0.5s ease both;
 }
 
-.menu-search-hint span.on {
-  opacity: 1;
+@keyframes hint-creature-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 「動きを減らす」設定では現れ方の演出を消す(絵は出る) */
+@media (prefers-reduced-motion: reduce) {
+  .menu-search-creature {
+    animation: none;
+  }
 }
 
 .menu-search-empty {
