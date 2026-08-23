@@ -483,9 +483,11 @@ html[data-theme='dark'] .contact-pill:hover {
   bottom: 0;
   left: 0;
   z-index: 30;
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  /* 地は不透明(2026-08-23 Andy指摘「裏側がオーバーレイしてよくわからなくなる」)。
+     元は92%の半透明+ぼかしで「うっすら覆う」意図だったが、/mailのように
+     枠と文字が詰まったページの上ではそれが透けてナビと重なり、どちらも読めなくなる。
+     ぼかしも併せて外す(不透明の下では効かないうえ、スマホでは重い) */
+  background: var(--bg);
   transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
@@ -498,6 +500,32 @@ html[data-theme='dark'] .contact-pill:hover {
   left: 50%;
   transform: translateX(-50%);
   width: min(640px, calc(100vw - 260px));
+  /* 囲う(2026-08-23 Andy指摘「検索ボックス周りが薄くてみにくい」)。
+     幕の上に置いただけでは、入力欄の細い罫線1本しか手掛かりが無く、
+     どこからどこまでが検索なのかが立たない。枠は--ghost=静かな輪郭。
+     上端はナビの1項目目(Home)と揃える */
+  border: 1px solid var(--ghost);
+  border-radius: 2px;
+  padding: 22px 24px 24px;
+  background: var(--bg);
+}
+
+/* 記事一覧の検索欄と同じ部品を使うが、あちらの見出し下アキ(96px)はここでは邪魔。
+   囲いの中なので上端から始める(スマホではこの96pxがそのまま結果の場所を奪う) */
+/* 詳細度は.article-search側(ファイル後方)に勝つ必要があるので.menu-searchで修飾する */
+.menu-search .menu-search-field {
+  margin-top: 0;
+}
+
+/* 罫線と placeholder を一段上げる(2026-08-23 Andy指摘「表記も全て見にくい」)。
+   一覧の検索欄(--dot/--faint)は本文の並ぶ紙の上なので沈めてよかったが、
+   ここは幕の上に単独で置かれるので同じ濃度だと消える */
+.menu-search .menu-search-field input {
+  border-bottom-color: var(--mut);
+}
+
+.menu-search .menu-search-field input::placeholder {
+  color: var(--body);
 }
 
 /* 巻き取りは**結果が出ている間だけ**(2026-08-23 Andy指摘「結果も出ていないのに
@@ -506,7 +534,10 @@ html[data-theme='dark'] .contact-pill:hover {
    摘みも細く静かに: 一覧の窓(.sound-queue-list)は「動かせる」と伝えるために
    太く濃くしてあるが、こちらは全画面の幕の上なので同じ強さだと騒がしい */
 .menu-search:has(.menu-search-results) {
-  max-height: calc(100vh - 200px);
+  /* --kb=スマホのソフトキーボードが覆っている高さ(コンポーネントが実測して入れる)。
+     これを引かないと、結果はキーボードの裏まで伸びて見えないまま残る
+     (2026-08-23 Andy指摘「キーボードがかぶってとても見えづらい」) */
+  max-height: calc(100vh - 200px - var(--kb, 0px));
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -538,7 +569,7 @@ html[data-theme='dark'] .contact-pill:hover {
   height: 1.9em;
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: var(--faint);
+  color: var(--mut);
 }
 
 .menu-search-hint span {
@@ -555,19 +586,12 @@ html[data-theme='dark'] .contact-pill:hover {
 .menu-search-empty {
   margin-top: 22px;
   font-size: 12px;
-  color: var(--faint);
+  color: var(--mut);
 }
 
 .menu-search-results {
   margin-top: 30px;
   padding-bottom: 30px;
-}
-
-/* 結果が出ている間だけ幕を濃くする(2026-08-23)。
-   メニューの幕は既定で92%と薄く、背後のカバー群がタイルに透けて重なって読めなかった。
-   ナビだけを見せている普段の見え方は変えない(:hasで結果があるときにだけ効かせる) */
-.site-menu:has(.menu-search-results) {
-  background: var(--bg);
 }
 
 /* 狭い画面: ナビは右端のままなので、検索はその左に収まる幅で中央に置く。
@@ -582,7 +606,7 @@ html[data-theme='dark'] .contact-pill:hover {
   }
 
   .menu-search:has(.menu-search-results) {
-    max-height: calc(100vh - 170px);
+    max-height: calc(100vh - 170px - var(--kb, 0px));
   }
 }
 
@@ -2239,7 +2263,7 @@ a.show-cast-name:hover {
   margin-top: 14px;
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: var(--faint);
+  color: var(--mut);
 }
 
 .nf-links {

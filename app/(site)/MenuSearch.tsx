@@ -25,6 +25,7 @@ const HINTS = [
 const HINT_INTERVAL = 4400 // ワードマーク3000・MAILピル3600と割り切れない値にして拍を重ねない
 
 export default function MenuSearch({ onNavigate }: { onNavigate?: () => void }) {
+  const box = useRef<HTMLDivElement>(null)
   const [q, setQ] = useState('')
   // hitsは「どの語の結果か」と対で持つ。状態を効果の中で同期的に書き換えず、
   // 描画時に導出する(Reactの規約: 効果の本体で即setStateしない)
@@ -39,6 +40,27 @@ export default function MenuSearch({ onNavigate }: { onNavigate?: () => void }) 
     const id = setInterval(() => setHint((v) => (v + 1) % HINTS.length), HINT_INTERVAL)
     return () => clearInterval(id)
   }, [hintPaused])
+
+  // スマホのソフトキーボードが覆う高さを測って--kbに入れる(2026-08-23 Andy指摘
+  // 「キーボードがかぶってとても見えづらい」)。キーボードが出ても画面(100vh)は
+  // 縮まないので、CSSだけでは結果がキーボードの裏まで伸びて見えないまま残る。
+  // visualViewport=実際に見えている領域。その差ぶんを引けば、結果は見える帯の
+  // 中に収まり、続きはその中で送れる
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const apply = () => {
+      const covered = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      box.current?.style.setProperty('--kb', `${Math.round(covered)}px`)
+    }
+    apply()
+    vv.addEventListener('resize', apply)
+    vv.addEventListener('scroll', apply)
+    return () => {
+      vv.removeEventListener('resize', apply)
+      vv.removeEventListener('scroll', apply)
+    }
+  }, [])
 
   // 打鍵のたびには叩かない(デバウンス)。打ち終わりから300ms
   const seq = useRef(0)
@@ -65,7 +87,7 @@ export default function MenuSearch({ onNavigate }: { onNavigate?: () => void }) 
   const hits = result.q === needle ? result.hits : []
 
   return (
-    <div className="menu-search">
+    <div className="menu-search" ref={box}>
       <div className="article-search menu-search-field">
         <input
           type="search"
