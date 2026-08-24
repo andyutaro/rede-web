@@ -220,7 +220,7 @@ export default async function StudioNotes({
 
   return (
     <>
-      <h1 className="studio-h1">NOTES</h1>
+      <h1 className="studio-h1">NOTE</h1>
       <div className="studio-tabs">
         {TABS.map((t) => (
           <Link

@@ -5,7 +5,7 @@ import UpdateList from '../UpdateList'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Updates',
+  title: 'Update',
   description: '新しいエピソード・記事・scribeが生まれた記録。',
   alternates: { canonical: 'https://andyutaro.com/updates' },
 }
@@ -17,7 +17,7 @@ export default async function UpdatesPage() {
     <div className="measure">
       <section className="section">
         <div className="section-head">
-          <h1>UPDATES</h1>
+          <h1>UPDATE</h1>
         </div>
         <div className="section-body">
           <UpdateList rows={rows} />

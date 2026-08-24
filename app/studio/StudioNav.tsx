@@ -7,10 +7,10 @@ import { usePathname } from 'next/navigation'
 // 上部メニューを10→7に(メニューが多すぎて目が散る問題への対応)。
 // ARTICLESは公開棚の改名(→Notes)に追従してNOTESへ
 const ROOMS = [
-  { href: '/studio/notes', label: 'NOTES' },
+  { href: '/studio/notes', label: 'NOTE' },
   { href: '/studio/photography', label: 'PHOTO' },
   { href: '/studio/podcast', label: 'PODCAST INBOX' },
-  { href: '/studio/updates', label: 'UPDATES' },
+  { href: '/studio/updates', label: 'UPDATE' },
   { href: '/studio/bookmarks', label: 'BOOKMARKS' },
   { href: '/studio/tags', label: 'TAGS' },
   { href: '/studio/contact', label: 'MAIL' },

@@ -123,7 +123,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         dangerouslySetInnerHTML={{
           __html: breadcrumbJsonLd([
             { name: 'Home', path: '' },
-            { name: 'Notes', path: '/notes' },
+            { name: 'Note', path: '/notes' },
             { name: `Desk Archive ${scribeTitle(date)}`, path: `/desk/${date}` },
           ]),
         }}
@@ -152,7 +152,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         <Pager
           older={pagerLink(prevRes.data?.date as string)}
           newer={newerLink}
-          back={{ href: '/notes', title: 'NOTES' }}
+          back={{ href: '/notes', title: 'NOTE' }}
         />
       </article>
     </div>

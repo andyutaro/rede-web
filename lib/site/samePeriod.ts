@@ -90,7 +90,7 @@ async function buildIndex(): Promise<SamePeriodItem[]> {
     const { thumb, assigned } = resolveThumb(d, pool, date)
     items.push({
       date,
-      label: 'NOTES',
+      label: 'NOTE',
       title: `DESK『${scribeTitle(date)}』`,
       href: `/desk/${date}`,
       thumb,
@@ -113,7 +113,7 @@ async function buildIndex(): Promise<SamePeriodItem[]> {
           ? 'OBJECT'
           : type === 'event'
             ? 'EVENT'
-            : 'NOTES'
+            : 'NOTE'
     items.push({ date, label, title, href: `${shelf}/${a.id}`, thumb, assigned })
   }
 

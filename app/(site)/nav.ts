@@ -6,9 +6,9 @@ export const NAV = [
   { label: 'Home', href: '/' },
   // AboutはHomeの次(2026-07-13 Andy指定)
   { label: 'About', href: '/about' },
-  { label: 'Updates', href: '/updates' },
+  { label: 'Update', href: '/updates' },
   { label: 'Podcast', href: '/podcast' },
-  { label: 'Notes', href: '/notes' },
+  { label: 'Note', href: '/notes' },
   // Photographyは独立棚(2026-07-10格上げ: Podcast/Notesと並ぶ存在に)
   { label: 'Photo', href: '/photography' },
   // Physical=物理世界にあるもの・あったことの棚(2026-07-12、

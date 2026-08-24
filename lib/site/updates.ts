@@ -80,7 +80,7 @@ export async function recentUpdates(
     date: d.date as string,
     kind: 'scribe',
     // scribeはNotes棚の配下なのでラベル=NOTES。タイトルは「SCRIBE『20260706』」
-    label: 'NOTES',
+    label: 'NOTE',
     excerpt: `DESK『${scribeTitle(d.date as string)}』`,
     href: `/desk/${d.date}`,
   }))
@@ -91,7 +91,7 @@ export async function recentUpdates(
     rows.push({
       date: today,
       kind: 'scribe',
-      label: 'NOTES',
+      label: 'NOTE',
       excerpt: `DESK『${scribeTitle(today)}』`,
       href: '/live',
       live: true,
@@ -119,7 +119,7 @@ export async function recentUpdates(
             ? { kind: 'Physical' as const, label: 'PHYSICAL', excerpt: `OBJECT『${clipped}』`, href: `/physical/${a.id}` }
             : type === 'event'
               ? { kind: 'Event' as const, label: 'PHYSICAL', excerpt: `EVENT『${clipped}』`, href: `/physical/${a.id}` }
-              : { kind: 'Article' as const, label: 'NOTES', excerpt: `BLOG『${clipped}』`, href: `/notes/${a.id}` }
+              : { kind: 'Article' as const, label: 'NOTE', excerpt: `BLOG『${clipped}』`, href: `/notes/${a.id}` }
       rows.push({
         date: tokyoYmd(a.published_at as string),
         ...row,

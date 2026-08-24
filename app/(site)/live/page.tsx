@@ -63,7 +63,7 @@ export default async function LivePage() {
       <Pager
         older={prev ? { href: `/desk/${prev}`, title: `Desk Archive ${scribeTitle(prev)}` } : null}
         newer={null}
-        back={{ href: '/notes', title: 'NOTES' }}
+        back={{ href: '/notes', title: 'NOTE' }}
       />
     </div>
   )

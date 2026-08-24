@@ -105,8 +105,8 @@ export default async function Home() {
 
       <section className="section">
         <div className="section-head">
-          <h2>UPDATES — LAST 10 DAYS</h2>
-          <Link href="/updates">ALL UPDATES →</Link>
+          <h2>UPDATE — LAST 10 DAYS</h2>
+          <Link href="/updates">ALL →</Link>
         </div>
         <div className="section-body">
           <UpdateList rows={updates} />

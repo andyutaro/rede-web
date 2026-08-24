@@ -15,9 +15,18 @@ import { isEditor } from '@/lib/supabase/editor'
 type Shelf = 'notes' | 'photography' | 'physical'
 
 const SHELF_LABEL: Record<Shelf, string> = {
-  notes: 'NOTES',
+  notes: 'NOTE',
   photography: 'PHOTO',
   physical: 'PHYSICAL',
+}
+
+// パンくずはナビと同じ語で名乗る。棚のURL(/notes・/photography)から機械的に
+// 起こすと「Notes」「Photography」に戻ってしまうので、表記は表で持つ
+// (2026-08-23: Photography→Photo、複数形→単数形に揃えた際に露見)
+const SHELF_CRUMB: Record<Shelf, string> = {
+  notes: 'Note',
+  photography: 'Photo',
+  physical: 'Physical',
 }
 
 // 棚名からDBのtypeへ。notes=article。physicalはもの(physical)と こと(event)の
@@ -94,10 +103,10 @@ export default async function ArticleDetail({ id, shelf }: { id: string; shelf: 
     isEditor(),
   ])
 
-  // パンくず(2026-07-25): 検索結果の階層表示用。語彙はナビ表記(Notes等)に揃える
+  // パンくず(2026-07-25): 検索結果の階層表示用。語彙はナビ表記に揃える
   const crumbs = breadcrumbJsonLd([
     { name: 'Home', path: '' },
-    { name: shelf.charAt(0).toUpperCase() + shelf.slice(1), path: `/${shelf}` },
+    { name: SHELF_CRUMB[shelf], path: `/${shelf}` },
     { name: ((a.title as string) || '').trim() || '(無題)', path: `/${shelf}/${id}` },
   ])
 

@@ -30,7 +30,7 @@ export default async function StudioUpdates({
 
   return (
     <>
-      <h1 className="studio-h1">UPDATES</h1>
+      <h1 className="studio-h1">UPDATE</h1>
       <div className="studio-tabs">
         <Link href="/studio/updates" aria-current={!trash ? 'page' : undefined}>
           POSTS
