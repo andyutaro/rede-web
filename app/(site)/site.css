@@ -433,21 +433,22 @@ html[data-theme='dark'] .contact-pill:hover {
 
 /* ---- MENUボタン(2026-07-12): Contactピルの下・同サイズ。
    押すとナビをオーバーレイで縦展開。開くと枠が反転して"閉じる"と分かる。
-   2026-08-01: 「地味すぎて視認性が悪い」(Andy)。原因は地ではなく線で、輪郭が
-   --mut(地との差2.9)しか手掛かりが無かった。一度--ghostで塗ったが「全部くすんだ色に
-   なった」(Andy)ので取り消し、**地は紙色のまま、輪郭だけを--body(本文と同じ濃さ)に
-   上げる**。塗りを足さないので右レールにくすみが増えず、MENUは3つの中で唯一の
-   紙色=いちばん抜けの良いピルとして立つ。線の濃さは地との差2.9→9.2 ---- */
+   2026-08-23: **塗りをMAILピルと同じにする**(Andy指定「MENUボタンの色をMAILボタンの
+   方に合わせて」)。これで2026-07-20の描き分け(MAIL=塗り/MENU=線)と、それを補うために
+   線だけ--bodyへ上げた2026-08-01の手当ては、どちらも役目を終える。
+   中の語が入れ替わる作りも共通になったので、二つは同じ部品の上下2段として立つ。
+   開いている間(.open)だけは反転を残す=押されていることが色で分かる ---- */
 .menu-toggle {
   position: fixed;
   top: 100px; /* テーマ(20)→Contact(60)→MENU(100) の縦積み */
   right: 22px;
   width: 88px;
   height: 30px;
-  border: 1px solid var(--body);
+  /* 塗り・輪郭・文字色はMAILピル(.contact-pill)と同じ値 */
+  border: 1px solid var(--mut);
   border-radius: 999px;
-  background: var(--bg);
-  color: var(--ink);
+  background: var(--mut);
+  color: var(--bg);
   font: inherit;
   font-size: 10px;
   letter-spacing: 0.22em;
@@ -461,13 +462,36 @@ html[data-theme='dark'] .contact-pill:hover {
   transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
 
+/* ホバーもMAILピルと同じ「応答して一段濃くなる」文法 */
 .menu-toggle:hover {
+  background: var(--body);
+  border-color: var(--body);
+  color: var(--bg);
+}
+
+/* 開いている間だけ反転(CLOSEと読める状態)。ここはMAILピルには無い状態なので、
+   塗りを共有した後もMENU固有のまま残す */
+.menu-toggle.open {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--bg);
 }
 
-.menu-toggle.open {
+/* ダークもMAILピルと同じ沈んだ灰緑(2026-07-20の「--mutが白っぽく浮いて眩しい」への
+   手当てを共有する)。.openの反転はダークでも残すので、詳細度で勝つ形で書き足す */
+html[data-theme='dark'] .menu-toggle {
+  background: #4b564f;
+  border-color: #4b564f;
+  color: var(--ink);
+}
+
+html[data-theme='dark'] .menu-toggle:hover {
+  background: var(--mut);
+  border-color: var(--mut);
+  color: var(--bg);
+}
+
+html[data-theme='dark'] .menu-toggle.open {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--bg);
