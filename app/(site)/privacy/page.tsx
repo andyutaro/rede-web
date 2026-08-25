@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { getPrivacyContent } from '@/lib/site/pages'
 
-// ISR: 文言は/api/pages/saveのrevalidatePathで即時反映されるので毎リクエスト読まない
+// ISR: 文言のためだけに毎リクエスト読まない。
+// 反映は即時ではない(revalidatePathがこの構成では効かない)。詳しくは
+// app/(site)/about/page.tsx の同じ注記
 export const revalidate = 1800
 
 export const metadata: Metadata = {

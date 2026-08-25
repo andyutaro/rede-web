@@ -39,7 +39,15 @@ function showsByPlace(listed: { slug: string }[]): Record<string, string[]> {
   return out
 }
 
-// ISR: 番組カバーをRSSから引くため。文言編集は保存時にrevalidatePath('/about')で即反映
+// ISR: 番組カバーをRSSから引くため。
+// キャッシュの実態(2026-08-25 Andy報告「保存したのにaboutが変わらない」):
+// 保存APIのrevalidatePathは**この構成では何もしていない**。open-next.config.tsが
+// 設定しているのはincrementalCacheだけで、tagCache/queue/cachePurgeは既定の
+// "dummy"のまま=無効化の指示が誰にも届かない。よって文言の編集は即時ではなく、
+// 下のrevalidate秒数が切れてから反映される(拠点ごとのregionalCacheがさらに前段に
+// 重なるので、回線によって見える版がずれる時間もある)。
+// 直すならtagCache(D1等)を足す。revalidatePathの呼び出しはその日に効き始めるので
+// 消さずに残してある。
 export const revalidate = 1800
 
 // description: Aboutの署名+リード(Andy自身の言葉、studio編集が即反映)から組成

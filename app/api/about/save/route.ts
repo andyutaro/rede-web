@@ -33,6 +33,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // この呼び出しは現状きかない(tagCacheが"dummy"のため)。/aboutはISRの30分が
+  // 切れてから入れ替わる。tagCacheを足した日に効き始めるので残しておく
   revalidatePath('/about')
   return NextResponse.json({ ok: true })
 }

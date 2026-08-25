@@ -82,7 +82,9 @@ export default function AboutEditor({ initial }: { initial: AboutContent }) {
         body: JSON.stringify(build()),
       })
       if (res.ok) {
-        setStatus('保存しました。/about に反映されます。')
+        // 「反映されます」は嘘だった(2026-08-25)。実際は最大30分待つ。
+        // 詳しくは app/(site)/about/page.tsx の注記
+        setStatus('保存しました。/about への反映は最大30分後です。')
       } else {
         const j = await res.json().catch(() => ({}))
         setStatus(`保存に失敗: ${j.error ?? res.status}`)

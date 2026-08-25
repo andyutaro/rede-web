@@ -33,7 +33,7 @@ export default function PageEditor({ pageKey, fields }: { pageKey: string; field
         body: JSON.stringify({ key: pageKey, data }),
       })
       if (!res.ok) throw new Error()
-      setMessage('保存しました')
+      setMessage('保存しました（公開ページへの反映は最大30分後）')
     } catch {
       setMessage('保存に失敗しました')
     } finally {
