@@ -30,6 +30,23 @@ export function imgCard(url: string | null | undefined): string {
   return `${CDN_BASE}/width=1200,height=630,fit=pad,background=%23${CARD_BG},quality=82,format=jpeg/${url}`
 }
 
+// 枠に合わせて切り取った画像(2026-08-27)。Homeの写真1枚のように、
+// 表示側でobject-fit:coverするスロット用。CSSだけで切ると、縦長の元画像を
+// まるごと落としてから大半を捨てることになる(1280幅の縦写真は1280×1700級)。
+// CDN側で切っておけば転送も復号も枠のぶんで済む。
+// 変換の組み合わせが1つ増えるので無料枠(5,000ユニーク/月)を少し使うが、
+// 現状は数百なので余る。
+export function imgCover(
+  url: string | null | undefined,
+  width: number,
+  height: number
+): string {
+  if (!url) return ''
+  if (url.startsWith('data:') || url.includes('/cdn-cgi/image/')) return url
+  if (!/^https?:\/\//i.test(url)) return url
+  return `${CDN_BASE}/width=${width},height=${height},quality=78,fit=cover,format=auto/${url}`
+}
+
 export function imgThumb(url: string | null | undefined, width: number): string {
   if (!url) return ''
   // 既に変換済み/データURL/相対パスはそのまま(変換は絶対URLの元画像に対して行う)

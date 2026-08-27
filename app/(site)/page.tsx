@@ -10,7 +10,7 @@ import { tokyoDaysAgo } from '@/lib/site/text'
 import CoverGrid from './CoverGrid'
 import LiveWindow from './LiveWindow'
 import UpdateList from './UpdateList'
-import { imgThumb, IMG_W } from '@/lib/site/img'
+import { imgCover, IMG_W } from '@/lib/site/img'
 
 // ISR 60秒(2026-08-05)。以前は force-dynamic だった=一番人が来るページを
 // 毎リクエスト組み直していて、Error 1102(CPU 10ms超過)が**混んだ日に集中して**
@@ -25,6 +25,12 @@ import { imgThumb, IMG_W } from '@/lib/site/img'
 //   ピルのキューは/aboutなど既にISRのページで同じ扱い(layout側の既存の前提)。
 // - UPDATES … 元より日単位の粒度。
 export const revalidate = 60
+
+// Homeの写真1枚は「枠が先、写真が後」(2026-08-27 Andy指定
+// 「縦長写真だとデカすぎてダサい」)。横位置の写真を基準にした3:2の窓に切り取る。
+// 写真全体を正確に出すことより枠の形を優先する=1枚がHomeを占拠しない。
+// CSS側(.photo-single)のaspect-ratioと必ず同じ比にすること
+const PHOTO_FRAME_H = Math.round((IMG_W.photo * 2) / 3)
 
 export const metadata = {
   alternates: { canonical: 'https://andyutaro.com' },
@@ -134,11 +140,21 @@ export default async function Home() {
               // 中身は装飾のimgだけでリンク名が空だった(2026-07-23)
               <Link href={photo.href} aria-label="この写真の掲載ページへ">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imgThumb(photo.url, IMG_W.photo)} alt="" loading="lazy" decoding="async" />
+                <img
+                  src={imgCover(photo.url, IMG_W.photo, PHOTO_FRAME_H)}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
               </Link>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={imgThumb(photo.url, IMG_W.photo)} alt="" loading="lazy" decoding="async" />
+              <img
+                src={imgCover(photo.url, IMG_W.photo, PHOTO_FRAME_H)}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
             )}
           </div>
         </section>

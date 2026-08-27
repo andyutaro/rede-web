@@ -2846,15 +2846,28 @@ a.show-cast-name:hover {
 }
 
 /* ---- Photography(§2): 見出しの下に写真1枚 ---- */
+/* 枠を先に決めて、写真をその中に切り取って収める(2026-08-27 Andy指定
+   「縦長写真だとデカすぎてダサい」)。以前は width:100%/height:auto だったので、
+   縦位置の写真が来ると柱640pxに対して850px級の高さになり、Homeが1枚に占拠されていた。
+   横位置の写真を基準にした3:2の窓にして、写真全体を正確に出すことより枠の形を優先する。
+   組み方は§9の正方形セルと同じ(枠にaspect-ratio、中身は100%×100%)。
+   画像そのものにaspect-ratioを掛けると中身の高さで崩れる。
+   比を変えるときは page.tsx の PHOTO_FRAME_H も一緒に直すこと */
+.photo-single {
+  aspect-ratio: 3 / 2;
+}
+
 .photo-single img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Photographyのリンクラッパー(Home→scribeページ遷移用) */
 .photo-single a {
   display: block;
+  height: 100%;
 }
 
 /* ---- ライトボックス ---- */
