@@ -2,16 +2,13 @@
 
 import './globals.css'
 import './(site)/site.css'
+import { THEME_INIT } from '@/lib/site/theme'
 
 // ルートレイアウト自体が壊れた場合の最後の受け皿(2026-07-23)。
 // ここはレイアウトを置き換えるのでhtml/bodyと地の指定を自分で持つ必要がある。
 // クライアントコンポーネント必須のためmetadataは使えず、titleはReactの<title>で置く。
 // 到達はごく稀(この画面が出る=レイアウトが壊れている)なので、
 // フォントの読み込みまではせず地の色と文字だけで静かに置く。
-// テーマの初期適用((site)レイアウト・app/not-found.tsxと同じ。ここは通らないので自分で置く)。
-// これが無いとダーク設定の人にも全画面の白が出る
-const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}`
-
 export default function GlobalError({
   error,
   unstable_retry,

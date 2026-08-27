@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Noto_Sans_JP } from 'next/font/google'
 import NotFoundBody from './(site)/NotFoundBody'
 import './(site)/site.css'
+import { THEME_INIT } from '@/lib/site/theme'
 
 // どのルートにも当たらないURLの404(2026-07-23)。ここはルートレイアウト
 // (html/body)の直下で(site)レイアウトを通らないため、公開サイトの地(site.css・
@@ -15,9 +16,6 @@ const noto = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = { title: 'Not Found' }
-
-// テーマの初期適用((site)レイアウトと同じ。ここを通らないので自分で置く)
-const THEME_INIT = `try{if(localStorage.getItem('andy-theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}`
 
 export default function GlobalNotFound() {
   return (

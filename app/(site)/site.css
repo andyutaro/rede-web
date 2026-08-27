@@ -2255,7 +2255,7 @@ a.show-cast-name:hover {
    通常のページはlocalStorageのandy-themeで明暗を切り替えるが、この画面は
    Reactが文書ごと描き直す経路があり初期化スクリプトが走らないことがある。
    その場合でも暗所の読者に全画面の白を出さないよう、OSの配色設定に従わせる。
-   サイト全体の既定(常にライトで、切替は手動)は変えない=ここだけの限定指定。 */
+   サイト全体の既定(時刻で決める。lib/site/theme.ts)は変えない=ここだけの限定指定。 */
 @media (prefers-color-scheme: dark) {
   .site-standalone {
     --bg: #1d2420;
