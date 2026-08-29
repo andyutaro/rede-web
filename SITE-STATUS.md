@@ -1,4 +1,4 @@
-# andyutaro.com — サイトの現状（2026-08-05 時点）
+# andyutaro.com — サイトの現状（2026-08-29 時点）
 
 > 前提知識ゼロで読める自己完結メモ。別のClaude（claude.ai のチャット等）に状況を渡すためのもの。
 > 作業用の細かい規約は `AGENTS.md` / `CLAUDE.md` に別途ある。
@@ -40,9 +40,27 @@
 - **Next.js 16.2.10（改変版）** + React 19 + TypeScript
   - ⚠️ 通常のNextと異なるbreaking changeがある。**書く前に `node_modules/next/dist/docs/` の該当ガイドを読む規約**。`middleware.ts` ではなく `proxy.ts` 系（ただし現在proxyは廃止済み）。
 - **ホスティング: Cloudflare Workers**（OpenNextアダプタ `@opennextjs/cloudflare` 1.20.1）。**無料プラン**。
-- **DB/認証/ストレージ: Supabase**（`@supabase/supabase-js` 2.110）。無料プラン。
-- **ライブ配信の中継: 自前WebSocketサーバー**（`rede-relay.onrender.com`、Render無料枠）。scribeの毎打鍵スナップショットを中継する。
+- **DB/認証: Supabase**（`@supabase/supabase-js` 2.110）。無料プラン。**文章とデータだけ**（実測 約1.1MB / 500MB枠 ＝ 0.2%）。
+- **メディア（写真・動画・音源）: Cloudflare R2** `rede-web-media` → **`media.andyutaro.com`** から配信（2026-08-29移行）。
+  - 移行理由: Supabase Storageの1GB枠が**動画17本で83%**埋まり、月150〜280MBのペースで2か月後に満杯の見込みだった。R2は10GBで、しかも**下り転送が無料**＝観られ・聴かれるほど枠が減る構造にならない。Supabase Pro課金（$25/月）はAndyが却下。
+  - Supabaseの原本（439MB）は**消していない**。旧URLも生きている＝R2側に何かあっても戻せる。
+- **ライブ配信の中継: 自前WebSocketサーバー**（`rede-relay.onrender.com`、Render無料枠）。scribeの毎打鍵スナップショットを中継する。**唯一Cloudflare/Supabase外の稼働部品＝ここが落ちるとライブ中継だけ止まる**（書く・保存・公開ページは無事）。
+- **メール通知: Resend**（おたよりの受信通知）。ドメインからの送信は封鎖してある（`MX .` ＋ SPF `-all` ＋ DMARC `p=reject`）。
 - **費用はドメイン代のみ**（月1150円予算の内側）。旧STUDIOプランは解約済み、Vercelは完全撤収済み。
+
+### 実測の容量と使用量（2026-08-29）
+
+| | 実測 | 無料枠 |
+|---|---|---|
+| Workers リクエスト | 7,211/日 | 10万/日 |
+| Workers CPU | 中央値 9.1ms・上位1% 602ms | §4参照 |
+| R2 合計 | 1.03 GB | 10 GB |
+| └ `rede-web-media`（メディア） | 0.43 GB / 236件 | |
+| └ `rede-web-cache`（ISR・7日で失効） | 0.24 GB / 1,602件 | |
+| └ `rede-web-backup`（控え・失効なし） | 0.36 GB / 222件 | |
+| Supabase Storage（原本・増加停止） | 439 MB | 1 GB |
+| Supabase Postgres | 約 1.1 MB | 500 MB |
+| Image Transformations | 未計測 | 5,000ユニーク/月 |
 
 ### Markdownは全面廃止（重要な確定事項）
 
@@ -69,6 +87,9 @@
 ### Error 1102（Worker exceeded resource limits）
 
 無料プランの**CPU 10ms/リクエスト**制限で稀に発生する。対策の歴史:
+
+> ⚠️ **この「10ms」という前提は疑わしい（2026-08-29）。** 実測でCPUの上位1%は**602ms**、エラーは7日で28件しかない。10msが本当に効いているなら上位1%は全滅しているはず。プランが変わったか無料枠の条件が変わった可能性がある。**以下の対策の一部はもう不要かもしれない**ので、次に手を入れるときはダッシュボードでプランを確認してから判断する。→ §10
+
 - R2による永続ISRキャッシュ、フィード/写真プール/日付索引の**エッジキャッシュ**（`lib/site/edgeCache.ts` の `cachedJson`）
 - 現状（2026-08-05 の月次レビューで判明）: **ゼロではない。混んだ日に集中して出ていた**（人が来た日にだけ壊れて見える、という一番まずい出方）。残る要因は **force-dynamic なページ**（notes/updates/photography/physical/scribe/live/search）が毎回生成される構造。
 - **Homeだけ ISR 60秒に変更済み**（2026-08-05、一番人が来る1枚から静める）。据え置きになるもの（当日scribe窓・ランダム写真・PODCASTピルのキュー・UPDATES）と、それが実害にならない理由は `app/(site)/page.tsx` 冒頭のコメントに書いてある。残りの動的ページは未着手。
@@ -211,8 +232,9 @@ ISR化したページは `s-maxage={revalidate}, stale-while-revalidate=2592000`
 
 ## 8. データとバックアップ
 
-- **テーブル**: `scribe_days`(37日) / `articles`(公開16) / `annotations`(9) / `bookmarks`(47) / `contact_messages`(6) / `episode_tags` / `site_content` / `manual_updates`
-- **ストレージ**: `scribe-media`（本文の写真、約90枚・115MB）
+- **テーブル**（2026-08-29実測）: `scribe_days`(68日) / `articles`(40) / `annotations`(101) / `arrivals`(968) / `bookmarks`(47) / `desk_private_notes`(5) / `episode_tags`(15) / `contact_messages`(4) / `site_content`(3) / `manual_updates`(0)
+- **メディア**: R2 `rede-web-media`（236件・439MB）。配信は `media.andyutaro.com`。**Supabaseの原本も同じ内容で残してある**＝実質これがメディアの控えになっている。**原本を消すとその関係が切れる**ので当面消さない。
+- **メディアを扱うコードはURLの形で判定しない。** 必ず `lib/site/media.ts` の `mediaPathOf()` でパス（`YYYY-MM-DD/uuid.ext`）に落として突き合わせる。パスは新旧のURLで同一。→ §11-6
 - **RLSは全テーブル/ストレージで有効**。公開キーで読めるのは公開済みコンテンツのみ、書き込みは全拒否。
 - **画像は上限1600px・JPEG q0.82で保存**（2026-07-29に2000px/q0.85から強化。表示側の最大は`IMG_W.photo`=1280なので画質は落ちない）。Storage無料枠1GBの消費ペースを落とすため。**既存ファイルは変わらない＝新規アップロードから効く**。
 - **バックアップ**: 毎晩0:01のcronで R2（`rede-web-backup`）へ。文章は日付つきJSONで世代保存、写真は差分。Supabase無料プランに時点復旧が無いための備え。
@@ -233,6 +255,9 @@ ISR化したページは `s-maxage={revalidate}, stale-while-revalidate=2592000`
 
 ## 10. いま開いている論点
 
+- **CPUの前提が古い可能性（2026-08-29）**: 実測でWorkersの上位1%は**602ms**。このメモとコードは一貫して「無料プランの10ms制限」を前提に書かれているが、その前提なら上位1%は全部落ちているはずで、実際のエラーは7日で28件しかない。**1102を恐れて入れた制約のいくつかは、もう不要かもしれない。** ダッシュボードでプランを確認してから判断する。
+- **`media.andyutaro.com` はbot対策で非ブラウザのUAに403を返す**（2026-08-29確認）。今は無害だが、ここからポッドキャスト音源を配るなら緩める必要がある（再生アプリのUAが弾かれる）。
+
 - **1102の恒久対策**: Homeは2026-08-05にISR化した（§4）。残る force-dynamic ページ（notes/updates/photography/physical/scribe/live/search）は未解決。次の月次レビューで、Homeを静めた効果が出ているかを見てから次を決める。
 - **未配信2番組**（ガイロン / オルタナティブフィッシング）: 配信開始後にフィードURLをもらってshows.tsに1行足すだけ。
 - **公開Tagsページ: 保留**（2026-07-29 Andy「一旦いらないくらいで保留」）。**こちらから提案しない。** やるとしてもタグが十分溜まってから。
@@ -248,3 +273,8 @@ ISR化したページは `s-maxage={revalidate}, stale-while-revalidate=2592000`
 3. **重い計算はエッジキャッシュへ逃がす**（`cachedJson`）。force-dynamicページでコールドisolateだとメモリキャッシュは効かない。これが1102の主因だった。
 4. **検証はブラウザペインを過信しない。** Claude Codeのペインはdevページをハイドレートせず、JS計測が0や異常値を返したりスクリーンショットが白紙になることがある。確実な検証は headless Chrome（`--dump-dom` / `--screenshot`）を使う。
 5. **CSSチャンクは複数に分かれる。** 本番で特定のCSSが載ったか調べるときは、ページが参照する全 `.css` を走査する（1つ目だけ見ると誤診する）。
+6. **メディアのURLを完全一致で突き合わせない（2026-08-29に踏んだ）。** 配信元をSupabase→R2へ移した際、cronの孤児掃除が「本文にこの完全URLが含まれるか」で削除対象を決めていたため、**236件中233件が削除対象**になった（空撃ちで発見、実行前に修正）。写真プールも `/scribe-media/` を含むかで絞っていて空になり、Homeのランダム写真が実際に消えた。**判定はパスで行う**（`lib/site/media.ts`）。
+7. **CSPの `img-src` と `media-src` は別物（2026-07-30と2026-08-29に二度踏んだ）。** 画像は `imgThumb` が `/cdn-cgi/image/` 経由＝自ドメインに書き換えるのでCSPの許可が要らないが、**動画と音源は生のURLのまま出る**。配信元を増やしたら `media-src` に足さないと、**画像は無事なのに動画と音源だけが黙って消える**。
+8. **R2の `put()` は長さの分からない `ReadableStream` を受け付けない（2026-08-29）。** `request.body` をそのまま渡すと保存の一歩手前で500になる。`arrayBuffer()` で渡す（上限50MB・Workerメモリ128MBなので収まる）。
+9. **アップロードの許可はエディタとサーバーの両方にある。** 種類を増やすときは `lib/site/media.ts` の `ALLOWED_EXT` を直す（出所は1つ）。かつてエディタだけ音声を通してサーバーを忘れ、mp3が「アップロード失敗」の一言で弾かれ続けた。
+10. **ブラウザのタブを使い回して検証しない。** 古いCSPや古いキャッシュを掴んだままのタブを見て「サイトが壊れた」と誤診し、実在しない障害を長時間追ったことがある（2026-08-29）。**確認は必ず新しいタブで。**
