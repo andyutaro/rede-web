@@ -12,6 +12,7 @@ import WaveformHero from './WaveformHero'
 import ImageLightbox from './ImageLightbox'
 import { showBySlug, type Show } from '@/lib/site/shows'
 import { fetchShowFeedLight, randomEpisodeQueue } from '@/lib/site/podcastFeed'
+import { HERO_SLUGS, heroPool, pickQueue } from '@/lib/site/heroQueue'
 import { THEME_INIT } from '@/lib/site/theme'
 import { dateDots } from '@/lib/site/text'
 import './site.css'
@@ -51,22 +52,43 @@ const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN
 // ブロックしないため。fallbackは同じ波形(episodes=null)なので差し替えは無縫
 // (波形はグローバルなrAF時刻から決定的に描かれる)。
 async function HeroEpisode() {
-  const heroShows = ['onairdo', 'mimoriradio', 'sakanakaigi']
-    .map(showBySlug)
-    .filter((s): s is Show => !!s?.feed)
-  // 波形キューに概要欄は不要=軽量版(全ページ共通の負荷なのでここが一番効く)
-  const feeds = await Promise.all(heroShows.map((s) => fetchShowFeedLight(s.feed!, s.since)))
-  const episodes = randomEpisodeQueue(feeds, 10).map(({ feedIndex, episode }) => {
-    const show = heroShows[feedIndex]
+  const heroShows = HERO_SLUGS.map(showBySlug).filter((s): s is Show => !!s?.feed)
+
+  // 夜のcronが作り置きした一覧から引く(2026-08-29)。以前はここで毎回RSSを3本
+  // 取ってその場で組んでいたが、冷えた拠点では**2.97MBのXMLの復号+パースだけで
+  // 6.8ms**かかり、ページ描画と合わせて無料枠のCPU 10msを超えていた。超えると
+  // キャッシュの書き込みも完了せず、その拠点は永久に温まらない=悪循環。
+  // 実測で7日8,190件の作り直し失敗が出ていた。作り置きなら87KB/0.19ms。
+  // 抽選は表示のたびに行うので、訪問ごとに順番が変わる挙動は変わらない。
+  // 詳しくは lib/site/heroQueue.ts
+  const pool = await heroPool().catch(() => [])
+  let episodes = pickQueue(pool, 10).map((t) => {
+    const show = showBySlug(t.slug)
     return {
-      audioUrl: episode.audioUrl!,
-      showName: show.display ?? show.name,
-      title: episode.title,
+      audioUrl: t.audioUrl,
+      showName: show?.display ?? show?.name ?? t.slug,
+      title: t.title,
       // リリース日(年月日、2026-07-14 Andy指定)。表記はエピソードページと同じドット式
-      date: dateDots(episode.date),
-      href: `/podcast/${show.slug}/${episode.id}`,
+      date: dateDots(t.date),
+      href: `/podcast/${t.slug}/${t.id}`,
     }
   })
+
+  // 作り置きがまだ無い/読めないときだけ、従来どおりRSSから組む。
+  // 重いのは承知のうえで、ピルが死ぬよりはよい(初回デプロイ〜初回cronの間の保険)
+  if (episodes.length === 0) {
+    const feeds = await Promise.all(heroShows.map((s) => fetchShowFeedLight(s.feed!, s.since)))
+    episodes = randomEpisodeQueue(feeds, 10).map(({ feedIndex, episode }) => {
+      const show = heroShows[feedIndex]
+      return {
+        audioUrl: episode.audioUrl!,
+        showName: show.display ?? show.name,
+        title: episode.title,
+        date: dateDots(episode.date),
+        href: `/podcast/${show.slug}/${episode.id}`,
+      }
+    })
+  }
   return <WaveformHero episodes={episodes.length > 0 ? episodes : null} />
 }
 

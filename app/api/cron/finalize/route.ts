@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
+import { buildHeroPool } from '@/lib/site/heroQueue'
 import { mediaPathOf } from '@/lib/site/media'
 import { createClient } from '@supabase/supabase-js'
 import { backupToR2 } from '@/lib/site/backup'
@@ -58,6 +59,18 @@ export async function GET(request: Request) {
     cleanup = { deleted: 0, error: e instanceof Error ? e.message : 'cleanup failed' }
   }
 
+  // PODCASTピルの連続再生キューを作り置く(2026-08-29)。全ページ共通のレイアウトが
+  // 毎回RSSを取っていた頃、冷えた拠点でCPU上限を超えて作り直しが失敗し続けていた
+  // (7日で8,190件)。ここで1日1回だけ作れば、読む側は87KB/0.19msで済む。
+  // **一番最後に置く**: 失敗しても確定・控え・掃除を巻き添えにせず、
+  // かつサブリクエストを先に使い切っても読む側には従来のRSS経路の保険がある
+  let heroQueue: Awaited<ReturnType<typeof buildHeroPool>>
+  try {
+    heroQueue = await buildHeroPool()
+  } catch (e) {
+    heroQueue = { count: 0, error: e instanceof Error ? e.message : 'heroQueue failed' }
+  }
+
   // ブックマークの夜間同期(2026-07-27): 本文のリンクを索引へ、タイトルは
   // 少量ずつ取得(サブリクエスト上限を食い潰さないよう8件)。失敗しても他を巻き添えにしない
   let bookmarks: unknown
@@ -75,6 +88,7 @@ export async function GET(request: Request) {
     finalized: (data ?? []).length > 0, // false = 行がない(その日書かなかった) or 確定済み
     backup,
     cleanup,
+    heroQueue,
     bookmarks,
   })
 }
