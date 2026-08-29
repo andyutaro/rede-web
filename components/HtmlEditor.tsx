@@ -234,7 +234,20 @@ export default function HtmlEditor({
         const origExt = (file.name.split('.').pop() || fallbackExt).toLowerCase()
         const ext = blob === file ? origExt : 'jpg'
         const res = await fetch('/api/scribe/upload-url', { method: 'POST', body: JSON.stringify({ ext }) })
-        if (!res.ok) throw new Error('upload-url failed')
+        if (!res.ok) {
+          // 理由を出す(2026-08-27)。これまで全ての失敗が「アップロード失敗」の
+          // 一言だったので、mp3が弾かれていたとき原因が分からなかった。
+          // 401はセッション切れで、書いている最中に起きうる=見分けが要る
+          ph.remove()
+          fail(
+            res.status === 400
+              ? `アップロード失敗: この形式(.${ext})は受け付けていません`
+              : res.status === 401
+                ? 'アップロード失敗: ログインが切れています'
+                : `アップロード失敗: 準備できませんでした(${res.status})`
+          )
+          return
+        }
         const { signedUrl, publicUrl } = await res.json()
 
         let lastShown = -5
