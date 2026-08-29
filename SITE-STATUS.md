@@ -233,11 +233,13 @@ ISR化したページは `s-maxage={revalidate}, stale-while-revalidate=2592000`
 ## 8. データとバックアップ
 
 - **テーブル**（2026-08-29実測）: `scribe_days`(68日) / `articles`(40) / `annotations`(101) / `arrivals`(968) / `bookmarks`(47) / `desk_private_notes`(5) / `episode_tags`(15) / `contact_messages`(4) / `site_content`(3) / `manual_updates`(0)
-- **メディア**: R2 `rede-web-media`（236件・439MB）。配信は `media.andyutaro.com`。**Supabaseの原本も同じ内容で残してある**＝実質これがメディアの控えになっている。**原本を消すとその関係が切れる**ので当面消さない。
+- **メディア**: R2 `rede-web-media`。配信は `media.andyutaro.com`。控えは毎晩のcronで `rede-web-backup/media/` へ差分コピー（**2026-08-29に取り出し元をSupabase→R2へ切り替え。切り替え前は新規アップ分の控えが取られていなかった**）。
+- **Supabaseの `scribe-media`（439MB）は移行前の原本として凍結**。もう増えず、掃除の対象からも外した＝R2に何かあったときの戻り先として残す。
 - **メディアを扱うコードはURLの形で判定しない。** 必ず `lib/site/media.ts` の `mediaPathOf()` でパス（`YYYY-MM-DD/uuid.ext`）に落として突き合わせる。パスは新旧のURLで同一。→ §11-6
 - **RLSは全テーブル/ストレージで有効**。公開キーで読めるのは公開済みコンテンツのみ、書き込みは全拒否。
 - **画像は上限1600px・JPEG q0.82で保存**（2026-07-29に2000px/q0.85から強化。表示側の最大は`IMG_W.photo`=1280なので画質は落ちない）。Storage無料枠1GBの消費ペースを落とすため。**既存ファイルは変わらない＝新規アップロードから効く**。
-- **バックアップ**: 毎晩0:01のcronで R2（`rede-web-backup`）へ。文章は日付つきJSONで世代保存、写真は差分。Supabase無料プランに時点復旧が無いための備え。
+- **バックアップ**: 毎晩0:01のcronで R2（`rede-web-backup`）へ。文章は日付つきJSONで世代保存、メディアはR2から差分コピー（一晩12件まで＝溜まった分は数晩かけて片付く）。Supabase無料プランに時点復旧が無いための備え。
+- **未参照メディアの掃除もR2が対象**（2026-08-29に切り替え）。Supabaseを見ていた頃のままだと新規分の孤児が永久に溜まり、掃除が実質止まる。
 
 ---
 

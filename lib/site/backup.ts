@@ -13,8 +13,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 //   (無料枠の操作回数を無駄に使わないため。R2側で消えない限り一度で済む)
 // - 失敗しても確定処理を巻き添えにしない(呼び出し側でcatchする)
 
-// R2の型は@cloudflare/workers-typesを入れないと来ないが、使うのはこの3つだけなので
-// 依存を増やさず必要な形だけ書く(head/put/get)
+// R2の型は@cloudflare/workers-typesを入れないと来ないが、使う形だけ書く
 type R2Store = {
   list(options?: { prefix?: string; cursor?: string }): Promise<{
     objects: { key: string }[]
@@ -26,13 +25,15 @@ type R2Store = {
     value: string | ArrayBuffer,
     options?: { httpMetadata?: { contentType?: string } }
   ): Promise<unknown>
+  get(key: string): Promise<{
+    arrayBuffer(): Promise<ArrayBuffer>
+    httpMetadata?: { contentType?: string }
+  } | null>
 }
-
-const BUCKET = 'scribe-media'
 // 一晩に写す写真の上限。初回は溜まっている分を数晩かけて片付ける
 // (1リクエストのCPU/時間制限に収めるため)
 // Workersの1起動あたりサブリクエスト上限(50)を、同じcron内の掃除処理と分け合う。
-// 写真1枚につきSupabaseからの取得+R2への書き込みで2回使うので、控えめに置く。
+// 写真1枚につきR2からの取得+R2への書き込みで2回使うので、控えめに置く。
 // 溜まっている分は数晩かけて片付く(2晩目以降は差分なのでほぼ0枚)
 const MAX_PHOTOS_PER_RUN = 12
 
@@ -53,8 +54,14 @@ export async function backupToR2(): Promise<BackupResult> {
   // async: true でないとルートハンドラでは文脈が取れず例外になる
   // (同期版はグローバルに文脈が載っている前提。2026-07-23に踏んだ)
   const { env } = await getCloudflareContext({ async: true })
-  const bucket = (env as unknown as { BACKUP_BUCKET?: R2Store }).BACKUP_BUCKET
+  const e = env as unknown as { BACKUP_BUCKET?: R2Store; MEDIA_BUCKET?: R2Store }
+  const bucket = e.BACKUP_BUCKET
   if (!bucket) return { error: 'BACKUP_BUCKET未設定' }
+  // メディアの原本はR2へ移った(2026-08-29)。控えの取り出し元もそちらへ切り替える。
+  // **切り替え前は、新しくアップした分がSupabaseに現れないので控えが取られていなかった**
+  // (実測: 移行当日にアップした2枚がrede-web-backupに存在しなかった)
+  const mediaBucket = e.MEDIA_BUCKET
+  if (!mediaBucket) return { error: 'MEDIA_BUCKET未設定' }
 
   const supabase = service()
   const result: BackupResult = {}
@@ -94,7 +101,7 @@ export async function backupToR2(): Promise<BackupResult> {
 
   // ---- 2. 写真(差分) ----
   try {
-    const paths = await listAllMedia(supabase)
+    const paths = await listAllMedia(mediaBucket)
     // 既にある控えは1回の一覧で把握する(1枚ずつheadすると枚数分の
     // サブリクエストを使い切ってしまう。2026-07-23に上限へ当たった)
     const already = await listBackedUp(bucket)
@@ -111,10 +118,10 @@ export async function backupToR2(): Promise<BackupResult> {
         remaining++
         continue
       }
-      const { data } = await supabase.storage.from(BUCKET).download(path)
-      if (!data) continue
-      await bucket.put(key, await data.arrayBuffer(), {
-        httpMetadata: { contentType: data.type || 'application/octet-stream' },
+      const obj = await mediaBucket.get(path)
+      if (!obj) continue
+      await bucket.put(key, await obj.arrayBuffer(), {
+        httpMetadata: { contentType: obj.httpMetadata?.contentType || 'application/octet-stream' },
       })
       copied++
     }
@@ -141,20 +148,15 @@ async function listBackedUp(bucket: R2Store): Promise<Set<string>> {
 
 // バケット直下+日付フォルダ配下の全ファイルを列挙する
 // (cleanupOrphanMedia と同じ構造。あちらは消す側、こちらは残す側)
-async function listAllMedia(supabase: ReturnType<typeof service>): Promise<string[]> {
+// メディアの一覧(R2)。R2は階層を持たないので日付フォルダを辿る必要がない=
+// Supabase Storageを列挙していた頃より呼び出しも少なくて済む
+async function listAllMedia(media: R2Store): Promise<string[]> {
   const out: string[] = []
-  const { data: entries } = await supabase.storage.from(BUCKET).list('', { limit: 1000 })
-  if (!entries) return out
-  const folders: string[] = []
-  for (const e of entries) {
-    if (e.id !== null) out.push(e.name)
-    else folders.push(e.name)
-  }
-  const lists = await Promise.all(
-    folders.map((f) => supabase.storage.from(BUCKET).list(f, { limit: 1000 }))
-  )
-  lists.forEach((r, i) => {
-    for (const f of r.data ?? []) if (f.id !== null) out.push(`${folders[i]}/${f.name}`)
-  })
+  let cursor: string | undefined
+  do {
+    const r = await media.list({ cursor })
+    for (const o of r.objects) out.push(o.key)
+    cursor = r.truncated ? r.cursor : undefined
+  } while (cursor)
   return out
 }

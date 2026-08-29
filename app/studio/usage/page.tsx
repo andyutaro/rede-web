@@ -1,3 +1,4 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { createClient } from '@/lib/supabase/server'
 import { createService } from '@/lib/supabase/service'
 
@@ -5,7 +6,9 @@ export const dynamic = 'force-dynamic'
 
 // USAGE室: Supabase無料枠に対する現在の使用状況。
 // - DB(上限500MB): studio_usage()関数(db/2026-07-11-usage.sql、要SQL実行)
-// - Storage(上限1GB): scribe-mediaの全ファイルサイズを合算
+// - Storage(上限1GB): scribe-media。**2026-08-29のR2移行で増加は止まった**=
+//   移行前の原本を凍結して置いてあるだけ。いま増えるのはR2の方なので、
+//   容量を見るならR2の欄を見る(この欄だけ見ていると「43%で固定」に見えて実態を見失う)
 // - 通信量(5GB/月)・Auth MAU等はAPIから取れないためSupabaseダッシュボード参照
 const DB_LIMIT = 500 * 1024 * 1024
 const STORAGE_LIMIT = 1024 * 1024 * 1024
@@ -15,6 +18,39 @@ const BUCKET = 'scribe-media'
 // 超過すると当日は新規リクエストがエラーになる(勝手に課金はされない)。
 // 取得にはCF_USAGE_TOKEN(Account Analytics:Read)とCF_USAGE_ACCOUNT_IDが必要。
 const CF_DAILY_LIMIT = 100_000
+// R2無料枠は10GB。3バケット(media/cache/backup)の合計に効く
+const R2_LIMIT = 10 * 1024 * 1024 * 1024
+
+type R2List = {
+  list(options?: { cursor?: string }): Promise<{
+    objects: { key: string; size: number }[]
+    truncated: boolean
+    cursor?: string
+  }>
+}
+
+// R2のメディア(2026-08-29〜。ここが実際に増えていく側)
+async function r2MediaStats(): Promise<{ bytes: number; files: number; error: boolean }> {
+  try {
+    const { env } = await getCloudflareContext({ async: true })
+    const media = (env as unknown as { MEDIA_BUCKET?: R2List }).MEDIA_BUCKET
+    if (!media) return { bytes: 0, files: 0, error: true }
+    let bytes = 0
+    let files = 0
+    let cursor: string | undefined
+    do {
+      const r = await media.list({ cursor })
+      for (const o of r.objects) {
+        bytes += o.size ?? 0
+        files++
+      }
+      cursor = r.truncated ? r.cursor : undefined
+    } while (cursor)
+    return { bytes, files, error: false }
+  } catch {
+    return { bytes: 0, files: 0, error: true }
+  }
+}
 
 type CfDay = { date: string; requests: number; errors: number }
 
@@ -107,9 +143,10 @@ async function storageStats() {
 
 export default async function StudioUsage() {
   const supabase = await createClient()
-  const [{ data: usage, error: rpcError }, storage, cf] = await Promise.all([
+  const [{ data: usage, error: rpcError }, storage, r2, cf] = await Promise.all([
     supabase.rpc('studio_usage'),
     storageStats(),
+    r2MediaStats(),
     cloudflareStats(),
   ])
 
@@ -196,9 +233,30 @@ export default async function StudioUsage() {
         )}
       </section>
 
+      {/* いま増えていくのはこちら(2026-08-29〜)。だから上に置く */}
       <section className="usage-section">
         <div className="usage-head">
-          <span>SUPABASE — STORAGE({BUCKET})</span>
+          <span>R2 — MEDIA(rede-web-media)</span>
+          <span className="usage-num">
+            {r2.error ? '—' : `${fmtBytes(r2.bytes)} / ${fmtBytes(R2_LIMIT)}`}
+          </span>
+        </div>
+        {r2.error ? (
+          <p className="studio-empty">取得できません</p>
+        ) : (
+          <>
+            <UsageBar ratio={r2.bytes / R2_LIMIT} />
+            <p className="usage-note">
+              {r2.files}ファイル・media.andyutaro.comから配信(未参照分は毎日0:01のGCが削除)。
+              10GBの枠はcache・backupと共用
+            </p>
+          </>
+        )}
+      </section>
+
+      <section className="usage-section">
+        <div className="usage-head">
+          <span>SUPABASE — STORAGE({BUCKET}・凍結)</span>
           <span className="usage-num">
             {storage.error ? '—' : `${fmtBytes(storage.bytes)} / ${fmtBytes(STORAGE_LIMIT)}`}
           </span>
@@ -208,7 +266,9 @@ export default async function StudioUsage() {
         ) : (
           <>
             <UsageBar ratio={storage.bytes / STORAGE_LIMIT} />
-            <p className="usage-note">{storage.files}ファイル(未参照分は毎日0:01のGCが削除)</p>
+            <p className="usage-note">
+              {storage.files}ファイル。移行前の原本。もう増えない(R2に何かあったときの戻り先)
+            </p>
           </>
         )}
       </section>

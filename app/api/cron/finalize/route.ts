@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { mediaPathOf } from '@/lib/site/media'
 import { createClient } from '@supabase/supabase-js'
 import { backupToR2 } from '@/lib/site/backup'
@@ -83,7 +84,18 @@ export async function GET(request: Request) {
 // サムネイル充当プールとHomeのランダム写真の母集団を汚染する。
 // どのscribe/articleの本文にも現れず、手動サムネイルでもないファイルを消す。
 // 直近24時間内に作られたファイルは対象外(アップロード直後〜保存前の競合の保険)。
-const BUCKET = 'scribe-media'
+// 掃除の対象はR2(2026-08-29)。メディアの原本がここへ移ったので、Supabaseを
+// 見ていた頃のままだと**新しく上げた分の孤児が永久に溜まる**(掃除が実質止まる)。
+// Supabase側の439MBは移行前の原本として凍結し、もう消さない
+// =R2に何かあったときの戻り先として残す
+type R2Clean = {
+  list(options?: { cursor?: string }): Promise<{
+    objects: { key: string; uploaded?: string | Date }[]
+    truncated: boolean
+    cursor?: string
+  }>
+  delete(keys: string[]): Promise<unknown>
+}
 
 async function cleanupOrphanMedia() {
   const supabase = createClient(
@@ -121,22 +133,19 @@ async function cleanupOrphanMedia() {
       .filter((p): p is string => !!p)
   )
 
-  // バケット全ファイル(ルート直下+日付フォルダ)を列挙
-  const { data: entries, error: listErr } = await supabase.storage.from(BUCKET).list('', { limit: 1000 })
-  if (listErr || !entries) return { deleted: 0, error: listErr?.message }
+  // R2の全ファイルを列挙(階層が無いので日付フォルダを辿る必要がない)
+  const { env } = await getCloudflareContext({ async: true })
+  const media = (env as unknown as { MEDIA_BUCKET?: R2Clean }).MEDIA_BUCKET
+  if (!media) return { deleted: 0, error: 'MEDIA_BUCKET未設定' }
   const files: { path: string; createdAt: string | null }[] = []
-  for (const e of entries) {
-    if (e.id !== null) files.push({ path: e.name, createdAt: e.created_at ?? null })
-  }
-  const folders = entries.filter((e) => e.id === null)
-  const folderLists = await Promise.all(
-    folders.map((f) => supabase.storage.from(BUCKET).list(f.name, { limit: 1000 }))
-  )
-  folderLists.forEach((r, i) => {
-    for (const f of r.data ?? []) {
-      files.push({ path: `${folders[i].name}/${f.name}`, createdAt: f.created_at ?? null })
+  let cursor: string | undefined
+  do {
+    const r = await media.list({ cursor })
+    for (const o of r.objects) {
+      files.push({ path: o.key, createdAt: o.uploaded ? new Date(o.uploaded).toISOString() : null })
     }
-  })
+    cursor = r.truncated ? r.cursor : undefined
+  } while (cursor)
 
   const dayMs = 24 * 60 * 60 * 1000
   const orphanPaths: string[] = []
@@ -149,10 +158,13 @@ async function cleanupOrphanMedia() {
     orphanPathSet.add(f.path)
   }
 
-  // Storage APIのremoveは一度に大量指定しない(100件ずつ)
+  // R2のdeleteは一度に大量指定しない(100件ずつ)
   for (let i = 0; i < orphanPaths.length; i += 100) {
-    const { error: rmErr } = await supabase.storage.from(BUCKET).remove(orphanPaths.slice(i, i + 100))
-    if (rmErr) return { deleted: i, error: rmErr.message }
+    try {
+      await media.delete(orphanPaths.slice(i, i + 100))
+    } catch (e) {
+      return { deleted: i, error: e instanceof Error ? e.message : String(e) }
+    }
   }
 
   // 消したファイルを充当サムネイルとして焼き込んでいた行はリセット(次の表示で再充当される)
