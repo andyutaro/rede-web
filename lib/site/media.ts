@@ -31,3 +31,33 @@ export function mediaUploadDate(url: string): string | null {
   const m = p?.match(/^(\d{4}-\d{2}-\d{2})\//)
   return m ? m[1] : null
 }
+
+// 受け付ける拡張子とMIME。アップロード経路が唯一ここを見る。
+// 種類を増やすときはここだけ直せば、エディタ側とサーバー側が同時に追従する
+// (2026-08-27にエディタだけ音声を通してサーバーを忘れ、mp3が上がらなかった)
+export const ALLOWED_EXT =
+  /^(jpg|jpeg|png|gif|webp|heic|pdf|mp4|mov|webm|m4v|mp3|m4a|wav|aac|flac|ogg|oga|opus)$/
+
+const CT_BY_EXT: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', heic: 'image/heic', pdf: 'application/pdf',
+  mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', m4v: 'video/x-m4v',
+  mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', aac: 'audio/aac',
+  flac: 'audio/flac', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/opus',
+}
+
+// 保存するContent-Type。ブラウザの申告を優先しつつ、無い/嘘のときは拡張子から補う。
+// ここが崩れると、R2から配ったときに画像が表示されず動画も鳴らない
+export function contentTypeFor(ext: string, declared?: string | null): string {
+  const d = (declared ?? '').split(';')[0].trim().toLowerCase()
+  const byExt = CT_BY_EXT[ext]
+  if (d && /^(image|video|audio)\//.test(d)) return d
+  if (d === 'application/pdf') return d
+  return byExt ?? 'application/octet-stream'
+}
+
+// 保存先のパス。JSTの日付フォルダ+uuid(既存の構造をそのまま引き継ぐ)
+export function newMediaPath(ext: string): string {
+  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(new Date())
+  return `${date}/${crypto.randomUUID()}.${ext}`
+}

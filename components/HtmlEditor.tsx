@@ -9,7 +9,7 @@ import { embedConfigFor, isBareUrl } from '@/lib/scribe/embed'
 // 埋め込みカード・URLリンク化・埋め込み選択削除。
 // 放送卓固有の関心(ライブ配信・オフライン下書き・楽観ロック・日付跨ぎ)は
 // DeskEditor側がprops/controller経由で載せる。
-// アップロードは/api/scribe/upload-url(認証済みセッション→署名URL)を共用する。
+// アップロードは/api/scribe/upload(認証済みセッション→R2へ直接)を共用する。
 
 // クラス名は旧scribe・/watchサニタイザのホワイトリストと一致させている。
 // スタイルはコンポーネント自身が持つ(desk/studioどちらのページCSSにも依存しない)
@@ -189,17 +189,22 @@ export default function HtmlEditor({
       }
     }
 
-    // 進捗イベントを取るためsupabase-jsではなくXHRで署名URLへPUTする
+    // 進捗イベントを取るためfetchではなくXHRでPUTする。
+    // 応答の本文(publicUrlのJSON)も返す=送信と結果取得を1往復で済ませる
+    type PutFail = { status: number }
     function putWithProgress(url: string, blob: Blob, onProgress: (pct: number) => void) {
-      return new Promise<void>((resolve, reject) => {
+      return new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
         xhr.open('PUT', url)
         xhr.setRequestHeader('content-type', blob.type || 'application/octet-stream')
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
         }
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(String(xhr.status))))
-        xhr.onerror = () => reject(new Error('network'))
+        xhr.onload = () =>
+          xhr.status >= 200 && xhr.status < 300
+            ? resolve(xhr.responseText)
+            : reject({ status: xhr.status } as PutFail)
+        xhr.onerror = () => reject({ status: 0 } as PutFail)
         xhr.send(blob)
       })
     }
@@ -233,31 +238,41 @@ export default function HtmlEditor({
         const fallbackExt = isPdf ? 'pdf' : isVideo ? 'mp4' : isAudio ? 'mp3' : 'png'
         const origExt = (file.name.split('.').pop() || fallbackExt).toLowerCase()
         const ext = blob === file ? origExt : 'jpg'
-        const res = await fetch('/api/scribe/upload-url', { method: 'POST', body: JSON.stringify({ ext }) })
-        if (!res.ok) {
+        let lastShown = -5
+        let publicUrl: string
+        try {
+          const body = await putWithProgress(
+            `/api/scribe/upload?ext=${encodeURIComponent(ext)}`,
+            blob,
+            (pct) => {
+              // 5%刻みで更新(全量スナップショット配信なので更新頻度を抑える)
+              if (pct - lastShown >= 5 || pct === 100) {
+                lastShown = pct
+                ph.textContent = `アップロード中… ${pct}%`
+              }
+            }
+          )
+          publicUrl = JSON.parse(body).publicUrl
+          if (!publicUrl) throw { status: 500 } as PutFail
+        } catch (e) {
           // 理由を出す(2026-08-27)。これまで全ての失敗が「アップロード失敗」の
           // 一言だったので、mp3が弾かれていたとき原因が分からなかった。
           // 401はセッション切れで、書いている最中に起きうる=見分けが要る
+          const status = (e as PutFail)?.status ?? 0
           ph.remove()
           fail(
-            res.status === 400
+            status === 400
               ? `アップロード失敗: この形式(.${ext})は受け付けていません`
-              : res.status === 401
+              : status === 401
                 ? 'アップロード失敗: ログインが切れています'
-                : `アップロード失敗: 準備できませんでした(${res.status})`
+                : status === 413
+                  ? 'アップロード失敗: ファイルが大きすぎます(上限50MB)'
+                  : status === 0
+                    ? 'アップロード失敗: 通信が切れました'
+                    : `アップロード失敗: 保存できませんでした(${status})`
           )
           return
         }
-        const { signedUrl, publicUrl } = await res.json()
-
-        let lastShown = -5
-        await putWithProgress(signedUrl, blob, (pct) => {
-          // 5%刻みで更新(全量スナップショット配信なので更新頻度を抑える)
-          if (pct - lastShown >= 5 || pct === 100) {
-            lastShown = pct
-            ph.textContent = `アップロード中… ${pct}%`
-          }
-        })
 
         let node: HTMLElement
         if (isImage) {

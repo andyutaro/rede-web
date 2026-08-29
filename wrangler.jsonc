@@ -16,6 +16,13 @@
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
       "bucket_name": "rede-web-cache"
     },
+    // 本文にアップした写真・動画・音源(2026-08-29)。Supabase Storageの1GB枠が
+    // 動画で83%埋まったためR2へ移した。配信は media.andyutaro.com。
+    // アップロードはWorker経由(/api/scribe/upload)でここへ直接書く
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "rede-web-media"
+    },
     // 書いたものの控え(2026-07-23)。scribe・記事・写真はSupabaseの中にしか
     // 存在せず、無料プランには時点復旧が無い=誤って消したら戻らなかった。
     // キャッシュとは別バケットにする(こちらは消してはいけないもの)

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 // セキュリティヘッダー(2026-07-14)。CSPはdev/prod両方で有効化して壊れを早期に検知する。
 // devのみHMR用に'unsafe-eval'とlocalhostのws/httpを足す。
@@ -30,6 +31,13 @@ const SUPABASE_ORIGIN =
 // 公開サイトのオリジン。lib/site/img.tsのCDN_BASEと必ず同じ値にする
 // (画像の変換URLがこのドメイン固定で作られるため)
 const SITE_ORIGIN = "https://andyutaro.com";
+
+// メディア(写真・動画・音源)の配信元。lib/site/media.tsのMEDIA_BASEと同じ値にする。
+// 2026-08-29にSupabase StorageからR2へ移した。**ここをCSPに足し忘れると、
+// 画像は無事なのに動画と音源だけが黙って消える**(画像はimgThumbが
+// /cdn-cgi/image/経由=自ドメインに書き換えるため許可が要らない。動画と音源には
+// その変換が無く、生のURLのまま出る)。2026-07-30と同じ踏み方を移行時に再演した
+const MEDIA_ORIGIN = "https://media.andyutaro.com";
 
 const connectSrc = [
   "'self'",
@@ -76,7 +84,7 @@ const csp = [
   // lib/site/img.tsのimgThumbは変換URLを`https://andyutaro.com/cdn-cgi/image/...`と
   // **ドメイン固定の絶対URL**で作る(dev/併走環境でも変換済み画像を引くための設計)。
   // 本番では'self'と同じだが、devではオリジンが違うので'self'に当たらない。
-  `img-src 'self' data: blob: ${SITE_ORIGIN} ${SUPABASE_ORIGIN}`,
+  `img-src 'self' data: blob: ${SITE_ORIGIN} ${MEDIA_ORIGIN} ${SUPABASE_ORIGIN}`,
   // 音源はAnchorのenclosure(実体はcloudfrontへリダイレクト)。
   // 動画は2種類あり、出所が違う(2026-08-01修正):
   //   ①番組ページのヒーロー映像 = /public/bg/*.mp4 = 自ドメイン('self'で足りる)
@@ -86,7 +94,9 @@ const csp = [
   // 「Media load rejected by URL safety check」、要素は300x150の空箱になる)。
   // 画像が無事だったのはimgThumbが/cdn-cgi/image/経由=自ドメインに書き換えるから。
   // 動画にはその変換が無く、生のSupabase URLのまま出るのでimg-srcの許可が効かない
-  `media-src 'self' blob: ${SUPABASE_ORIGIN} https://anchor.fm https://d3ctxlq1ktw2nl.cloudfront.net`,
+  // 2026-08-29: ②の出所がR2(MEDIA_ORIGIN)へ移った。SUPABASE_ORIGINも残す
+  // =過去にアップした分の旧URLがまだ生きている(今日の未確定行など)
+  `media-src 'self' blob: ${MEDIA_ORIGIN} ${SUPABASE_ORIGIN} https://anchor.fm https://d3ctxlq1ktw2nl.cloudfront.net`,
   "font-src 'self' data:",
   `frame-src ${frameSrc}`,
   `connect-src ${connectSrc}`,
@@ -164,3 +174,9 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// devでもWorkerのバインディング(R2等)を使えるようにする(2026-08-29)。
+// これが無いと next dev では getCloudflareContext() にバケットが載らず、
+// アップロードがローカルでだけ失敗する。devの書き込み先はローカル模擬なので
+// 本番のバケットは汚れない
+initOpenNextCloudflareForDev();
