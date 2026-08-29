@@ -82,7 +82,7 @@ export async function GET(request: Request) {
     bookmarks = { error: e instanceof Error ? e.message : 'bookmarks failed' }
   }
 
-  return NextResponse.json({
+  const result = {
     ok: true,
     target,
     finalized: (data ?? []).length > 0, // false = 行がない(その日書かなかった) or 確定済み
@@ -90,7 +90,13 @@ export async function GET(request: Request) {
     cleanup,
     heroQueue,
     bookmarks,
-  })
+  }
+  // **必ず記録に残す(2026-08-29)。** 戻り値はHTTPの応答として返るだけで、
+  // 自動実行では誰も読まない=控えが毎晩失敗していても気づけない。
+  // 実際、この行を足すまで結果を見るには手でcronを叩くしかなかった。
+  // ここに出しておけばObservabilityに残り、日次点検からも読める
+  console.log('[cron] ' + JSON.stringify(result))
+  return NextResponse.json(result)
 }
 
 // ---- 未参照メディアの掃除(2026-07-10) ----

@@ -157,7 +157,12 @@ async function listBackedUp(bucket: R2Store): Promise<Set<string>> {
 // バケット直下+日付フォルダ配下の全ファイルを列挙する
 // (cleanupOrphanMedia と同じ構造。あちらは消す側、こちらは残す側)
 // メディアの一覧(R2)。R2は階層を持たないので日付フォルダを辿る必要がない=
-// Supabase Storageを列挙していた頃より呼び出しも少なくて済む
+// Supabase Storageを列挙していた頃より呼び出しも少なくて済む。
+//
+// **新しい順に返す(2026-08-29)。** R2の一覧はキー順=「YYYY-MM-DD/uuid」の古い順で
+// 返るので、そのまま使うと**いちばん新しい=いちばん失いたくないものが最後に回る**。
+// 実際、移行直後は残り45件を一晩6枚ずつで、当日アップした写真は8晩後だった。
+// 控えの目的からすると順番が逆なので、ここで反転させる。
 async function listAllMedia(media: R2Store): Promise<string[]> {
   const out: string[] = []
   let cursor: string | undefined
@@ -166,5 +171,5 @@ async function listAllMedia(media: R2Store): Promise<string[]> {
     for (const o of r.objects) out.push(o.key)
     cursor = r.truncated ? r.cursor : undefined
   } while (cursor)
-  return out
+  return out.reverse()
 }

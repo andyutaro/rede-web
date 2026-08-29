@@ -149,4 +149,54 @@ try {
   alerts.push(`Supabaseが読めない: ${e.message}`)
 }
 
+// ⑤ 夜のcronの結果(直近24時間)。route.tsが [cron] の行で残している。
+// **ここを見ないと、控えが毎晩失敗していても気づけない**(2026-08-29の教訓:
+// 戻り値はHTTPの応答として返るだけで、自動実行では誰も読まなかった)
+try {
+  const r = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${ACC}/workers/observability/telemetry/query`,
+    {
+      method: 'POST',
+      headers: { authorization: `Bearer ${CF}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        queryId: 'cron',
+        timeframe: { from: Date.now() - DAY, to: Date.now() },
+        parameters: {
+          datasets: ['cloudflare-workers'],
+          filters: [{ key: '$metadata.message', type: 'string', operation: 'includes', value: '[cron]' }],
+          limit: 10,
+        },
+        view: 'events',
+      }),
+    }
+  )
+  const d = await r.json()
+  if (!d.success) throw new Error(JSON.stringify(d.errors).slice(0, 160))
+  let events = d.result?.events ?? []
+  if (!Array.isArray(events)) events = events.events ?? []
+  const line = events
+    .map((e) => String(e?.$metadata?.message ?? ''))
+    .find((m) => m.includes('[cron]'))
+  if (!line) {
+    alerts.push('夜のcronの記録が24時間ぶん無い。動いていないか、最後まで届いていない')
+    numbers.夜のcron = '記録なし'
+  } else {
+    const res = JSON.parse(line.slice(line.indexOf('{')))
+    numbers.夜のcron = {
+      確定: res.target,
+      控え: res.backup?.photos ?? res.backup?.error ?? '—',
+      掃除: res.cleanup,
+      再生キュー: res.heroQueue,
+    }
+    for (const [name, v] of [['控え', res.backup], ['掃除', res.cleanup], ['再生キュー', res.heroQueue]]) {
+      if (v?.error) alerts.push(`夜のcronの${name}が失敗: ${String(v.error).slice(0, 90)}`)
+    }
+    const rest = res.backup?.photos?.remaining
+    if (typeof rest === 'number' && rest > 60)
+      alerts.push(`控えの未処理が${rest}件。一晩6枚では追いつかない量`)
+  }
+} catch (e) {
+  alerts.push(`夜のcronの記録が読めない: ${e.message}`)
+}
+
 console.log(JSON.stringify({ 異常: alerts, 数字: numbers }, null, 2))
