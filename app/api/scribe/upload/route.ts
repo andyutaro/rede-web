@@ -15,7 +15,7 @@ import { ALLOWED_EXT, contentTypeFor, mediaUrl, newMediaPath } from '@/lib/site/
 const MAX_UPLOAD = 50 * 1024 * 1024
 
 type R2Put = {
-  put(key: string, value: ReadableStream | ArrayBuffer, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>
+  put(key: string, value: ArrayBuffer, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>
 }
 
 // メソッドはPUT。クライアント(HtmlEditorのputWithProgress)は進捗を取るために
@@ -49,9 +49,24 @@ export async function PUT(request: Request) {
   const path = newMediaPath(ext)
   const contentType = contentTypeFor(ext, request.headers.get('content-type'))
   try {
-    await bucket.put(path, request.body, { httpMetadata: { contentType } })
+    // **ストリームのまま渡さない。** R2のputは長さの分からないReadableStreamを
+    // 受け付けず、2026-08-29に本番で500になった。上限50MB・Workerのメモリ128MBなので
+    // 全部載せても収まる。バックアップ(lib/site/backup.ts)も同じくarrayBufferで
+    // 42MBの動画を運べている=この構成で実績のある書き方に揃える
+    const body = await request.arrayBuffer()
+    if (body.byteLength === 0) {
+      return NextResponse.json({ error: '中身が空です' }, { status: 400 })
+    }
+    if (body.byteLength > MAX_UPLOAD) {
+      return NextResponse.json({ error: 'too large' }, { status: 413 })
+    }
+    await bucket.put(path, body, { httpMetadata: { contentType } })
   } catch (e) {
-    return NextResponse.json({ error: `upload failed: ${String(e).slice(0, 120)}` }, { status: 500 })
+    // 理由をそのまま返す(2026-08-29)。500だけ出しても原因が追えない
+    return NextResponse.json(
+      { error: `R2への保存に失敗: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200) },
+      { status: 500 }
+    )
   }
   return NextResponse.json({ path, publicUrl: mediaUrl(path) })
 }

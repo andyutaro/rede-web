@@ -191,7 +191,7 @@ export default function HtmlEditor({
 
     // 進捗イベントを取るためfetchではなくXHRでPUTする。
     // 応答の本文(publicUrlのJSON)も返す=送信と結果取得を1往復で済ませる
-    type PutFail = { status: number }
+    type PutFail = { status: number; reason?: string }
     function putWithProgress(url: string, blob: Blob, onProgress: (pct: number) => void) {
       return new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
@@ -200,10 +200,18 @@ export default function HtmlEditor({
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
         }
-        xhr.onload = () =>
-          xhr.status >= 200 && xhr.status < 300
-            ? resolve(xhr.responseText)
-            : reject({ status: xhr.status } as PutFail)
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) return resolve(xhr.responseText)
+          // サーバーが理由を返していれば拾って出す(2026-08-29)。
+          // 「500」だけでは何が起きたか分からず、原因追跡に往復が要る
+          let reason: string | undefined
+          try {
+            reason = JSON.parse(xhr.responseText)?.error
+          } catch {
+            // 本文がJSONでないときは理由なしで進む
+          }
+          reject({ status: xhr.status, reason } as PutFail)
+        }
         xhr.onerror = () => reject({ status: 0 } as PutFail)
         xhr.send(blob)
       })
@@ -259,7 +267,12 @@ export default function HtmlEditor({
           // 一言だったので、mp3が弾かれていたとき原因が分からなかった。
           // 401はセッション切れで、書いている最中に起きうる=見分けが要る
           const status = (e as PutFail)?.status ?? 0
+          const reason = (e as PutFail)?.reason
           ph.remove()
+          if (reason && status >= 500) {
+            fail(`アップロード失敗: ${reason}`)
+            return
+          }
           fail(
             status === 400
               ? `アップロード失敗: この形式(.${ext})は受け付けていません`
