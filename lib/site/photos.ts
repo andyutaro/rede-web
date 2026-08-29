@@ -97,7 +97,10 @@ function photoPool(): Promise<PoolEntry[]> {
   // 鍵の数字はキャッシュ破棄用(本文の画像URLを外から動かしたら上げる)。
   // -3: オスシカイギの写真を開催日のフォルダへ移した(2026-07-29)。移動前の
   // パスを掴んだプールが残ると、Photographyに404の穴が開いたまま30分残る
-  const promise = cachedJson('photo-pool-3', POOL_TTL_MS / 1000, loadPhotoPool)
+  // -4: 配信元をR2へ移した(2026-08-29)。本文のURLを書き換えた直後、まだ旧コードが
+  //     動いている拠点が「/scribe-media/を含むか」で絞って**空のプール**を作り、
+  //     それが30分焼き付いた(Homeのランダム写真が実際に消えた)。鍵を上げて捨てる
+  const promise = cachedJson('photo-pool-4', POOL_TTL_MS / 1000, loadPhotoPool)
   photoPoolCache = { promise, ts: Date.now() }
   return promise
 }
