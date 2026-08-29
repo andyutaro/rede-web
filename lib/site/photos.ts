@@ -1,5 +1,6 @@
 import { createService } from '@/lib/supabase/service'
 import { cachedJson } from '@/lib/site/edgeCache'
+import { mediaPathOf, mediaUploadDate } from '@/lib/site/media'
 
 const BUCKET = 'scribe-media'
 const IMG_RE = /\.(jpe?g|png|gif|webp|avif)$/i
@@ -43,6 +44,12 @@ async function loadAllImages(): Promise<string[]> {
   return urls.sort() // 順序を安定させる(決定的な充当のため)
 }
 
+// **ここはSupabaseのURLのままにしておくこと(2026-08-29)。**
+// この関数はStorageバケットの一覧から作るので、そこに載るのは「Supabaseに
+// あるファイル」。配信元をR2へ移したが、新規アップロードはまだSupabaseへ
+// 上がるため、R2にまだ無いファイルが混じる。mediaUrl()に変えるとその分が
+// 404になる。**新規のアップロード先をR2へ切り替えた日に、ここも一緒に直す。**
+// (本文から集めるプールの方は既に新旧どちらのURLでも拾える。imageUrlsInHtml参照)
 function publicUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
 }
@@ -58,11 +65,14 @@ export function shelfPathForType(type: string): string {
   return `/${type}`
 }
 
-// 本文HTMLから、scribe-mediaの画像URLを列挙する(<img src>のみ。動画・PDFは除く)。
+// 本文HTMLから、自分のところの画像URLを列挙する(<img src>のみ。動画・PDFは除く)。
+// 判定は**パスが取れるか**で行う(2026-08-29)。以前は「/scribe-media/を含むか」で
+// 絞っていたが、配信元をR2(media.andyutaro.com)へ移して条件から外れ、
+// プールが空になるところだった
 function imageUrlsInHtml(html: string): string[] {
   const urls: string[] = []
   for (const m of (html || '').matchAll(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) {
-    if (/scribe-media/.test(m[1]) && IMG_RE.test(m[1])) urls.push(m[1])
+    if (mediaPathOf(m[1]) && IMG_RE.test(m[1])) urls.push(m[1])
   }
   return urls
 }
@@ -92,10 +102,9 @@ function photoPool(): Promise<PoolEntry[]> {
   return promise
 }
 
-// アップロード日: scribe-mediaのパス構造「YYYY-MM-DD/uuid.ext」から取る
+// アップロード日: パス構造「YYYY-MM-DD/uuid.ext」から取る(新旧どちらのURLでも)
 function uploadDateOf(url: string): string | null {
-  const m = url.match(/scribe-media\/(\d{4}-\d{2}-\d{2})\//)
-  return m ? m[1] : null
+  return mediaUploadDate(url)
 }
 
 async function loadPhotoPool(): Promise<PoolEntry[]> {

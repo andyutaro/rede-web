@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { mediaPathOf } from '@/lib/site/media'
 import { createClient } from '@supabase/supabase-js'
 import { backupToR2 } from '@/lib/site/backup'
 import { scanBookmarks, fetchTitles } from '@/lib/studio/bookmarks'
@@ -89,18 +90,35 @@ async function cleanupOrphanMedia() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-  const [daysRes, artsRes] = await Promise.all([
+  const [daysRes, artsRes, privRes] = await Promise.all([
     supabase.from('scribe_days').select('date, html, thumbnail_url, thumbnail_source'),
     supabase.from('articles').select('id, html, thumbnail_url, thumbnail_source'),
+    // privateのメモも参照元に数える(2026-08-29)。この掃除は2026-07-10のもので、
+    // 2026-08-16に増えたprivateを知らないまま動いていた。いまは中に画像が
+    // 一枚も無いので実害は出ていないが、貼った翌日に消える穴が空いていた
+    supabase.from('desk_private_notes').select('id, html'),
   ])
   if (daysRes.error || artsRes.error) {
     // 参照元が読めない状態で消すのは危険なので何もしない
     return { deleted: 0, error: daysRes.error?.message ?? artsRes.error?.message }
   }
+  if (privRes.error) {
+    // privateが読めないときも消さない(参照元を1つ欠いたまま判定しない)
+    return { deleted: 0, error: privRes.error.message }
+  }
   const rows = [...(daysRes.data ?? []), ...(artsRes.data ?? [])]
-  const htmlAll = rows.map((r) => (r.html as string) ?? '').join('\n')
-  const manualThumbs = new Set(
-    rows.filter((r) => r.thumbnail_source === 'manual' && r.thumbnail_url).map((r) => r.thumbnail_url as string)
+  const htmlAll = [...rows, ...(privRes.data ?? [])]
+    .map((r) => (r.html as string) ?? '')
+    .join('\n')
+  // 突き合わせは**パス**で行う(2026-08-29)。メディアの配信元をR2へ移したので
+  // 本文中のURLは media.andyutaro.com/<path> になった。完全URLで見ていた頃の
+  // ままだと、移行直後に参照中のファイルが全て孤児=削除対象になる。
+  // パス(YYYY-MM-DD/uuid.ext)は新旧のURLで同一なので、これなら両方に効く
+  const manualThumbPaths = new Set(
+    rows
+      .filter((r) => r.thumbnail_source === 'manual' && r.thumbnail_url)
+      .map((r) => mediaPathOf(r.thumbnail_url as string))
+      .filter((p): p is string => !!p)
   )
 
   // バケット全ファイル(ルート直下+日付フォルダ)を列挙
@@ -120,16 +138,15 @@ async function cleanupOrphanMedia() {
     }
   })
 
-  const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`
   const dayMs = 24 * 60 * 60 * 1000
   const orphanPaths: string[] = []
-  const orphanUrls = new Set<string>()
+  const orphanPathSet = new Set<string>()
   for (const f of files) {
     if (f.createdAt && Date.now() - new Date(f.createdAt).getTime() < dayMs) continue
-    const url = base + f.path
-    if (htmlAll.includes(url) || manualThumbs.has(url)) continue
+    // パスにはuuidが入るので、本文に偶然含まれることはない
+    if (htmlAll.includes(f.path) || manualThumbPaths.has(f.path)) continue
     orphanPaths.push(f.path)
-    orphanUrls.add(url)
+    orphanPathSet.add(f.path)
   }
 
   // Storage APIのremoveは一度に大量指定しない(100件ずつ)
@@ -140,7 +157,7 @@ async function cleanupOrphanMedia() {
 
   // 消したファイルを充当サムネイルとして焼き込んでいた行はリセット(次の表示で再充当される)
   for (const r of daysRes.data ?? []) {
-    if (r.thumbnail_url && orphanUrls.has(r.thumbnail_url as string)) {
+    if (r.thumbnail_url && orphanPathSet.has(mediaPathOf(r.thumbnail_url as string) ?? '')) {
       await supabase
         .from('scribe_days')
         .update({ thumbnail_url: null, thumbnail_source: null })
@@ -148,7 +165,7 @@ async function cleanupOrphanMedia() {
     }
   }
   for (const r of artsRes.data ?? []) {
-    if (r.thumbnail_url && orphanUrls.has(r.thumbnail_url as string)) {
+    if (r.thumbnail_url && orphanPathSet.has(mediaPathOf(r.thumbnail_url as string) ?? '')) {
       await supabase
         .from('articles')
         .update({ thumbnail_url: null, thumbnail_source: null })
