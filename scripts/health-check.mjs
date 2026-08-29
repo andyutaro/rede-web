@@ -149,10 +149,28 @@ try {
   alerts.push(`Supabaseが読めない: ${e.message}`)
 }
 
-// ⑤ 夜のcronの結果(直近24時間)。route.tsが [cron] の行で残している。
+// ⑤ 夜のcronの結果。route.tsが [cron] の行で残している。
 // **ここを見ないと、控えが毎晩失敗していても気づけない**(2026-08-29の教訓:
-// 戻り値はHTTPの応答として返るだけで、自動実行では誰も読まなかった)
+// 戻り値はHTTPの応答として返るだけで、自動実行では誰も読まなかった)。
+//
+// **窓を狭く取る。** 24時間で引くと1件しかないこの行がサンプリングで落ちる
+// (無料枠は1日20万イベントを超えると間引かれる。実際に0件になった)。
+// cronは0:01 JST=15:01 UTC固定なので、その前後30分だけを見る。
+// 手で叩いた分を拾えるよう、直近1時間も併せて探す
+// 直近の 15:01 UTC(=0:01 JST)を求め、その前後30分。見つからなければ直近1時間も見る
+const lastCron = (() => {
+  const d = new Date()
+  d.setUTCHours(15, 1, 0, 0)
+  if (d.getTime() > Date.now()) d.setUTCDate(d.getUTCDate() - 1)
+  return d.getTime()
+})()
+const windows = [
+  { from: lastCron - 30 * 60000, to: lastCron + 30 * 60000 },
+  { from: Date.now() - 3600000, to: Date.now() },
+]
 try {
+  let line
+  for (const win of windows) {
   const r = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${ACC}/workers/observability/telemetry/query`,
     {
@@ -160,7 +178,7 @@ try {
       headers: { authorization: `Bearer ${CF}`, 'content-type': 'application/json' },
       body: JSON.stringify({
         queryId: 'cron',
-        timeframe: { from: Date.now() - DAY, to: Date.now() },
+        timeframe: win,
         parameters: {
           datasets: ['cloudflare-workers'],
           filters: [{ key: '$metadata.message', type: 'string', operation: 'includes', value: '[cron]' }],
@@ -172,11 +190,14 @@ try {
   )
   const d = await r.json()
   if (!d.success) throw new Error(JSON.stringify(d.errors).slice(0, 160))
-  let events = d.result?.events ?? []
-  if (!Array.isArray(events)) events = events.events ?? []
-  const line = events
+  // 応答は result.events.events に入る(result.events は配列ではない)
+  const ev = d.result?.events
+  const events = Array.isArray(ev) ? ev : (ev?.events ?? [])
+  line = events
     .map((e) => String(e?.$metadata?.message ?? ''))
     .find((m) => m.includes('[cron]'))
+  if (line) break
+  }
   if (!line) {
     alerts.push('夜のcronの記録が24時間ぶん無い。動いていないか、最後まで届いていない')
     numbers.夜のcron = '記録なし'
