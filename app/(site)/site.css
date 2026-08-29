@@ -1300,6 +1300,15 @@ html[data-theme='dark'] .menu-toggle.open {
   margin: 14px 0;
 }
 
+/* 音源(2026-08-27 Andy指定)。動画と違って縦に伸びないので高さの上限は要らない。
+   幅は本文いっぱいにしてシークバーを掴みやすくする。見た目はブラウザ標準の
+   コントロールのまま=新しい形を作らない(§10) */
+.scribe-html .embed-audio {
+  display: block;
+  width: 100%;
+  margin: 14px 0;
+}
+
 .scribe-html .embed-pdf {
   display: flex;
   align-items: center;

@@ -113,6 +113,22 @@ function sanitizeChildren(node: Node, inLink = false): Node[] {
       }
       continue
     }
+    // 音源(2026-08-27)。VIDEOと同じ扱い。ここを通さないと公開側で剥がされて
+    // 「deskでは鳴るのにサイトでは消える」になる(アーカイブ・ライブ窓・
+    //  番組ページの概要欄がこの1本のサニタイザを共有している)
+    if (tag === 'AUDIO') {
+      const src = el.getAttribute('src') || ''
+      if (/^https:\/\//i.test(src)) {
+        const a = document.createElement('audio')
+        a.src = src
+        a.controls = true
+        a.preload = 'metadata'
+        a.className = 'embed-audio'
+        copyBlockId(el, a)
+        out.push(a)
+      }
+      continue
+    }
     if (tag === 'A') {
       const href = cleanHref(el.getAttribute('href') || '')
       if (/^(https?:|mailto:|\/|images\/)/i.test(href)) {

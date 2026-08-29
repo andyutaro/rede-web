@@ -24,6 +24,8 @@ const EDITOR_CSS = `
 /* max-heightは公開側(site.css)と同じ理由: 縦動画が画面の高さを越えると
    放送卓でも書いている場所が見えなくなる。置換要素なので縦横比は保たれる */
 .embed-video { display: block; max-width: 100%; max-height: 70vh; border-radius: 6px; margin: 14px 0; }
+/* 音源は縦に場所を取らない一本の帯。幅は本文いっぱい=シークバーを掴みやすくする */
+.embed-audio { display: block; width: 100%; margin: 14px 0; cursor: pointer; }
 .embed-selected { outline: 2px solid #7fb0e0; outline-offset: 3px; border-radius: 6px; }
 a.plain-link { color: #7fb0e0; text-decoration: underline; word-break: break-all; }
 .upload-placeholder { display: block; width: fit-content; padding: 10px 14px; margin: 10px 0;
@@ -207,8 +209,10 @@ export default function HtmlEditor({
     async function uploadFile(file: File) {
       const isImage = file.type.startsWith('image/')
       const isVideo = file.type.startsWith('video/')
+      // 音源(2026-08-27 Andy指定)。動画と同じ扱いで、本文の中でシークバー付きで鳴る
+      const isAudio = file.type.startsWith('audio/')
       const isPdf = file.type === 'application/pdf'
-      if (!isImage && !isVideo && !isPdf) return
+      if (!isImage && !isVideo && !isAudio && !isPdf) return
 
       // 進捗プレースホルダ。DOMに入れることでライブ配信に乗り、
       // deskとwatchの両方で同じ進捗が見える。アーカイブ保存からは
@@ -226,7 +230,7 @@ export default function HtmlEditor({
           fail('ファイルが大きすぎます(上限50MB)')
           return
         }
-        const fallbackExt = isPdf ? 'pdf' : isVideo ? 'mp4' : 'png'
+        const fallbackExt = isPdf ? 'pdf' : isVideo ? 'mp4' : isAudio ? 'mp3' : 'png'
         const origExt = (file.name.split('.').pop() || fallbackExt).toLowerCase()
         const ext = blob === file ? origExt : 'jpg'
         const res = await fetch('/api/scribe/upload-url', { method: 'POST', body: JSON.stringify({ ext }) })
@@ -256,6 +260,15 @@ export default function HtmlEditor({
           video.playsInline = true
           video.preload = 'metadata'
           node = video
+        } else if (isAudio) {
+          const audio = document.createElement('audio')
+          audio.className = 'embed-audio'
+          audio.src = publicUrl
+          audio.controls = true
+          // metadata=尺だけ先に取る。本文を開いただけで全部落とさない
+          // (回線と、Supabase無料枠の転送量への配慮)
+          audio.preload = 'metadata'
+          node = audio
         } else {
           const a = document.createElement('a')
           a.className = 'embed-pdf'
@@ -381,7 +394,7 @@ export default function HtmlEditor({
       emitChange()
     }
     function onEditorClick(e: MouseEvent) {
-      const embed = (e.target as HTMLElement).closest?.('.embed-image, .embed-pdf, .embed-podcast, .embed-video') as HTMLElement | null
+      const embed = (e.target as HTMLElement).closest?.('.embed-image, .embed-pdf, .embed-podcast, .embed-video, .embed-audio') as HTMLElement | null
       if (embed) {
         if (embed.classList.contains('embed-pdf')) e.preventDefault() // シングルクリックは選択のみ
         setSelected(embed)
@@ -480,7 +493,7 @@ export default function HtmlEditor({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,video/*,application/pdf"
+        accept="image/*,video/*,audio/*,application/pdf"
         multiple
         style={{ display: 'none' }}
         onChange={(e) => {
