@@ -11,6 +11,26 @@
   // ISRの永続キャッシュ(2026-07-23)。これが無い間、全ページが毎リクエストで
   // 再生成されていた(Error 1102の構造的な原因)。バケット名はrede-web-cache。
   // バインディング名はOpenNextの規約で固定(NEXT_INC_CACHE_R2_BUCKET)
+  // ISRの作り直しキュー(2026-08-31)。これが無い間、queueの既定値は"dummy"
+  // (send()が必ず例外を投げるだけの空実装)で、裏側での作り直しは稼働開始から
+  // 一度も成功していなかった。Failed to revalidate stale page が1日1,087件。
+  // 「保存したのに反映されない」の正体でもある。
+  //
+  // memory-queueではなくDurable Objectを使う理由: サービスバインディング経由の
+  // 呼び出しは呼び出し元とCPU予算を共有する(公式ドキュメント)。memory-queueだと
+  // 作り直しの再描画(実測100〜900ms)が閲覧者のリクエストに乗る。DOなら自分の
+  // 予算で走るので、閲覧者の10ms枠を侵さない。無料プランではSQLite版のみ使える。
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "rede-web" }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }
+  ],
   "r2_buckets": [
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
