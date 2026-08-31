@@ -1,19 +1,26 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { createService } from '@/lib/supabase/service'
 import { cachedJson } from '@/lib/site/edgeCache'
-import { mediaPathOf, mediaUploadDate } from '@/lib/site/media'
+import { mediaPathOf, mediaUploadDate, mediaUrl } from '@/lib/site/media'
 
-const BUCKET = 'scribe-media'
 const IMG_RE = /\.(jpe?g|png|gif|webp|avif)$/i
 
-// インスタンス内TTLキャッシュ(podcastFeedと同方式)。Storage走査は
-// 「ルート1回+日付フォルダ数」のAPI呼び出しになり日数に比例して重くなるため、
+type R2List = {
+  list(options?: { cursor?: string }): Promise<{
+    objects: { key: string }[]
+    truncated: boolean
+    cursor?: string
+  }>
+}
+
+// インスタンス内TTLキャッシュ(podcastFeedと同方式)。バケット走査を
 // 毎リクエスト実行しない。Promiseを入れて同時リクエストの重複走査も防ぐ。
 const POOL_TTL_MS = 30 * 60 * 1000
 let imagesCache: { promise: Promise<string[]>; ts: number } | null = null
 
-// サイト内全アップロード写真(scribe-mediaバケット)の一覧を返す(30分キャッシュ)。
+// サイト内全アップロード写真の一覧を返す(30分キャッシュ)。
 // パス構造は「YYYY-MM-DD/uuid.ext」(フォルダ=日付)。
-// サムネイル充当プールとHomeのランダム1枚の両方がこれを使う。
+// サムネイル充当プールがこれを使う。
 // 充当は「一度決まったら固定」が原則なので、プールの反映遅れ(最大30分)は無害。
 export function listAllImages(): Promise<string[]> {
   if (imagesCache && Date.now() - imagesCache.ts < POOL_TTL_MS) return imagesCache.promise
@@ -22,36 +29,35 @@ export function listAllImages(): Promise<string[]> {
   return promise
 }
 
+// **母集団はR2(配信元)から作る(2026-09-01)。** 以前はSupabase Storageの
+// 一覧から作り、URLもSupabaseのまま返していた。2026-08-29に配信元をR2へ移した後も
+// ここだけが残り、二つの実害が出ていた:
+//  ・Supabaseの公開オブジェクトは cache-control: no-cache = CDNが持てない。
+//    ここから充当された1枚は、見られるたびに原本が丸ごと転送される。
+//    8月のCached Egress超過(5.53GB/5GB)はこの経路と移行前の動画配信が原因。
+//  ・Storageの一覧は「ルート1回+日付フォルダの数」ぶんのAPI呼び出しになり、
+//    日数に比例して重くなっていた(フォルダ52個=53往復)。R2のlistは1回で済む。
+// 配信元と母集団が同じになるので、毎晩の孤児掃除がR2から消したファイルは
+// 自動で母集団からも消える(掃除と食い違って404を出さない)。
 async function loadAllImages(): Promise<string[]> {
-  const service = createService()
-  const { data: entries, error } = await service.storage.from(BUCKET).list('', { limit: 1000 })
-  if (error || !entries) return []
-
-  const urls: string[] = []
-  const folders = entries.filter((e) => e.id === null) // idなし=フォルダ
-  // ルート直下にファイルが直置きされている場合も拾う
-  for (const e of entries) {
-    if (e.id !== null && IMG_RE.test(e.name)) urls.push(publicUrl(e.name))
+  try {
+    const { env } = await getCloudflareContext({ async: true })
+    const media = (env as unknown as { MEDIA_BUCKET?: R2List }).MEDIA_BUCKET
+    if (!media) return []
+    const urls: string[] = []
+    let cursor: string | undefined
+    do {
+      const page = await media.list({ cursor })
+      for (const o of page.objects) {
+        if (IMG_RE.test(o.key)) urls.push(mediaUrl(o.key))
+      }
+      cursor = page.truncated ? page.cursor : undefined
+    } while (cursor)
+    return urls.sort() // 順序を安定させる(決定的な充当のため)
+  } catch {
+    // バインディングが無いdev等。空で返せば充当が無いだけで表示は壊れない
+    return []
   }
-  const results = await Promise.all(
-    folders.map((f) => service.storage.from(BUCKET).list(f.name, { limit: 1000 }))
-  )
-  results.forEach((r, i) => {
-    for (const file of r.data ?? []) {
-      if (IMG_RE.test(file.name)) urls.push(publicUrl(`${folders[i].name}/${file.name}`))
-    }
-  })
-  return urls.sort() // 順序を安定させる(決定的な充当のため)
-}
-
-// **ここはSupabaseのURLのままにしておくこと(2026-08-29)。**
-// この関数はStorageバケットの一覧から作るので、そこに載るのは「Supabaseに
-// あるファイル」。配信元をR2へ移したが、新規アップロードはまだSupabaseへ
-// 上がるため、R2にまだ無いファイルが混じる。mediaUrl()に変えるとその分が
-// 404になる。**新規のアップロード先をR2へ切り替えた日に、ここも一緒に直す。**
-// (本文から集めるプールの方は既に新旧どちらのURLでも拾える。imageUrlsInHtml参照)
-function publicUrl(path: string): string {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
 }
 
 // 記事typeから公開棚のパスを導く「唯一の対応表」。
