@@ -2,7 +2,7 @@ import { createService } from '@/lib/supabase/service'
 import { scribeTitle, htmlToPlainText, tokyoYmd } from './text'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { SHOWS } from './shows'
-import { fetchShowFeedLight } from './podcastFeed'
+import { showSummaries, summaryOf } from './showSummary'
 
 // 更新リストの1行: 日付+ラベル+タイトル。
 // scribeはタイトル=日付導出(20260706)、Podcastはラベル=番組名/タイトル=『…』配信、
@@ -63,15 +63,12 @@ export async function recentUpdates(
       .select('date, label, body, href, deleted_at')
       .order('date', { ascending: false })
       .limit(limit + 10),
-    // 各番組の直近エピソード(RSS)。**軽量版**で引く(2026-08-14、1102対策):
-    // ここで使うのはタイトル・日付・IDだけで、概要欄は一切読まない。
-    // フル版だと概要欄(容量の約9割)まで解析する代金を、Homeと/updatesが
-    // 毎回払っていた(実測: 5番組でfull 24.0ms / light 14.3ms、ローカルMac)。
-    // 加えて全ページ共通の波形キュー(layout)と**同じ軽量キャッシュを共有**できる
-    // ので、拠点キャッシュの命中率そのものが上がる=パースの回数が減る
-    Promise.all(
-      SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : Promise.resolve(null)))
-    ),
+    // 各番組の直近エピソード。**夜の作り置きから読む(2026-09-01)。**
+    // 2026-08-14に軽量版(概要欄を読まない)へ落として重さは減らしたが、
+    // 往復の本数は番組数のまま残っていた。Homeはカバー側でも同じRSSを取っていて、
+    // 合わせて10本。サブリクエスト上限(50本)を越えて作り直しが落ちる原因だった。
+    // 作り置きなら1本(前段に拠点キャッシュ30分)で、しかもカバー側と共有できる
+    showSummaries(),
   ])
 
   const liveDays = (days ?? []).filter((d) => !d.deleted_at).slice(0, limit)
@@ -145,8 +142,8 @@ export async function recentUpdates(
 
   // 各番組の直近エピソード。sinceで旧番組の混入を除去(BrandShift)。
   // マージ後にlimitで切るので各番組はlimit件で十分。
-  SHOWS.forEach((s, i) => {
-    const feed = feeds[i]
+  SHOWS.forEach((s) => {
+    const feed = summaryOf(feeds, s.slug)
     if (!feed) return
     const showName = s.shortName ?? s.name // 「ロングポスト」等の自然な番組名
     for (const ep of feed.episodes.slice(0, limit)) {

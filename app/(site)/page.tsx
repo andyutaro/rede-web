@@ -5,7 +5,7 @@ import { recentUpdates } from '@/lib/site/updates'
 import { randomPhotoWithHref } from '@/lib/site/photos'
 import { isRecentlyWritten } from '@/lib/site/serverBody'
 import { SHOWS } from '@/lib/site/shows'
-import { channelInfo } from '@/lib/site/podcastFeed'
+import { showSummaries, summaryOf } from '@/lib/site/showSummary'
 import { tokyoDaysAgo } from '@/lib/site/text'
 import CoverGrid from './CoverGrid'
 import LiveWindow from './LiveWindow'
@@ -72,13 +72,11 @@ export default async function Home() {
     recentUpdates(10, true, true), // Home: ミニマル表記+scribeは当日分のみ(2026-07-20)
     // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
     randomPhotoWithHref(),
-    // 番組カバー+最新エピソード日付はRSSから自動取得
-    // (カバーは番組全体のアート。エピソード画像ではない)
-    Promise.all(
-      SHOWS.map((s) =>
-        s.feed ? channelInfo(s.feed, s.since) : Promise.resolve({ image: null, latest: null })
-      )
-    ),
+    // 番組カバー+最新エピソード日付(カバーは番組全体のアート。エピソード画像ではない)。
+    // **夜の作り置きから読む(2026-09-01)。** 以前はここでRSSを番組数ぶん取り、
+    // UPDATES側でもう一度取っていた=Homeだけで往復10本。ISRキャッシュのR2読み書きと
+    // 合わさって1リクエストのサブリクエスト上限(50本)を越え、作り直しが落ち続けていた
+    showSummaries(),
   ])
 
   const initialHtml = todayRes.data?.html || null
@@ -87,11 +85,10 @@ export default async function Home() {
   // 背景波形+ランダム再生はlayoutへ移設(全ページ共通、2026-07-13)。Homeは通常のmeasure構成に戻す
   // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
   // 並びは各群とも最新エピソードが新しい順(左が最新)
-  const withArt = SHOWS.map((s, i) => ({
-    ...s,
-    cover: covers[i].image,
-    latest: covers[i].latest,
-  }))
+  const withArt = SHOWS.map((s) => {
+    const sum = summaryOf(covers, s.slug)
+    return { ...s, cover: sum?.image ?? null, latest: sum?.latest ?? null }
+  })
     .filter((s): s is typeof s & { cover: string } => Boolean(s.cover))
     .sort((a, b) => (b.latest ?? '').localeCompare(a.latest ?? ''))
   const originals = withArt.filter((s) => s.group === 'original')

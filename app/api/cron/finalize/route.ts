@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { buildHeroPool } from '@/lib/site/heroQueue'
+import { buildShowSummary } from '@/lib/site/showSummary'
 import { mediaPathOf } from '@/lib/site/media'
 import { firstImageThumbPatch, type ThumbPatch } from '@/lib/site/thumbs'
 import { createClient } from '@supabase/supabase-js'
@@ -72,6 +73,16 @@ export async function GET(request: Request) {
     heroQueue = { count: 0, error: e instanceof Error ? e.message : 'heroQueue failed' }
   }
 
+  // 番組の要約(カバー・最新日付・直近エピソード)を作り置く(2026-09-01)。
+  // Homeがこれを読むことでRSSの往復10本が1本になる。heroQueueの直後に置くのは、
+  // どちらも同じRSSを読むので拠点キャッシュが温まったまま続けて使えるため
+  let showSummary: Awaited<ReturnType<typeof buildShowSummary>>
+  try {
+    showSummary = await buildShowSummary()
+  } catch (e) {
+    showSummary = { count: 0, error: e instanceof Error ? e.message : 'showSummary failed' }
+  }
+
   // ブックマークの夜間同期(2026-07-27): 本文のリンクを索引へ、タイトルは
   // 少量ずつ取得(サブリクエスト上限を食い潰さないよう8件)。失敗しても他を巻き添えにしない
   let bookmarks: unknown
@@ -90,6 +101,7 @@ export async function GET(request: Request) {
     backup,
     cleanup,
     heroQueue,
+    showSummary,
     bookmarks,
   }
   // **必ず記録に残す(2026-08-29)。** 戻り値はHTTPの応答として返るだけで、
