@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { firstImageThumbPatch } from '@/lib/site/thumbs'
 
 // Article保存(scribe保存と同じ設計): 書き込みはユーザーのセッションクライアント、
 // RLSの"authenticated all"ポリシーで本人だけ書けることを担保。
@@ -75,6 +76,9 @@ export async function POST(request: Request) {
       .from('articles')
       .insert({
         ...fields,
+        // 本文の最初の画像をサムネイルとして焼き込む(2026-09-01)。棚の一覧が
+        // 表示のたびに本文を取り寄せて導出し直さなくて済むようにする
+        ...(firstImageThumbPatch(body.html, {}) ?? {}),
         published_at: body.status === 'published' ? (eventAt ?? now) : null,
       })
       .select('id, updated_at')
@@ -87,13 +91,16 @@ export async function POST(request: Request) {
   // 既存更新: published_atは未設定→published遷移のときだけ焼き込む
   const { data: current } = await supabase
     .from('articles')
-    .select('published_at')
+    .select('published_at, thumbnail_url, thumbnail_source')
     .eq('id', id)
     .maybeSingle()
   if (!current) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
   const patch = {
     ...fields,
+    // 本文が変わればサムネイルも追従させる(manualは触らない)。
+    // 表示側で毎回導出し直していたものを、変わった瞬間の一度に移した
+    ...(firstImageThumbPatch(body.html, current) ?? {}),
     // eventだけは開催日を後から直せる(告知の日付を間違えたまま固定されると困る)。
     // それ以外は従来どおり「最初にpublishedになった時刻」で固定
     ...(eventAt

@@ -20,8 +20,25 @@ export default async function ArticlePage() {
   const service = createService()
   const today = todayInTokyo()
 
-  const [{ data: days }, artRes, pool] = await Promise.all([
-    service.from('scribe_days').select('*').order('date', { ascending: false }),
+  // **本文HTMLを持ってこない(2026-09-01)。** ここは`select('*')`で
+  // scribe_daysを丸ごと引いていた=71行・本文込みで6.6MBが、force-dynamicの
+  // このページが開かれるたびにSupabaseから流れていた。8月のEgress 2.95GB/5GBの
+  // 主因。サムネイルは既に列へ焼き込んであるので、一覧に本文は要らない。
+  // 当日のLIVEセルだけは「本文が空でないか」を知る必要があるので、
+  // 存在判定をサーバー側の絞り込みでやる(条件はDBで効かせ、本文は運ばない)。
+  const [{ data: days }, liveRes, artRes, pool] = await Promise.all([
+    service
+      .from('scribe_days')
+      .select('date, deleted_at, finalized_at, thumbnail_url, thumbnail_source')
+      .order('date', { ascending: false }),
+    service
+      .from('scribe_days')
+      .select('date')
+      .eq('date', today)
+      .is('finalized_at', null)
+      .not('html', 'is', null)
+      .neq('html', '')
+      .maybeSingle(),
     service
       .from('articles')
       .select('id, title, type, html, thumbnail_url, thumbnail_source, published_at')
@@ -37,46 +54,33 @@ export default async function ArticlePage() {
   // ループ内で直列awaitせず集めて最後に並列実行(書き込みは差分がある日だけ=稀)
   const burnIns: PromiseLike<unknown>[] = []
 
+  const liveHasBody = Boolean(liveRes.data)
+
   for (const row of days ?? []) {
     if (row.deleted_at) continue // ゴミ箱(studio)入りの日は公開一覧から消す
     const date = row.date as string
-    const html = (row.html as string) ?? ''
     const finalized = Boolean(row.finalized_at)
 
     // 当日執筆中のscribeはLIVEセル(§6)。ALL/SCRIBEタブでのみ表示
     if (!finalized) {
-      if (date === today && html) {
+      if (date === today && liveHasBody) {
         items.push({ key: `live-${date}`, kind: 'live', date, href: '/live' })
       }
       continue
     }
 
-    // 優先順位(2026-07-10改訂): manual > 本文の最初の画像 > 充当(焼き込み)。
-    // 充当は「本文に画像が無い間のつなぎ」なので、後から本文に写真が入ったら
-    // 本文画像に昇格させ、焼き込みも更新する(6/22で踏んだ問題の恒久対応)
-    const first = firstImageSrc(html)
-    let thumb: string | null = null
-    let assigned = false
-    if (row.thumbnail_source === 'manual' && row.thumbnail_url) {
-      thumb = row.thumbnail_url as string
-    } else if (first) {
-      thumb = first
-      if (row.thumbnail_url !== first && 'thumbnail_url' in row) {
-        burnIns.push(
-          service
-            .from('scribe_days')
-            .update({ thumbnail_url: first, thumbnail_source: 'first_image' })
-            .eq('date', date)
-        )
-      }
-    } else if (row.thumbnail_url) {
-      thumb = row.thumbnail_url as string
-      assigned = row.thumbnail_source === 'assigned'
-    } else {
-      // 充当。thumbnail_url列があればここで焼き込んで固定する
+    // 優先順位(2026-07-10改訂): manual > 本文の最初の画像 > 充当。
+    // 本文画像への昇格(6/22で踏んだ問題の恒久対応)は、ここではなく
+    // **書いた側**でやる(2026-09-01): 保存時にthumbnail_urlへ焼き込み、
+    // 取りこぼしは毎晩のcronが本文を突き合わせて直す。表示のたびに全日分の
+    // 本文を運んで導出し直すのは、同じ答えを出すための代金が高すぎた。
+    let thumb: string | null = (row.thumbnail_url as string | null) ?? null
+    let assigned = Boolean(thumb) && row.thumbnail_source === 'assigned'
+    if (!thumb) {
+      // 充当。決まったらその場で焼き込んで固定する
       thumb = assignedOf(pool, date)
       assigned = thumb !== null
-      if (thumb && 'thumbnail_url' in row) {
+      if (thumb) {
         burnIns.push(
           service
             .from('scribe_days')

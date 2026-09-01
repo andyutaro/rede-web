@@ -85,7 +85,12 @@ async function productCells(ids?: string[]): Promise<ProductCell[]> {
   if (!ids?.length) return []
   const service = createService()
   const [{ data }, pool] = await Promise.all([
-    service.from('articles').select('*').in('id', ids),
+    // 列は使うものだけ(2026-09-01)。派生プロダクトは数件だが、`select('*')`は
+    // 本文HTMLごと運ぶので番組ページの数だけ積み上がっていた
+    service
+      .from('articles')
+      .select('id, title, status, html, thumbnail_url, published_at, deleted_at')
+      .in('id', ids),
     listAllImages(),
   ])
   const byId = new Map((data ?? []).map((a) => [a.id as string, a]))

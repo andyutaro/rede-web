@@ -17,10 +17,13 @@ export const metadata: Metadata = {
 export default async function PhotographyPage() {
   const service = createService()
   const [{ data: rows }, pool, photolog] = await Promise.all([
-    // '*': photo_kind/description列のマイグレーション未実行でも壊れない
+    // 列は使うものだけ(2026-09-01)。以前は`select('*')`で、棚が開かれるたびに
+    // articlesの全列(本文HTML込み)が流れていた。**htmlはサムネイル導出の
+    // 保険としてまだ引いている**——焼き込み(thumbnail_url)は保存時とcronで
+    // 埋まるので、全行に行き渡ったらここからも落とせる
     service
       .from('articles')
-      .select('*')
+      .select('id, photo_kind, title, html, thumbnail_url, published_at, deleted_at')
       .eq('status', 'published')
       .eq('type', 'photography')
       .order('published_at', { ascending: false }),

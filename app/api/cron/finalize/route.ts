@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { buildHeroPool } from '@/lib/site/heroQueue'
 import { mediaPathOf } from '@/lib/site/media'
+import { firstImageThumbPatch, type ThumbPatch } from '@/lib/site/thumbs'
 import { createClient } from '@supabase/supabase-js'
 import { backupToR2 } from '@/lib/site/backup'
 import { scanBookmarks, fetchTitles } from '@/lib/studio/bookmarks'
@@ -138,6 +139,13 @@ async function cleanupOrphanMedia() {
     // privateが読めないときも消さない(参照元を1つ欠いたまま判定しない)
     return { deleted: 0, error: privRes.error.message }
   }
+  // 本文とサムネイル列の突き合わせ(2026-09-01)。棚のページは列に焼き込まれた値を
+  // そのまま出すようになったので、本文を書き換えたのに列が古いままだと棚に
+  // 出続けてしまう。保存経路では毎回追従させているが、取りこぼし(移行前の行・
+  // 直接編集・画像の消滅)をここで拾う。**cleanupが既に読んだ本文を使い回す**ので
+  // 追加の取り寄せは無い
+  const thumbs = await syncFirstImageThumbs(supabase, daysRes.data ?? [], artsRes.data ?? [])
+
   const rows = [...(daysRes.data ?? []), ...(artsRes.data ?? [])]
   const htmlAll = [...rows, ...(privRes.data ?? [])]
     .map((r) => (r.html as string) ?? '')
@@ -156,7 +164,7 @@ async function cleanupOrphanMedia() {
   // R2の全ファイルを列挙(階層が無いので日付フォルダを辿る必要がない)
   const { env } = await getCloudflareContext({ async: true })
   const media = (env as unknown as { MEDIA_BUCKET?: R2Clean }).MEDIA_BUCKET
-  if (!media) return { deleted: 0, error: 'MEDIA_BUCKET未設定' }
+  if (!media) return { deleted: 0, thumbs, error: 'MEDIA_BUCKET未設定' }
   const files: { path: string; createdAt: string | null }[] = []
   let cursor: string | undefined
   do {
@@ -183,7 +191,7 @@ async function cleanupOrphanMedia() {
     try {
       await media.delete(orphanPaths.slice(i, i + 100))
     } catch (e) {
-      return { deleted: i, error: e instanceof Error ? e.message : String(e) }
+      return { deleted: i, thumbs, error: e instanceof Error ? e.message : String(e) }
     }
   }
 
@@ -205,5 +213,53 @@ async function cleanupOrphanMedia() {
     }
   }
 
-  return { deleted: orphanPaths.length }
+  return { deleted: orphanPaths.length, thumbs }
+}
+
+
+// ---- 本文とサムネイル列の突き合わせ(2026-09-01) ----
+// 棚の一覧(/notes 等)は本文HTMLを取り寄せるのをやめ、列に焼き込まれた
+// thumbnail_url をそのまま出す。導出は保存時に行うが、それだけだと
+//  ・この変更より前に書かれた行(articlesは焼き込みが無かった)
+//  ・保存経路を通らない直接編集
+//  ・参照していた画像そのものが消えた場合
+// が古いまま残る。毎晩ここで本文と突き合わせて直す。manualは触らない。
+type ThumbRow = {
+  date?: string
+  id?: string
+  html?: string | null
+  thumbnail_url?: string | null
+  thumbnail_source?: string | null
+}
+
+// クライアントは使う形だけで受ける(supabase-jsの総称型はここでは噛み合わない)
+type ThumbWriter = {
+  from(table: string): {
+    update(patch: ThumbPatch): { eq(column: string, value: string): PromiseLike<unknown> }
+  }
+}
+
+async function syncFirstImageThumbs(
+  supabase: ThumbWriter,
+  days: ThumbRow[],
+  articles: ThumbRow[]
+): Promise<{ days: number; articles: number; error?: string }> {
+  const out = { days: 0, articles: 0 } as { days: number; articles: number; error?: string }
+  try {
+    for (const r of days) {
+      const patch = firstImageThumbPatch(r.html, r)
+      if (!patch) continue
+      await supabase.from('scribe_days').update(patch).eq('date', r.date!)
+      out.days++
+    }
+    for (const r of articles) {
+      const patch = firstImageThumbPatch(r.html, r)
+      if (!patch) continue
+      await supabase.from('articles').update(patch).eq('id', r.id!)
+      out.articles++
+    }
+  } catch (e) {
+    out.error = e instanceof Error ? e.message : 'thumb sync failed'
+  }
+  return out
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { firstImageThumbPatch } from '@/lib/site/thumbs'
 
 // 保存はユーザーのセッションに紐づくクライアントで行う(service_role keyは使わない)。
 // RLSの"authenticated"ポリシーがそのまま「本人だけ書き込める」を担保する。
@@ -33,9 +34,20 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString()
+
+  // サムネイルは本文が変わったこの瞬間に決める(2026-09-01)。以前は/notesが
+  // 表示のたびに全日分の本文を取り寄せて導出し直していた(1回6.6MB)。
+  // 参照する列は2つだけなので、ここで1行読む代金は無視できる
+  const { data: currentThumb } = await supabase
+    .from('scribe_days')
+    .select('thumbnail_url, thumbnail_source')
+    .eq('date', date)
+    .maybeSingle()
+
   const patch = {
     html,
     updated_at: now,
+    ...(firstImageThumbPatch(html, currentThumb ?? {}) ?? {}),
     ...(finalize ? { finalized_at: now } : {}),
   }
 
