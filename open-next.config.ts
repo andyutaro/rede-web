@@ -57,7 +57,8 @@ export default defineCloudflareConfig({
   // 三段重ね。外から順に:
   // - nonBlocking … 詰まったDOで読者を待たせない(上の注記)
   // - queueCache … 同じ依頼を何度も投げない(2026-09-02)。期限切れの間、来た
-  //   リクエストの数だけ同じ依頼が積まれていた。TTLはHomeのrevalidateに合わせる
+  //   リクエストの数だけ同じ依頼が積まれていた。TTLは60秒(古さ1つにつき1分に1通。
+  //   Homeのrevalidateを1時間へ延ばした後も、畳む窓は短いままでよい)
   // - doQueue … 本体
   queue: nonBlocking(queueCache(doQueue, { regionalCacheTtlSec: 60 })),
 })
