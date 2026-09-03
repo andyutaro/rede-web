@@ -41,7 +41,115 @@ async function gql(query, variables) {
   return d.data
 }
 
-// ① Workersの結果内訳(直近24時間)。読者に見えている失敗はここ
+// Observabilityの集計を引く小道具(件数をグループ別に返す)
+async function obsCount(filters, groupBy, hours = 24) {
+  const r = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${ACC}/workers/observability/telemetry/query`,
+    {
+      method: 'POST',
+      headers: { authorization: `Bearer ${CF}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        queryId: 'count',
+        timeframe: { from: Date.now() - hours * 3600000, to: Date.now() },
+        parameters: {
+          datasets: ['cloudflare-workers'],
+          filters,
+          calculations: [{ operator: 'count' }],
+          groupBys: [{ type: 'string', value: groupBy }],
+          limit: 50,
+        },
+        view: 'calculations',
+      }),
+    }
+  )
+  const d = await r.json()
+  if (!d.success) throw new Error(JSON.stringify(d.errors).slice(0, 160))
+  return (d.result?.calculations?.[0]?.aggregates ?? []).map((a) => ({
+    key: String(a.groupKey ?? ''),
+    n: a.value ?? a.count ?? 0,
+  }))
+}
+
+// botの見分け(2026-09-03)。名乗っているものと、名乗らないが素性で分かるもの。
+// 「X11; Linux aarch64」のデスクトップChromeは実測でOracle Cloud/Hetznerの
+// クローラだった(ARMのLinuxデスクトップから日本語個人サイトを読む人は事実上いない)
+const BOT_UA =
+  /bot|crawl|spider|slurp|GPTBot|Awario|ClaudeBot|Bytespider|facebookexternalhit|preview|monitor|curl|wget|python|Go-http|okhttp|HeadlessChrome|Lighthouse|node-fetch|axios|X11; Linux aarch64/i
+
+// ① 失敗した呼び出しを**人とbotに分ける**(直近24時間)。
+//
+// **なぜ分けるか(2026-09-03 Andy指定の優先順位)。**
+//   1. 人がエラー画面を見ないこと  2. システムが落ちないこと  3. botはその次。
+// 分ける前は、GPTBotの巡回101件がそのまま「読者に見えた失敗101件」として
+// 通知され、こちらの判断を誤らせた。同日に失敗イベント50件を1件ずつ開いて
+// 素性を見たところ、**人の端末・人の回線から来たものは1件も無かった**。
+// 人の件数は上限値として扱う(UAがbotでないものを全部人として数えるため)。
+// 「読者に見えた失敗」とは、**待っている人の前でWorkerが死んだ**こと。
+// canceled と clientDisconnected は"クライアントが去った"側の事象なので数えない
+// (2026-09-03実測: プリフェッチとbotを除いた残りは canceled 1件だけで、
+//  exceededCpu も exceededWallTime も0件だった。人は誰も踏んでいなかった)。
+// ただし数だけは出す——サーバー側が固まってもcanceledになりうるので、
+// 消してしまうと今週のような詰まりを見落とす
+const DIED = ['exceededCpu', 'exceededWallTime', 'exceededMemory', 'internalError']
+
+try {
+  const rows = await obsCount(
+    [
+      { key: '$workers.outcome', type: 'string', operation: 'neq', value: 'ok' },
+      { key: '$workers.outcome', type: 'string', operation: 'neq', value: 'canceled' },
+      { key: '$workers.outcome', type: 'string', operation: 'neq', value: 'clientDisconnected' },
+      // **プリフェッチは数えない(2026-09-03)。** `?_rsc=` はNext.jsが次に開きそうな
+      // ページを先読みする通信で、読者が待っている画面ではない。スクロールや遷移で
+      // ブラウザ側が普通に打ち切る。失敗しても読者には見えない(通常の遷移に落ちるだけ)。
+      // 実測: 人らしい失敗3件は全部これで、wallは0ms/99ms/117ms=ブラウザが即座に
+      // 取り消したもの。これを数えると毎日「人がエラーを見た」が鳴り続ける
+      { key: '$workers.event.request.url', type: 'string', operation: 'not_includes', value: '_rsc=' },
+    ],
+    '$workers.event.request.headers.user-agent'
+  )
+  let human = 0
+  let bot = 0
+  const humanUa = []
+  for (const { key, n } of rows) {
+    if (!key || BOT_UA.test(key)) bot += n
+    else {
+      human += n
+      humanUa.push(`${key.slice(0, 40)}(${n})`)
+    }
+  }
+  // 参考値: 人らしいUAの canceled(クライアントが去った側)。通知はしない
+  let humanCanceled = 0
+  try {
+    const c = await obsCount(
+      [
+        { key: '$workers.outcome', type: 'string', operation: 'eq', value: 'canceled' },
+        { key: '$workers.event.request.url', type: 'string', operation: 'not_includes', value: '_rsc=' },
+      ],
+      '$workers.event.request.headers.user-agent'
+    )
+    for (const { key, n } of c) if (key && !BOT_UA.test(key)) humanCanceled += n
+  } catch {
+    humanCanceled = -1
+  }
+
+  numbers.失敗した呼び出し = {
+    人の前でWorkerが死んだ: human,
+    bot: bot,
+    '参考_人のcanceled(去った側)': humanCanceled,
+    ...(humanUa.length ? { 人の内訳: humanUa.slice(0, 5) } : {}),
+  }
+  // **最優先。alerts[0]が通知の本文になるので、必ず先頭に来るよう最初に押す**
+  if (human > 0)
+    alerts.push(
+      `人の前でWorkerが死んだ: 1日${human}件(${DIED.join('/')})。最優先。素性を確認すること`
+    )
+  // botの失敗は原則として報せない。ただし桁が違うならシステム側の異常なので拾う
+  if (bot > 1000) alerts.push(`botに返した失敗が1日${bot}件。多すぎるのでシステム側を疑う`)
+} catch (e) {
+  alerts.push(`失敗の内訳が取れない: ${e.message}`)
+}
+
+// ② Workersの枠の消費(直近24時間)。落ちないことの担保
 try {
   const d = await gql(
     `query($a:String!,$s:Time!){viewer{accounts(filter:{accountTag:$a}){
@@ -52,19 +160,16 @@ try {
   const by = {}
   for (const r of rows) by[r.dimensions.status] = (by[r.dimensions.status] ?? 0) + r.sum.requests
   const total = Object.values(by).reduce((a, b) => a + b, 0)
-  const failed = by.exceededResources ?? 0
   numbers.workers = {
     枠に対する割合: `${((total / 100000) * 100).toFixed(1)}%`,
-    読者に見えた失敗: failed,
-    失敗率: total ? `${((failed / total) * 100).toFixed(3)}%` : '—',
+    結果内訳: by,
   }
   if (total > 70000) alerts.push(`Workersのリクエストが1日10万枠の70%を超えた(${((total / 100000) * 100).toFixed(0)}%)`)
-  if (failed > 100) alerts.push(`読者に見えた失敗(1102)が1日${failed}件。普段は数件`)
 } catch (e) {
   alerts.push(`Workersの数字が取れない: ${e.message}`)
 }
 
-// ② Observabilityのログ(直近24時間)。**ここが本体。①には出ない裏側の失敗**
+// ③ Observabilityのログ(直近24時間)。**ここが本体。②には出ない裏側の失敗**
 try {
   const r = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${ACC}/workers/observability/telemetry/query`,
