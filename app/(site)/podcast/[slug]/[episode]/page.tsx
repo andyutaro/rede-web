@@ -14,8 +14,9 @@ import PlatformLinks from '../../PlatformLinks'
 import ShowPlayAll from '../../ShowPlayAll'
 import { imgThumb, IMG_W } from '@/lib/site/img'
 
-// ISR: 30分ごとに再検証。新エピソードのページは初回アクセス時に生成・キャッシュされる
-export const revalidate = 1800
+// ISR: 新エピソードのページは初回アクセス時に生成・キャッシュされる
+// 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
+export const revalidate = 86400
 
 type Params = { slug: string; episode: string }
 

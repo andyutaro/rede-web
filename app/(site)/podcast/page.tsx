@@ -5,7 +5,8 @@ import { tokyoDaysAgo } from '@/lib/site/text'
 import CoverGrid from '../CoverGrid'
 import PodcastEpisodeGrid, { type EpItem } from './PodcastEpisodeGrid'
 
-export const revalidate = 1800
+// 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
+export const revalidate = 86400
 
 // 棚のdescription: 番組名はshows.tsから組む(番組が増えても追従、散文は書かない)
 const showNames = (group: 'original' | 'works') =>

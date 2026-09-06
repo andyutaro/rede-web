@@ -48,7 +48,14 @@ function showsByPlace(listed: { slug: string }[]): Record<string, string[]> {
 // 重なるので、回線によって見える版がずれる時間もある)。
 // 直すならtagCache(D1等)を足す。revalidatePathの呼び出しはその日に効き始めるので
 // 消さずに残してある。
-export const revalidate = 1800
+// **1日に延ばす(2026-09-06 Andy指定: 「エラーが起きないこと ≫ 即時反映」)。**
+// 作り直しの失敗は、作り直しを試みる回数に比例して出る。30分だと1日48回の機会が
+// 拠点ごとに生まれ、その失敗が裏側のエラーの全量だった(2026-09-06: 1日1,834件、
+// 内訳は/about 265・mimoriradio 222・onairdo 208・privacy 178…)。
+// **同じ手をHomeに当てた9/3の結果が根拠**: 60秒→1時間にしたHomeは、翌々日には
+// 失敗の一覧から完全に消えた。1800秒のページだけが一覧に残っている。
+// 代償は反映がさらに遅くなること。Andyがそれを承知で優先順位を決めた。
+export const revalidate = 86400
 
 // description: Aboutの署名+リード(Andy自身の言葉、studio編集が即反映)から組成
 export async function generateMetadata(): Promise<Metadata> {

@@ -16,8 +16,9 @@ import ShowPlayAll from '../ShowPlayAll'
 import ShowHeroWater from '../ShowHeroWater'
 import PlaceMap from '../../PlaceMap'
 
-// ISR: 30分ごとに再検証し、新エピソードを自動で番組ページに反映する
-export const revalidate = 1800
+// ISR: 再検証で新エピソードを自動反映する(間隔は下記。新着が出るまで最大1日)
+// 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
+export const revalidate = 86400
 
 // 番組は5枠で既知なのでビルド時にプリレンダー(feedのある番組のみ)。
 // 各ページは30分ごとに背景で再生成され、新エピソードが乗る。

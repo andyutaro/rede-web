@@ -4,7 +4,8 @@ import { getPrivacyContent } from '@/lib/site/pages'
 // ISR: 文言のためだけに毎リクエスト読まない。
 // 反映は即時ではない(revalidatePathがこの構成では効かない)。詳しくは
 // app/(site)/about/page.tsx の同じ注記
-export const revalidate = 1800
+// 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
+export const revalidate = 86400
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',

@@ -325,4 +325,17 @@ try {
   alerts.push(`夜のcronの記録が読めない: ${e.message}`)
 }
 
+// **ネットワークが無いだけの朝を「異常5件」にしない(2026-09-06)。**
+// Macが寝ていて、起きた直後にlaunchdが走ると、全項目が fetch failed で落ちて
+// 通知が「異常5件」になる。サイトの異常と見分けがつかないのに一番うるさい形で鳴る。
+// 2026-09-05に実際に起きた(その日は結局1日ぶん何も見ていない)。
+// **サイトの異常より後ろに置く**——alerts[0]が通知の本文になるので、
+// 本物の異常がある朝はそちらを先に見せる。
+const netFails = alerts.filter((a) => a.includes('fetch failed'))
+if (netFails.length >= 2) {
+  const rest = alerts.filter((a) => !a.includes('fetch failed'))
+  alerts.length = 0
+  alerts.push(...rest, `点検を実行できなかった(ネットワークに届かない。${netFails.length}項目)`)
+}
+
 console.log(JSON.stringify({ 異常: alerts, 数字: numbers }, null, 2))
