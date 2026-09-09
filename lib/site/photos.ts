@@ -106,12 +106,16 @@ function photoPool(): Promise<PoolEntry[]> {
   // -4: 配信元をR2へ移した(2026-08-29)。本文のURLを書き換えた直後、まだ旧コードが
   //     動いている拠点が「/scribe-media/を含むか」で絞って**空のプール**を作り、
   //     それが30分焼き付いた(Homeのランダム写真が実際に消えた)。鍵を上げて捨てる
-  const promise = cachedJson('photo-pool-4', POOL_TTL_MS / 1000, loadPhotoPool)
+  // -5: 写真の日付をアップロード日から**掲載ページの日付**へ変えた(2026-09-09)。
+  //     エントリのdateの意味が変わるので、古いプールが残ると30分ぶん古い並びが焼き付く
+  const promise = cachedJson('photo-pool-5', POOL_TTL_MS / 1000, loadPhotoPool)
   photoPoolCache = { promise, ts: Date.now() }
   return promise
 }
 
-// アップロード日: パス構造「YYYY-MM-DD/uuid.ext」から取る(新旧どちらのURLでも)
+// アップロード日: パス構造「YYYY-MM-DD/uuid.ext」から取る(新旧どちらのURLでも)。
+// **PHOTOLOGの日付には使わない**(掲載ページの日付が正、下記 add() の注記)。
+// 掲載ページの日付が取れないときの保険としてだけ残している
 function uploadDateOf(url: string): string | null {
   return mediaUploadDate(url)
 }
@@ -129,11 +133,17 @@ async function loadPhotoPool(): Promise<PoolEntry[]> {
 
   const candidates: PoolEntry[] = []
   const seen = new Set<string>()
+  // 写真の日付は**掲載ページの日付**(2026-09-09 Andy指定)。
+  // 以前はアップロード日(パスのフォルダ名)を優先していたが、日をまたいで写真を
+  // 足すと**同じページの写真が2つの日付に割れた**。実測: 9/7のdeskに載る51枚のうち
+  // 14枚が「09.08」としてPhotographyの先頭ブロックへ切り離されていた。
+  // 掲載日で揃えれば、同じ日の写真は必ず一緒に並ぶ。
+  // アップロード日はページの日付が取れないとき(published_atがnull等)の保険。
   const add = (html: string, href: string, kind: string, pageDate: string) => {
     for (const url of imageUrlsInHtml(html)) {
       if (seen.has(url)) continue
       seen.add(url)
-      candidates.push({ url, href, kind, date: uploadDateOf(url) ?? pageDate })
+      candidates.push({ url, href, kind, date: pageDate || uploadDateOf(url) || '' })
     }
   }
   const ymd = (ts: string | null) => (ts ? String(ts).slice(0, 10) : '')
@@ -178,7 +188,11 @@ export async function photologPhotos(): Promise<PhotologPhoto[]> {
       href: `${e.href}#p=${encodeURIComponent(e.url.split('/').pop() ?? '')}`,
       date: e.date,
     }))
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.url < b.url ? -1 : 1))
+    // 同じ日の中は**本文に載っている順**(2026-09-09 Andy指定)。以前はurl(=uuid)の
+    // 文字列順で、掲載順とも撮った順とも無関係な並びになっていた。プールは本文の
+    // 出現順に積んでいるので、同点で0を返せば安定ソートがその順序を保つ。
+    // **同点で0以外を返さないこと**——ここに手を入れると本文の順序が壊れる
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
 }
 
 // Homeのランダム写真: 「公開中コンテンツの本文に実際に載っている画像」だけから選ぶ。
