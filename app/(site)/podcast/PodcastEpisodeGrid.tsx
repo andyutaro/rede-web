@@ -29,24 +29,40 @@ export default function PodcastEpisodeGrid({
   episodes,
   total,
   newSince = '9999-12-31',
+  heading,
+  allHref,
+  limit,
 }: {
   episodes: EpItem[]
   total: number
   newSince?: string
+  // Homeの「最新エピソード」(2026-09-11 Andy指定): 見出しを渡すと、タブ・検索・
+  // 件数を出さず「見出し+ALL →」だけの形になる。タイルの組版は棚と同じまま
+  heading?: string
+  allHref?: string
+  limit?: number
 }) {
   const [tab, setTab] = useState<Tab>('ALL')
   const [query, setQuery] = useState('')
+  const compact = Boolean(heading)
 
   const shown = useMemo(() => {
     let list = episodes
     if (tab !== 'ALL') list = list.filter((e) => e.group === tab.toLowerCase())
     const q = query.trim()
     if (q) list = list.filter((e) => e.title.toLowerCase().includes(q.toLowerCase()) || e.showLabel.toLowerCase().includes(q.toLowerCase()))
-    return list
-  }, [episodes, tab, query])
+    return limit ? list.slice(0, limit) : list
+  }, [episodes, tab, query, limit])
 
   return (
     <section className="section">
+      {compact ? (
+        <div className="section-head">
+          <h2>{heading}</h2>
+          {allHref && <Link href={allHref}>ALL →</Link>}
+        </div>
+      ) : (
+      <>
       <div className="section-head podcast-ep-head">
         <div className="podcast-ep-tabs" role="tablist">
           {TABS.map((t) => (
@@ -74,6 +90,8 @@ export default function PodcastEpisodeGrid({
           aria-label="エピソードを検索"
         />
       </div>
+      </>
+      )}
 
       <div className="section-body grid4">
         {shown.map((ep) => (

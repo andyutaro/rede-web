@@ -21,7 +21,9 @@ export type ShowSummary = {
   slug: string
   image: string | null
   latest: string | null
-  episodes: { id: string; title: string; date: string }[]
+  // image: エピソードアート(2026-09-11、Homeの最新エピソード用)。作り置きが
+  // 足す前の形のうちは無い=表示側は番組カバーで代用する(夜のcronで埋まる)
+  episodes: { id: string; title: string; date: string; image?: string | null }[]
 }
 
 const CONTENT_KEY = 'show_summary'
@@ -45,6 +47,7 @@ async function buildFromFeeds(): Promise<ShowSummary[]> {
         id: ep.id,
         title: ep.title,
         date: ep.date,
+        image: ep.image ?? null,
       })),
     }
   })

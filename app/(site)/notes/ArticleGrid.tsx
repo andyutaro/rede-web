@@ -43,26 +43,46 @@ function visible(item: GridItem, tab: Tab): boolean {
   }
 }
 
-export default function ArticleGrid({ items }: { items: GridItem[] }) {
+// heading: Homeの「最新書き物」(2026-09-11 Andy指定)。渡すとタブを出さず
+// 「見出し+ALL →」だけの形になる。タイルの組版(LIVEセル・3段ラベル)は棚と同じまま
+export default function ArticleGrid({
+  items,
+  heading,
+  allHref,
+  limit,
+}: {
+  items: GridItem[]
+  heading?: string
+  allHref?: string
+  limit?: number
+}) {
   const [tab, setTab] = useState<Tab>('ALL')
-  const shown = items.filter((i) => visible(i, tab))
+  const filtered = items.filter((i) => visible(i, tab))
+  const shown = limit ? filtered.slice(0, limit) : filtered
 
   return (
     <section className="section">
-      <div className="section-head article-tabs" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={tab === t}
-            className={tab === t ? 'active' : ''}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      {heading ? (
+        <div className="section-head">
+          <h2>{heading}</h2>
+          {allHref && <Link href={allHref}>ALL →</Link>}
+        </div>
+      ) : (
+        <div className="section-head article-tabs" role="tablist">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={tab === t}
+              className={tab === t ? 'active' : ''}
+              onClick={() => setTab(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="section-body grid4">
         {shown.map((item) =>
           item.kind === 'live' ? (
