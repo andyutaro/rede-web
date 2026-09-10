@@ -3,6 +3,7 @@ import { scribeTitle, htmlToPlainText, tokyoYmd } from './text'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { SHOWS } from './shows'
 import { showSummaries, summaryOf } from './showSummary'
+import { listGuestRows } from './guestEpisodes'
 
 // 更新リストの1行: 日付+ラベル+タイトル。
 // scribeはタイトル=日付導出(20260706)、Podcastはラベル=番組名/タイトル=『…』配信、
@@ -39,7 +40,8 @@ export async function recentUpdates(
 
   // 5系統(確定scribe/当日scribe/記事/手動投稿/RSS)は互いに独立なので並列で読む
   // (直列だと往復レイテンシが積み上がる)。列は表示に使う分だけ(htmlは当日行のみ)。
-  const [{ data: days }, { data: todayRow }, articlesRes, manualRes, feeds] = await Promise.all([
+  const [{ data: days }, { data: todayRow }, articlesRes, manualRes, feeds, guestRows] =
+    await Promise.all([
     // ゴミ箱(studio)入りの日はUpdatesにも出さない
     scribeLiveOnly
       ? Promise.resolve({ data: [] as { date: string; deleted_at: string | null }[] })
@@ -69,6 +71,12 @@ export async function recentUpdates(
     // 合わせて10本。サブリクエスト上限(50本)を越えて作り直しが落ちる原因だった。
     // 作り置きなら1本(前段に拠点キャッシュ30分)で、しかもカバー側と共有できる
     showSummaries(),
+    // ゲスト出演(2026-09-10)。**保存済みの控えだけを読む=Supabaseへの1本で済む。**
+    // listGuestEpisodes()は番組ごとにRSSを引くので、ここでは使わない——Homeは
+    // サブリクエスト上限(無料プラン50本)を越えて作り直しが落ちた前科があり、
+    // 更新リストのためにフィードの往復を増やさない。控えには番組名・題名・公開日が
+    // 入っているので1行を作るには足りる(先方が題名を変えた場合だけ古い値が残る)
+    listGuestRows(),
   ])
 
   const liveDays = (days ?? []).filter((d) => !d.deleted_at).slice(0, limit)
@@ -158,6 +166,22 @@ export async function recentUpdates(
       })
     }
   })
+
+  // ゲスト出演。ラベルはPODCASTではなく**GUEST**にして、自分の番組の配信と
+  // 見分けられるようにする(題名の前に出る番組名は先方の番組名)。
+  // 日付は**その回の公開日**=このファイルの原則どおり「エピソードの誕生はpubDate」。
+  // 何年も前の回を今日登録しても、10日の窓には入らない(それが正しい)
+  for (const g of guestRows.slice(0, limit)) {
+    if (!g.date) continue
+    const title = g.title.replace(/[！!\s　]+$/, '')
+    rows.push({
+      date: g.date,
+      kind: 'Podcast',
+      label: 'GUEST',
+      excerpt: `${g.showName}『${compact ? clip(title, HOME_TITLE_MAX) : title}』`,
+      href: `/podcast/guest/${g.id}`,
+    })
+  }
 
   rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
   // 当日ライブ行は「今この瞬間」なので、同日の他更新より上=最上部に固定する
