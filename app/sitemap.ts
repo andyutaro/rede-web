@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { SHOWS } from '@/lib/site/shows'
 import { fetchShowFeedLight } from '@/lib/site/podcastFeed'
 import { createService } from '@/lib/supabase/service'
+import { listGuestRows } from '@/lib/site/guestEpisodes'
 
 // sitemap.xml(2026-07-23): 検索エンジンにこのサイトの地図を渡す。
 // ポッドキャスターのサイトで一番拾われてほしいのはエピソードページなので、
@@ -33,7 +34,7 @@ const STATIC_PATHS = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const service = createService()
 
-  const [feeds, scribeRes, articleRes] = await Promise.all([
+  const [feeds, scribeRes, articleRes, guestRows] = await Promise.all([
     Promise.all(SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : null))),
     // 確定済み・未削除の日だけ(/desk/[date]が404を返さない日付)
     service
@@ -42,12 +43,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .not('finalized_at', 'is', null)
       .is('deleted_at', null),
     service.from('articles').select('id, type, status, published_at, deleted_at'),
+    // ゲスト出演(2026-09-10)。控えだけ読む=RSSを引かない(棚と同じくDB1本)
+    listGuestRows(),
   ])
 
   const now = new Date()
+
+  // 固定ページのlastModified(2026-09-10)。以前は全部「sitemapを生成した瞬間」で、
+  // 30分ごとに全固定ページが「更新された」と申告していた。Googleは当てにならない
+  // lastmodを無視するようになるので、**中身が本当に変わった日**だけを書く:
+  //  ・Home / Updates … サイト全体で一番新しいもの(エピソード・Desk・記事・ゲスト回)
+  //  ・Podcast … 一番新しいエピソード(自番組+ゲスト回)
+  //  ・それ以外(About・Privacy等) … 分からないので書かない(書かないのは正しい)
+  const ymd = (v: string | null | undefined) => (v ? String(v).slice(0, 10) : '')
+  const latestEpisode = [
+    ...feeds.map((f) => f?.latest ?? ''),
+    ...guestRows.map((g) => g.date ?? ''),
+  ].reduce((a, b) => (b > a ? b : a), '')
+  const latestDesk = (scribeRes.data ?? [])
+    .map((d) => ymd(d.finalized_at as string))
+    .reduce((a, b) => (b > a ? b : a), '')
+  const latestArticle = (articleRes.data ?? [])
+    .filter((a) => a.status === 'published' && a.published_at && !a.deleted_at)
+    .map((a) => ymd(a.published_at as string))
+    .reduce((a, b) => (b > a ? b : a), '')
+  const latestAny = [latestEpisode, latestDesk, latestArticle].reduce(
+    (a, b) => (b > a ? b : a),
+    ''
+  )
+  const lastModOf = (p: string): Date | undefined => {
+    const d = p === '' || p === '/updates' ? latestAny : p === '/podcast' ? latestEpisode : ''
+    return d ? new Date(d) : undefined
+  }
+
   const entries: MetadataRoute.Sitemap = STATIC_PATHS.map((p) => ({
     url: `${BASE}${p}`,
-    lastModified: now,
+    lastModified: lastModOf(p),
     changeFrequency: p === '' || p === '/updates' ? 'daily' : 'monthly',
     priority: p === '' ? 1 : 0.7,
   }))
@@ -98,6 +129,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(a.published_at as string),
       changeFrequency: 'yearly',
       priority: 0.5,
+    })
+  }
+
+  // ゲスト出演の回(2026-09-10)。自番組のエピソードと同じ扱い。日付はその回の公開日
+  for (const g of guestRows) {
+    if (!g.date) continue
+    entries.push({
+      url: `${BASE}/podcast/guest/${g.id}`,
+      lastModified: new Date(g.date),
+      changeFrequency: 'yearly',
+      priority: 0.6,
     })
   }
 

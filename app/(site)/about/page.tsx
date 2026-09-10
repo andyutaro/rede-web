@@ -83,8 +83,25 @@ export default async function AboutPage() {
   const c: AboutContent = await getAboutContent()
   const covers = await coverMap([...c.original, ...c.branded].map((s) => s.slug))
 
+  // Aboutの構造化データ(2026-09-10、事実データのみ)。このページが「Andyという人の
+  // プロフィールページ」であることを渡す。人物の定義はHomeと同じ@idを指し、
+  // 名前は重ねて持たせる(Googleはプロフィールページの主体に名前があることを求める)
+  const profileJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    url: 'https://andyutaro.com/about',
+    mainEntity: {
+      '@type': 'Person',
+      '@id': 'https://andyutaro.com/#andy',
+      name: 'Andy',
+      alternateName: '安田裕太郎',
+      url: 'https://andyutaro.com',
+    },
+  }).replace(/</g, '\\u003c')
+
   return (
     <div className="measure about">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: profileJsonLd }} />
       <h1 className="sr-only">About</h1>
       {/* 楽章1: 導入エッセイ(署名→リード→本文→帰結) */}
       <section className="about-opening">

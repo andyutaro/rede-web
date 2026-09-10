@@ -31,6 +31,13 @@ Disallow: /studio
 Disallow: /desk/about
 Allow: /desk/
 Disallow: /desk
+# 共有カードの画像だけは開ける(2026-09-10)。番組ページ・エピソードページの
+# og:image は /api/og-image を指していて、ここで塞ぐとXのカードに画像が出ない
+# (Twitterbotはrobots.txtに従い、画像URLが塞がれているとサムネイルを出さない)。
+# 対象は番組5+エピソード約330=sitemapで一番拾われてほしいページ群そのもの。
+# リダイレクト先の /cdn-cgi/image/ は元から塞いでいないので、この1行で足りる。
+# Disallowより前に置く: 上と同じく、先一致・最長一致のどちらの解釈でも同じ結果にするため
+Allow: /api/og-image
 Disallow: /api/
 Disallow: /live
 Disallow: /search

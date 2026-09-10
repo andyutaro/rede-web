@@ -75,8 +75,25 @@ export default async function PodcastPage() {
 
   allEpisodes.sort((a, b) => b.date.localeCompare(a.date))
 
+  // 棚の構造化データ(2026-09-10、事実データのみ)。この棚が何の集まりかを
+  // 検索エンジンに渡す: Andyの番組(ORIGINAL/WORKS)の一覧。作り手はHomeで
+  // 定義した同じ人物(@id)を指す。ゲスト出演は他人の番組なので hasPart に入れない
+  const shelfJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Podcast — Andy',
+    url: 'https://andyutaro.com/podcast',
+    author: { '@id': 'https://andyutaro.com/#andy' },
+    hasPart: withArt.map((s) => ({
+      '@type': 'PodcastSeries',
+      name: s.shortName ?? s.name,
+      url: `https://andyutaro.com/podcast/${s.slug}`,
+    })),
+  }).replace(/</g, '\\u003c')
+
   return (
     <div className="measure">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: shelfJsonLd }} />
       <h1 className="sr-only">Podcast</h1>
       {/* 番組の更新は4日、下のエピソード新着は7日と窓が違う(2026-08-05)。
           番組タイルは「いま動いている番組」を短い窓で示す方が意味が立つ */}
