@@ -201,13 +201,29 @@ export async function findFeedByShowName(showName: string): Promise<string | nul
     const results = (data.results ?? []).filter((r) => r.feedUrl)
     if (results.length === 0) return null
     const want = normalizeTitle(showName)
-    // 完全一致を最優先。無ければ部分一致、それも無ければ先頭
+
+    // 完全一致だけを無条件に受ける
     const exact = results.find((r) => normalizeTitle(r.collectionName ?? '') === want)
+    if (exact) return exact.feedUrl ?? null
+
+    // 部分一致は**条件付き**。iTunesは語がかすっただけの別番組を返す。
+    // 実測(2026-09-10): 「コーチングのコ」で検索すると
+    // 「正解のない時代の『問い』のラジオ〜第三世代コーチングの視点〜チャンネル」が
+    // 1件目に来る。以前はここで`?? results[0]`と先頭に落としていたため、
+    // **別番組のフィードを掴む**状態だった(似た題名の回があれば、他人の音源が
+    // 別番組の名前で鳴るところだった)。短すぎる語や、長さが釣り合わない
+    // 包含は受けない
     const partial = results.find((r) => {
       const got = normalizeTitle(r.collectionName ?? '')
-      return got.includes(want) || want.includes(got)
+      if (!got || !want) return false
+      if (!(got.includes(want) || want.includes(got))) return false
+      const short = Math.min(got.length, want.length)
+      const long = Math.max(got.length, want.length)
+      return short >= 4 && short / long >= 0.5
     })
-    return (exact ?? partial ?? results[0]).feedUrl ?? null
+    // **見つからなければnull。先頭に落とさない。**
+    // 呼び出し側はRSS無し(=Spotifyの情報だけ)として正しく扱う
+    return partial?.feedUrl ?? null
   } catch {
     return null
   }
