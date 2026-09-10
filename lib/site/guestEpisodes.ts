@@ -12,18 +12,21 @@
 // 全編鳴り、自分の番組のエピソードページと同じ器に載る。
 
 import { createService } from '@/lib/supabase/service'
+import { tokyoYmd } from '@/lib/site/text'
 import { fetchShowFeed, fetchShowFeedLight, type Episode } from '@/lib/site/podcastFeed'
 
 export type GuestRow = {
   id: string
-  feedUrl: string
-  guid: string
+  // RSSが無い番組(Spotify独占配信)はnull
+  feedUrl: string | null
+  guid: string | null
   spotifyUrl: string | null
-  // 控え(RSSが引けないときの代替表示)
+  // 控え。RSSが無い回はここが唯一の真実(Spotifyの埋め込みJSON由来)
   showName: string
   title: string
   date: string | null
   duration: string | null
+  image: string | null
 }
 
 // 棚・ページで使う解決済みの1件。epがnullならRSSから引けなかった=控えで出す
@@ -37,8 +40,8 @@ export type GuestEpisode = {
   image: string | null
   audioUrl: string | null
   description: string // 生HTML。表示側でサニタイズ
-  feedUrl: string
-  guid: string
+  feedUrl: string | null
+  guid: string | null
 }
 
 // **UAで返るものが変わる**(2026-09-10 実測)。フルのChrome UAを送ると
@@ -83,7 +86,83 @@ export function spotifyEpisodeId(url: string): string | null {
   return m ? m[1] : null
 }
 
-// ① Spotifyのエピソードページから回名と番組名を取る
+// 尺のミリ秒 → 00:50:35 の形(RSSのitunes:durationと揃える)
+function msToDuration(ms: number): string {
+  const t = Math.round(ms / 1000)
+  const h = Math.floor(t / 3600)
+  const m = Math.floor((t % 3600) / 60)
+  const sec = t % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(h)}:${pad(m)}:${pad(sec)}`
+}
+
+export type SpotifyMeta = {
+  title: string
+  showName: string
+  date: string | null // YYYY-MM-DD
+  duration: string | null
+  image: string | null
+}
+
+// ①' 埋め込みページの__NEXT_DATA__から取る(2026-09-10)。**og:よりこちらが上**——
+// 回名・番組名に加えて**公開日・尺・カバーまで入っている**。
+// Spotify独占配信でRSSが無い番組は、ここが唯一の情報源になる(音源だけは
+// audioPreviewしか無く全編ではないので使わない=その回は送客ボタンだけにする)
+export async function readSpotifyEmbed(url: string): Promise<SpotifyMeta | null> {
+  const id = spotifyEpisodeId(url)
+  if (!id) return null
+  try {
+    const res = await fetch(`https://open.spotify.com/embed/episode/${id}`, {
+      headers: { 'user-agent': UA, 'accept-language': 'ja,en;q=0.8' },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const html = await res.text()
+    const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
+    if (!m) return null
+    const json = JSON.parse(m[1]) as {
+      props?: {
+        pageProps?: {
+          state?: {
+            data?: {
+              entity?: {
+                title?: string
+                name?: string
+                subtitle?: string
+                releaseDate?: { isoString?: string }
+                duration?: number
+                relatedEntityCoverArt?: { url?: string; maxWidth?: number }[]
+              }
+            }
+          }
+        }
+      }
+    }
+    const e = json.props?.pageProps?.state?.data?.entity
+    if (!e) return null
+    const title = (e.title || e.name || '').trim()
+    const showName = (e.subtitle || '').trim()
+    if (!title || !showName) return null
+    // カバーは一番大きいものを選ぶ(640があればそれ)
+    const arts = (e.relatedEntityCoverArt ?? []).filter((a) => a.url)
+    const image =
+      arts.slice().sort((a, b) => (b.maxWidth ?? 0) - (a.maxWidth ?? 0))[0]?.url ?? null
+    return {
+      title,
+      showName,
+      // **東京日付に直す**(2026-09-10)。isoStringはUTCで、そのまま切ると
+      // RSS経由の日付(podcastFeedは東京基準)と1日ずれる。棚の並びは公開日順なので
+      // 出所によって日付が変わると位置が動いてしまう
+      date: e.releaseDate?.isoString ? tokyoYmd(e.releaseDate.isoString) : null,
+      duration: typeof e.duration === 'number' ? msToDuration(e.duration) : null,
+      image,
+    }
+  } catch {
+    return null
+  }
+}
+
+// ① Spotifyのエピソードページから回名と番組名を取る(埋め込みが読めないときの控え)
 export async function readSpotifyEpisode(
   url: string
 ): Promise<{ title: string; showName: string } | null> {
@@ -168,10 +247,28 @@ export function audioHostAllowed(url: string | null): boolean {
 }
 
 export type ResolveResult =
-  | { ok: true; feedUrl: string; guid: string; showName: string; ep: Episode }
+  | {
+      ok: true
+      // RSSが見つかった回はここが埋まる。Spotify独占配信の回はnull
+      feedUrl: string | null
+      guid: string | null
+      showName: string
+      title: string
+      date: string
+      duration: string | null
+      image: string | null
+      audioUrl: string | null
+      // RSSが無い=サイト内で鳴らせない。ページは送客ボタンだけになる
+      rssFound: boolean
+    }
   | { ok: false; step: 'spotify' | 'feed' | 'episode'; message: string }
 
-// Spotify URL(またはRSS直指定)から1件を解決する。studioのプレビューと保存の両方が使う
+// Spotify URL(またはRSS直指定)から1件を解決する。studioのプレビューと保存の両方が使う。
+//
+// **RSSが見つからなくても失敗にしない**(2026-09-10 Andy指摘「spotifyでしか公開
+// されていなくてrssが見つからない番組がある」)。Spotifyの埋め込みJSONに公開日・尺・
+// カバーまで入っているので、タイルもページも正しく作れる。欠けるのは全編音源だけで、
+// その回は「Spotifyで聴く」ボタンだけを置く。
 export async function resolveGuestEpisode(input: {
   spotifyUrl?: string
   feedUrl?: string
@@ -180,43 +277,78 @@ export async function resolveGuestEpisode(input: {
   let feedUrl = input.feedUrl?.trim() || ''
   let title = input.title?.trim() || ''
   let showName = ''
+  let meta: SpotifyMeta | null = null
 
   if (input.spotifyUrl) {
-    const meta = await readSpotifyEpisode(input.spotifyUrl)
+    // 埋め込みJSONが本命。読めなければog:へ落ちる(回名と番組名だけ取れる)
+    meta = await readSpotifyEmbed(input.spotifyUrl)
     if (!meta) {
-      return {
-        ok: false,
-        step: 'spotify',
-        message: 'SpotifyのURLから回名・番組名を読めなかった（URLを確認するか、RSSを直接貼る）',
+      const og = await readSpotifyEpisode(input.spotifyUrl)
+      if (!og) {
+        return {
+          ok: false,
+          step: 'spotify',
+          message:
+            'SpotifyのURLから情報を読めなかった（URLを確認するか、RSSを直接貼る）',
+        }
       }
+      meta = { ...og, date: null, duration: null, image: null }
     }
     title = title || meta.title
     showName = meta.showName
   }
 
-  if (!feedUrl) {
-    if (!showName) {
-      return { ok: false, step: 'feed', message: '番組名が分からないためRSSを探せない' }
-    }
-    const found = await findFeedByShowName(showName)
-    if (!found) {
+  // RSSを探す。見つからなくてもSpotify由来の情報だけで成立させる
+  if (!feedUrl && showName) {
+    feedUrl = (await findFeedByShowName(showName)) ?? ''
+  }
+
+  if (feedUrl) {
+    const feed = await fetchShowFeed(feedUrl)
+    const ep = feed ? (title ? matchEpisode(feed.episodes, title) : feed.episodes[0]) : null
+    if (ep) {
       return {
-        ok: false,
-        step: 'feed',
-        message: `「${showName}」のRSSが見つからなかった（Spotify独占配信の可能性。RSSを直接貼る）`,
+        ok: true,
+        feedUrl,
+        guid: ep.id,
+        showName: showName || feed!.title,
+        title: ep.title,
+        date: ep.date,
+        duration: ep.duration,
+        image: ep.image ?? feed!.image,
+        audioUrl: ep.audioUrl,
+        rssFound: true,
       }
     }
-    feedUrl = found
+    // RSSは引けたが回が無い。Spotify由来の情報があるならそれで通す
+    if (!meta) {
+      return { ok: false, step: 'episode', message: `RSSの中に「${title}」が見つからなかった` }
+    }
   }
 
-  const feed = await fetchShowFeed(feedUrl)
-  if (!feed) return { ok: false, step: 'feed', message: 'RSSを取得できなかった' }
-
-  const ep = title ? matchEpisode(feed.episodes, title) : feed.episodes[0]
-  if (!ep) {
-    return { ok: false, step: 'episode', message: `RSSの中に「${title}」が見つからなかった` }
+  if (!meta) {
+    return { ok: false, step: 'feed', message: 'RSSもSpotifyの情報も取れなかった' }
   }
-  return { ok: true, feedUrl, guid: ep.id, showName: showName || feed.title, ep }
+  if (!meta.date) {
+    // 並びが公開日順なので、日付が無いものは棚に置けない
+    return {
+      ok: false,
+      step: 'spotify',
+      message: 'Spotifyから公開日を読めなかった（RSSを直接貼る）',
+    }
+  }
+  return {
+    ok: true,
+    feedUrl: null,
+    guid: null,
+    showName: meta.showName,
+    title: meta.title,
+    date: meta.date,
+    duration: meta.duration,
+    image: meta.image,
+    audioUrl: null,
+    rssFound: false,
+  }
 }
 
 // 保存済みの行を読む。並びは**エピソードの公開日降順**(2026-09-10 Andy指定。
@@ -225,18 +357,21 @@ export async function listGuestRows(): Promise<GuestRow[]> {
   const service = createService()
   const { data } = await service
     .from('guest_episodes')
-    .select('id, feed_url, episode_guid, spotify_url, show_name, title, published_at, duration')
+    .select(
+      'id, feed_url, episode_guid, spotify_url, show_name, title, published_at, duration, image_url'
+    )
     .is('deleted_at', null)
     .order('published_at', { ascending: false })
   return (data ?? []).map((r) => ({
     id: r.id as string,
-    feedUrl: r.feed_url as string,
-    guid: r.episode_guid as string,
+    feedUrl: (r.feed_url as string | null) ?? null,
+    guid: (r.episode_guid as string | null) ?? null,
     spotifyUrl: (r.spotify_url as string | null) ?? null,
     showName: (r.show_name as string) ?? '',
     title: (r.title as string) ?? '',
     date: (r.published_at as string | null) ?? null,
     duration: (r.duration as string | null) ?? null,
+    image: (r.image_url as string | null) ?? null,
   }))
 }
 
@@ -246,8 +381,9 @@ export async function listGuestEpisodes({ full = false } = {}): Promise<GuestEpi
   if (rows.length === 0) return []
 
   // 同じ番組に複数回出ている場合、フィードは1回だけ引く(podcastFeed側でも
-  // in-flight共有されるが、ここで畳んでおくと意図が読める)
-  const feedUrls = [...new Set(rows.map((r) => r.feedUrl))]
+  // in-flight共有されるが、ここで畳んでおくと意図が読める)。
+  // RSSが無い回(Spotify独占配信)はここに入らない=保存済みの控えだけで描く
+  const feedUrls = [...new Set(rows.map((r) => r.feedUrl).filter((u): u is string => Boolean(u)))]
   const feeds = await Promise.all(
     feedUrls.map((u) => (full ? fetchShowFeed(u) : fetchShowFeedLight(u)))
   )
@@ -255,8 +391,8 @@ export async function listGuestEpisodes({ full = false } = {}): Promise<GuestEpi
 
   const out: GuestEpisode[] = []
   for (const r of rows) {
-    const feed = feedByUrl.get(r.feedUrl) ?? null
-    const ep = feed?.episodes.find((e) => e.id === r.guid) ?? null
+    const feed = r.feedUrl ? (feedByUrl.get(r.feedUrl) ?? null) : null
+    const ep = r.guid ? (feed?.episodes.find((e) => e.id === r.guid) ?? null) : null
     // RSSが引けなければ控えで出す(フィードから回が落ちても棚から消えない)
     const date = ep?.date ?? r.date
     if (!date) continue
@@ -267,7 +403,7 @@ export async function listGuestEpisodes({ full = false } = {}): Promise<GuestEpi
       title: ep?.title || r.title,
       date,
       duration: ep?.duration ?? r.duration,
-      image: ep?.image ?? feed?.image ?? null,
+      image: ep?.image ?? feed?.image ?? r.image,
       audioUrl: ep?.audioUrl ?? null,
       description: ep?.description ?? '',
       feedUrl: r.feedUrl,

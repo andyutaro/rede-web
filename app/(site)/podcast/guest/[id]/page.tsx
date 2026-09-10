@@ -93,6 +93,8 @@ export default async function GuestEpisodePage({ params }: { params: Promise<Par
             </div>
           )}
           <h1 className="episode-title">{g.title}</h1>
+          {/* 尺の単独表示はプレイヤーが無い回だけ(自分の番組のページと同じ扱い)。
+              RSSが無い番組(Spotify独占配信)はここに落ちる */}
           {g.duration && !g.audioUrl && <div className="episode-duration">{g.duration}</div>}
 
           {g.audioUrl && <AudioPlayer src={g.audioUrl} title={g.title} />}

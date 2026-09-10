@@ -17,14 +17,15 @@ export type GuestListRow = {
 }
 
 type Preview = {
-  feedUrl: string
-  guid: string
+  feedUrl: string | null
+  guid: string | null
   showName: string
   title: string
   date: string
   duration: string | null
   image: string | null
   hasAudio: boolean
+  rssFound: boolean
   audioHost: string | null
   audioAllowed: boolean
 }
@@ -175,6 +176,13 @@ export default function GuestManager({ rows }: { rows: GuestListRow[] }) {
                 {preview.duration ? ` · ${preview.duration}` : ''}
                 {preview.hasAudio ? ' · 音源あり' : ' · 音源なし'}
               </div>
+              {!preview.rssFound && (
+                <div className="guest-warn">
+                  RSSが見つからない番組（Spotify独占配信）。日付・尺・カバーは取れて
+                  いるので棚には正しく並ぶが、**サイト内では鳴らせない**。ページは
+                  「Spotifyで聴く」ボタンだけになる
+                </div>
+              )}
               {preview.hasAudio && !preview.audioAllowed && (
                 <div className="guest-warn">
                   ⚠ {preview.audioHost} はCSPのmedia-srcに無い。このままだとサイト内で

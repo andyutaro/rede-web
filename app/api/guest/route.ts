@@ -57,14 +57,16 @@ export async function POST(request: Request) {
     feedUrl: resolved.feedUrl,
     guid: resolved.guid,
     showName: resolved.showName,
-    title: resolved.ep.title,
-    date: resolved.ep.date,
-    duration: resolved.ep.duration,
-    image: resolved.ep.image,
-    hasAudio: Boolean(resolved.ep.audioUrl),
+    title: resolved.title,
+    date: resolved.date,
+    duration: resolved.duration,
+    image: resolved.image,
+    hasAudio: Boolean(resolved.audioUrl),
+    // RSSが見つからない番組(Spotify独占配信)。ページは送客ボタンだけになる
+    rssFound: resolved.rssFound,
     // CSPのmedia-srcに無いホストは鳴らない。貼った時点で気づけるように返す
-    audioHost: audioHostOf(resolved.ep.audioUrl),
-    audioAllowed: audioHostAllowed(resolved.ep.audioUrl),
+    audioHost: audioHostOf(resolved.audioUrl),
+    audioAllowed: audioHostAllowed(resolved.audioUrl),
   }
 
   if (body.action !== 'save') return NextResponse.json({ ok: true, preview })
@@ -77,12 +79,16 @@ export async function POST(request: Request) {
       episode_guid: resolved.guid,
       spotify_url: spotifyUrl ?? null,
       show_name: resolved.showName,
-      title: resolved.ep.title,
-      published_at: resolved.ep.date,
-      duration: resolved.ep.duration,
+      title: resolved.title,
+      published_at: resolved.date,
+      duration: resolved.duration,
+      // RSSが無い回はここが唯一のカバー。RSS由来の回でも控えとして持つ
+      image_url: resolved.image,
       deleted_at: null,
     },
-    { onConflict: 'feed_url,episode_guid' }
+    // RSSが無い回はfeed_url/episode_guidがnullなので、そちらの一意索引では
+    // 重複を止められない。Spotify URLを鍵にする(部分索引を2本張ってある)
+    { onConflict: resolved.rssFound ? 'feed_url,episode_guid' : 'spotify_url' }
   )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
