@@ -35,16 +35,25 @@ create table if not exists guest_episodes (
   deleted_at timestamptz
 );
 
--- 同じ回を二重に登録しない。RSS由来の回はfeed+id、RSSが無い回はSpotify URLで見る
--- (Postgresはnullを互いに異なるものとして扱うので、feed_urlがnullの行は
---  上の索引では重複を止められない。だから2本目が要る)
+-- 同じ回を二重に登録しない。RSS由来の回はfeed+id、RSSが無い回はSpotify URLで見る。
+--
+-- **部分索引(where ...)にしないこと**(2026-09-10、一度やって踏んだ)。
+-- ON CONFLICT は部分索引を推論に使えず、保存が
+-- 「there is no unique or exclusion constraint matching the ON CONFLICT
+--  specification」で落ちる。
+-- そして部分索引にする必要は元々ない——**Postgresはnullを互いに異なるものとして
+-- 扱う**ので、素の一意索引でちょうど狙いどおりになる:
+--   ・feed_urlがnullの行(Spotify限定)は (feed_url, episode_guid) で衝突しない
+--   ・spotify_urlがnullの行(RSS直貼り)は spotify_url で衝突しない
+-- 一度張ってしまった部分索引を捨てるためにdropを先に置く(何度実行しても安全)
+drop index if exists guest_episodes_feed_guid_idx;
+drop index if exists guest_episodes_spotify_idx;
+
 create unique index if not exists guest_episodes_feed_guid_idx
-  on guest_episodes (feed_url, episode_guid)
-  where feed_url is not null and episode_guid is not null;
+  on guest_episodes (feed_url, episode_guid);
 
 create unique index if not exists guest_episodes_spotify_idx
-  on guest_episodes (spotify_url)
-  where spotify_url is not null;
+  on guest_episodes (spotify_url);
 
 -- 棚の並び(公開日降順)がそのまま引ける
 create index if not exists guest_episodes_published_idx
