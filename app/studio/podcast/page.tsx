@@ -1,14 +1,65 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SHOWS } from '@/lib/site/shows'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { getTagVocabulary } from '@/lib/studio/tagVocabulary'
+import { listGuestEpisodes } from '@/lib/site/guestEpisodes'
 import PodcastInbox, { type InboxRow } from './PodcastInbox'
+import GuestManager, { type GuestListRow } from './GuestManager'
 
 export const dynamic = 'force-dynamic'
 
+// 部屋は増やさずタブにする(2026-09-10。NOTES室と同じ作法=上部メニューを増やさない)
+const TABS = [
+  { key: 'inbox', label: 'INBOX' },
+  { key: 'guest', label: 'GUEST' },
+] as const
+type TabKey = (typeof TABS)[number]['key']
+
 // Podcast Inbox: RSS取り込み済みエピソードのうち未タグのものが溜まる場所。
 // Andyが任意のタイミングでタグ付けする(仕様: 取り込み後は「未タグのエピソード」に溜まる)。
-export default async function StudioPodcast() {
+export default async function StudioPodcast({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const { tab: rawTab } = await searchParams
+  const tab: TabKey = (TABS.find((t) => t.key === rawTab)?.key ?? 'inbox') as TabKey
+
+  const tabs = (
+    <div className="studio-tabs">
+      {TABS.map((t) => (
+        <Link
+          key={t.key}
+          href={t.key === 'inbox' ? '/studio/podcast' : `/studio/podcast?tab=${t.key}`}
+          aria-current={tab === t.key ? 'page' : undefined}
+        >
+          {t.label}
+        </Link>
+      ))}
+    </div>
+  )
+
+  // ゲスト出演(2026-09-10): 他番組に出た回をSpotify URLの貼り付けで登録する
+  if (tab === 'guest') {
+    const eps = await listGuestEpisodes()
+    const rows: GuestListRow[] = eps.map((e) => ({
+      id: e.id,
+      showName: e.showName,
+      title: e.title,
+      date: e.date,
+      duration: e.duration,
+      hasAudio: Boolean(e.audioUrl),
+    }))
+    return (
+      <>
+        <h1 className="studio-h1">PODCAST — GUEST</h1>
+        {tabs}
+        <GuestManager rows={rows} />
+      </>
+    )
+  }
+
   const supabase = await createClient()
 
   const [feeds, { data: tagRows }, tagVocabulary] = await Promise.all([
@@ -52,6 +103,7 @@ export default async function StudioPodcast() {
   return (
     <>
       <h1 className="studio-h1">PODCAST INBOX</h1>
+      {tabs}
       <PodcastInbox rows={rows} tagVocabulary={tagVocabulary} starterSlugs={starterSlugs} />
     </>
   )

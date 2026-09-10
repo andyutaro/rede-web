@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { SHOWS } from '@/lib/site/shows'
 import { fetchShowFeedLight } from '@/lib/site/podcastFeed'
 import { tokyoDaysAgo } from '@/lib/site/text'
+import { listGuestEpisodes } from '@/lib/site/guestEpisodes'
 import CoverGrid from '../CoverGrid'
 import PodcastEpisodeGrid, { type EpItem } from './PodcastEpisodeGrid'
 
@@ -22,9 +23,12 @@ export const metadata: Metadata = {
 
 export default async function PodcastPage() {
   // 棚はタイトル・日付・カバーだけ使う=軽量版で足りる
-  const feeds = await Promise.all(
-    SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : Promise.resolve(null)))
-  )
+  const [feeds, guests] = await Promise.all([
+    Promise.all(
+      SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : Promise.resolve(null)))
+    ),
+    listGuestEpisodes(),
+  ])
 
   const withArt = SHOWS.map((s, i) => ({
     ...s,
@@ -51,6 +55,23 @@ export default async function PodcastPage() {
       })
     }
   })
+  // ゲスト出演(2026-09-10 Andy指定): 他番組に出た回。番組タイルには出さず
+  // エピソードのタイルにだけ並ぶ。並びは自番組の回と同じ**公開日降順**
+  // (「サイトに追加した日順」ではない)ので、下の共通ソートに素直に混ぜる
+  for (const g of guests) {
+    allEpisodes.push({
+      key: `guest-${g.id}`,
+      slug: 'guest',
+      epId: g.id,
+      href: `/podcast/guest/${g.id}`,
+      title: g.title,
+      date: g.date,
+      thumb: g.image,
+      showLabel: g.showName,
+      group: 'guest',
+    })
+  }
+
   allEpisodes.sort((a, b) => b.date.localeCompare(a.date))
 
   return (

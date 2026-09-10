@@ -1710,3 +1710,130 @@
     min-width: 0;
   }
 }
+
+/* ---- ゲスト出演の登録(2026-09-10) ---- */
+.guest-form {
+  max-width: 640px;
+  margin-bottom: 40px;
+}
+
+.guest-label {
+  display: block;
+  margin: 16px 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #8a8a8a;
+}
+
+.guest-form input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e8e6e0;
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.guest-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.guest-link {
+  background: none;
+  border: 0;
+  color: #6b6b6b;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.guest-link:hover {
+  color: #e8e6e0;
+}
+
+.guest-error {
+  margin-top: 14px;
+  font-size: 12px;
+  color: #e05548;
+  line-height: 1.8;
+}
+
+.guest-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.guest-preview img {
+  flex: none;
+  object-fit: cover;
+}
+
+.guest-preview-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+.guest-preview-show,
+.guest-row-show {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #8a8a8a;
+}
+
+.guest-preview-title,
+.guest-row-title {
+  display: block;
+  color: #e8e6e0;
+}
+
+.guest-preview-meta,
+.guest-row-meta {
+  display: block;
+  font-size: 11px;
+  color: #6b6b6b;
+}
+
+.guest-list-head {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #8a8a8a;
+  margin-bottom: 14px;
+}
+
+.guest-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.guest-row-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.guest-empty {
+  font-size: 12px;
+  color: #6b6b6b;
+}
+
+.guest-warn {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #d9b44a;
+}

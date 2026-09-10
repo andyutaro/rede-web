@@ -13,10 +13,15 @@ export type EpItem = {
   date: string
   thumb: string | null
   showLabel: string
-  group: 'original' | 'works'
+  // guest = 他番組にゲスト出演した回(2026-09-10)。番組タイル(ORIGINAL/WORKS)は
+  // 「Andyが作っている番組」の記号なので他人の番組は並べないが、**エピソードの
+  // タイルは記号が別**なのでここには同じ文法で並べられる
+  group: 'original' | 'works' | 'guest'
+  // 既定は /podcast/[slug]/[epId]。ゲスト回だけ別ルートを持つ
+  href?: string
 }
 
-const TABS = ['ALL', 'ORIGINAL', 'WORKS'] as const
+const TABS = ['ALL', 'ORIGINAL', 'WORKS', 'GUEST'] as const
 type Tab = (typeof TABS)[number]
 
 // newSince: この日付以降のエピソードに赤のNEWドット(7日以内の新着、2026-07-20)
@@ -76,7 +81,7 @@ export default function PodcastEpisodeGrid({
             {/* 同上(2026-07-23)。ここは301タイルあり、名前が無いと一覧から
                 目的の回を選ぶ操作が事実上できなかった。新着はラベル側で伝える */}
             <Link
-              href={`/podcast/${ep.slug}/${ep.epId}`}
+              href={ep.href ?? `/podcast/${ep.slug}/${ep.epId}`}
               className="sq"
               aria-label={`${ep.showLabel} ${ep.title} ${dateShort(ep.date)}${ep.date >= newSince ? ' 新着' : ''}`}
             >
