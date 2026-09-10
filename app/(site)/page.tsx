@@ -77,13 +77,16 @@ export default async function Home() {
   const today = todayInTokyo()
   const service = createService()
 
-  const [todayRes, updatesRaw, photo, covers, daysRes, artRes, guestRows, pool] = await Promise.all([
+  const [todayRes, updates, photo, covers, daysRes, artRes, guestRows, pool] = await Promise.all([
     // finalized_at: 最新書き物のLIVEセルの判定にも使う(当日の行は0:01まで未確定)
     service.from('scribe_days').select('html, updated_at, finalized_at').eq('date', today).maybeSingle(),
-    // UPDATE — LAST 7 DAYS(2026-09-11 Andy指定): 7日以内かつ最大5件。
-    // 見出しは以前「LAST 10 DAYS」だったが、実装は日数ではなく**10件**で切っていた。
-    // 新しい順の上位5件を取ってから7日で絞る=「7日以内の新しい方から最大5件」になる
-    recentUpdates(5, true, true), // Home: ミニマル表記+scribeは当日分のみ(2026-07-20)
+    // UPDATE — LATEST 5(2026-09-11 Andy指定): **新しい順に5件、日数では切らない。**
+    // 同日の経緯: LAST 10 DAYS(実装は日数ではなく10件だった)→ 7日以内かつ最大5件
+    // → 見出しを LATEST 5 に → 見出しどおり日数の絞り込みを外した(更新の少ない週に
+    // 「LATEST 5」なのに3件、を起こさないため)。
+    // DESKの確定アーカイブも載せる(第3引数false)。2026-07-20に「毎日のscribeで
+    // 埋まりすぎる」として当日分だけにしていたのを、同日Andy指定で戻した
+    recentUpdates(5, true, false),
     // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
     randomPhotoWithHref(),
     // 番組カバー+最新エピソード日付(カバーは番組全体のアート。エピソード画像ではない)。
@@ -115,8 +118,6 @@ export default async function Home() {
     // (assignedOfは母集団上のハッシュなので、母集団が違うと別の画像になる)
     listAllImages(),
   ])
-
-  const updates = updatesRaw.filter((r) => r.live || r.date >= tokyoDaysAgo(6))
 
   // 最新エピソード(2026-09-11 Andy指定「/podcastのエピソードタイルの最新4件」)。
   // 自番組(夜の作り置き)とゲスト出演(控え)を公開日で混ぜる。棚と同じ並び・同じ組版
@@ -225,7 +226,7 @@ export default async function Home() {
 
       <section className="section">
         <div className="section-head">
-          <h2>UPDATE — LAST 7 DAYS</h2>
+          <h2>UPDATE — LATEST 5</h2>
           <Link href="/updates">ALL →</Link>
         </div>
         <div className="section-body">
