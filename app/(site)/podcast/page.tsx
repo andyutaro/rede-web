@@ -5,6 +5,7 @@ import { tokyoDaysAgo } from '@/lib/site/text'
 import { listGuestEpisodes } from '@/lib/site/guestEpisodes'
 import CoverGrid from '../CoverGrid'
 import PodcastEpisodeGrid, { type EpItem } from './PodcastEpisodeGrid'
+import GuestGrid from './GuestGrid'
 
 // 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
 export const revalidate = 86400
@@ -88,6 +89,17 @@ export default async function PodcastPage() {
         heading="WORKS"
         shows={withArt.filter((s) => s.group === 'works')}
         onAirSince={tokyoDaysAgo(4)}
+      />
+      {/* GUEST(2026-09-10 Andy指定): WORKSの下に最新4件。全件は下のタブで見られる。
+          ORIGINAL/WORKSは番組のカバーだが、ここはエピソードのタイル */}
+      <GuestGrid
+        items={guests.slice(0, 4).map((g) => ({
+          id: g.id,
+          showName: g.showName,
+          title: g.title,
+          date: g.date,
+          image: g.image,
+        }))}
       />
       <PodcastEpisodeGrid
         episodes={allEpisodes}
