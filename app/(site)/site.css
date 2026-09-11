@@ -4067,3 +4067,24 @@ a.show-cast-name:hover {
   letter-spacing: 0.08em;
   color: var(--body);
 }
+
+/* ---- 続き・全て見るの行き先は「右下」で統一(2026-09-11 Andy指定) ----
+   以前はHomeの UPDATE・PODCAST — LATEST・NOTE — LATEST の「ALL →」が見出し行の
+   右上(.section-head a)にあり、DESKの窓の「全文を読む →」(右下、.scribe-window-foot)
+   と位置が揃っていなかった。字面もその「全文を読む →」に合わせる(11px・0.12em・
+   --mut、hoverで--ink)=同じ役割のリンクはどこでも同じ位置・同じ見た目 */
+.section-foot {
+  margin-top: 28px;
+  display: flex;
+  justify-content: flex-end;
+  font-size: 11px;
+  color: var(--mut);
+}
+
+.section-foot a {
+  letter-spacing: 0.12em;
+}
+
+.section-foot a:hover {
+  color: var(--ink);
+}

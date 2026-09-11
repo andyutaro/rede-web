@@ -65,7 +65,6 @@ export default function ArticleGrid({
       {heading ? (
         <div className="section-head">
           <h2>{heading}</h2>
-          {allHref && <Link href={allHref}>ALL →</Link>}
         </div>
       ) : (
         <div className="section-head article-tabs" role="tablist">
@@ -136,6 +135,12 @@ export default function ArticleGrid({
           )
         )}
       </div>
+      {/* 続き・全て見るは右下で統一(2026-09-11 Andy指定)。.section-foot の注記 */}
+      {heading && allHref && (
+        <div className="section-foot">
+          <Link href={allHref}>ALL →</Link>
+        </div>
+      )}
     </section>
   )
 }

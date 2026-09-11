@@ -59,7 +59,6 @@ export default function PodcastEpisodeGrid({
       {compact ? (
         <div className="section-head">
           <h2>{heading}</h2>
-          {allHref && <Link href={allHref}>ALL →</Link>}
         </div>
       ) : (
       <>
@@ -124,6 +123,12 @@ export default function PodcastEpisodeGrid({
 
       {shown.length === 0 && (
         <p className="podcast-ep-empty">該当なし</p>
+      )}
+      {/* 続き・全て見るは右下で統一(2026-09-11 Andy指定)。.section-foot の注記 */}
+      {compact && allHref && (
+        <div className="section-foot">
+          <Link href={allHref}>ALL →</Link>
+        </div>
       )}
     </section>
   )

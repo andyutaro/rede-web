@@ -77,7 +77,7 @@ export default async function Home() {
   const today = todayInTokyo()
   const service = createService()
 
-  const [todayRes, updates, photo, covers, daysRes, artRes, guestRows, pool] = await Promise.all([
+  const [todayRes, updatesRaw, photo, covers, daysRes, artRes, guestRows, pool] = await Promise.all([
     // finalized_at: 最新書き物のLIVEセルの判定にも使う(当日の行は0:01まで未確定)
     service.from('scribe_days').select('html, updated_at, finalized_at').eq('date', today).maybeSingle(),
     // UPDATE — LATEST 5(2026-09-11 Andy指定): **新しい順に5件、日数では切らない。**
@@ -86,7 +86,9 @@ export default async function Home() {
     // 「LATEST 5」なのに3件、を起こさないため)。
     // DESKの確定アーカイブも載せる(第3引数false)。2026-07-20に「毎日のscribeで
     // 埋まりすぎる」として当日分だけにしていたのを、同日Andy指定で戻した
-    recentUpdates(5, true, false),
+    // 当日のDESK(LIVE行)はここでは出さない(2026-09-11 Andy指定)。すぐ下のDESKの窓と
+    // 最新書き物のLIVEセルが担うので重複になる。1件多く取って、LIVE行を除いて5件に切る
+    recentUpdates(6, true, false),
     // ランダム写真+掲載ページへのリンク(Photography > Notes > scribeの順で解決)
     randomPhotoWithHref(),
     // 番組カバー+最新エピソード日付(カバーは番組全体のアート。エピソード画像ではない)。
@@ -118,6 +120,8 @@ export default async function Home() {
     // (assignedOfは母集団上のハッシュなので、母集団が違うと別の画像になる)
     listAllImages(),
   ])
+
+  const updates = updatesRaw.filter((r) => !r.live).slice(0, 5)
 
   // 最新エピソード(2026-09-11 Andy指定「/podcastのエピソードタイルの最新4件」)。
   // 自番組(夜の作り置き)とゲスト出演(控え)を公開日で混ぜる。棚と同じ並び・同じ組版
@@ -227,10 +231,13 @@ export default async function Home() {
       <section className="section">
         <div className="section-head">
           <h2>UPDATE — LATEST 5</h2>
-          <Link href="/updates">ALL →</Link>
         </div>
         <div className="section-body">
           <UpdateList rows={updates} />
+        </div>
+        {/* 続き・全て見るは右下で統一(2026-09-11 Andy指定)。.section-foot の注記 */}
+        <div className="section-foot">
+          <Link href="/updates">ALL →</Link>
         </div>
       </section>
 
