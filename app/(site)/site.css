@@ -4088,3 +4088,15 @@ a.show-cast-name:hover {
 .section-foot a:hover {
   color: var(--ink);
 }
+
+/* ---- Homeの最新4件は、スマホでは3件(2026-09-11 Andy指定) ----
+   スマホ(640px以下)のタイルは3列(上の.grid4の注記: 2列だと1枚が153〜181pxの
+   「重いカバー」に戻る)。4件並べると3枚+1枚取り残しになるので、列数は変えずに
+   件数だけを画面幅で変える=PCは4件(4列×1段)、スマホは3件(3列×1段)。
+   対象はHomeの PODCAST — LATEST / NOTE — LATEST だけ(.home-latest)。棚は全件出すので触らない。
+   隠した分は右下の「ALL →」から見られる */
+@media (max-width: 640px) {
+  .home-latest .grid4 > :nth-child(n + 4) {
+    display: none;
+  }
+}

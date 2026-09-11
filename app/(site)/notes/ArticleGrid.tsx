@@ -61,7 +61,8 @@ export default function ArticleGrid({
   const shown = limit ? filtered.slice(0, limit) : filtered
 
   return (
-    <section className="section">
+    <section className={heading ? 'section home-latest' : 'section'}>
+      {/* home-latest: Homeの最新4件だけに付く目印。スマホでは4枚目を隠す(site.cssの注記) */}
       {heading ? (
         <div className="section-head">
           <h2>{heading}</h2>

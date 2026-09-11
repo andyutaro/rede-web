@@ -55,7 +55,8 @@ export default function PodcastEpisodeGrid({
   }, [episodes, tab, query, limit])
 
   return (
-    <section className="section">
+    <section className={compact ? 'section home-latest' : 'section'}>
+      {/* home-latest: Homeの最新4件だけに付く目印。スマホでは4枚目を隠す(site.cssの注記) */}
       {compact ? (
         <div className="section-head">
           <h2>{heading}</h2>
