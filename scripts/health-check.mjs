@@ -319,7 +319,9 @@ try {
     }
     const rest = res.backup?.photos?.remaining
     if (typeof rest === 'number' && rest > 60)
-      alerts.push(`控えの未処理が${rest}件。一晩6枚では追いつかない量`)
+      // 2026-09-14から3時間ごとの控え専用cron(1回20枚)が別にあるので、夜の時点で
+      // 60枚を超えて残っているなら、そちらが止まっている可能性が高い
+      alerts.push(`控えの未処理が${rest}件。3時間ごとの控え専用cronが止まっているかもしれない`)
   }
 } catch (e) {
   alerts.push(`夜のcronの記録が読めない: ${e.message}`)

@@ -109,37 +109,69 @@ export async function backupToR2(): Promise<BackupResult> {
 
   // ---- 2. 写真(差分) ----
   try {
-    const paths = await listAllMedia(mediaBucket)
-    // 既にある控えは1回の一覧で把握する(1枚ずつheadすると枚数分の
-    // サブリクエストを使い切ってしまう。2026-07-23に上限へ当たった)
-    const already = await listBackedUp(bucket)
-    let copied = 0
-    let skipped = 0
-    let remaining = 0
-    for (const path of paths) {
-      const key = `media/${path}`
-      if (already.has(key)) {
-        skipped++
-        continue
-      }
-      if (copied >= MAX_PHOTOS_PER_RUN) {
-        remaining++
-        continue
-      }
-      const obj = await mediaBucket.get(path)
-      if (!obj) continue
-      await bucket.put(key, await obj.arrayBuffer(), {
-        httpMetadata: { contentType: obj.httpMetadata?.contentType || 'application/octet-stream' },
-      })
-      copied++
-    }
-    result.photos = { copied, skipped, remaining }
+    result.photos = await copyPhotos(bucket, mediaBucket, MAX_PHOTOS_PER_RUN)
   } catch (e) {
     result.error = (result.error ? result.error + ' / ' : '') +
       '写真: ' + (e instanceof Error ? `${e.name}: ${e.message}` : String(e))
   }
 
   return result
+}
+
+// 写真の控え(差分)。夜のcronと、控え専用のcron(backupPhotos)が共有する
+async function copyPhotos(
+  bucket: R2Store,
+  mediaBucket: R2Store,
+  max: number
+): Promise<{ copied: number; skipped: number; remaining: number }> {
+  const paths = await listAllMedia(mediaBucket)
+  // 既にある控えは1回の一覧で把握する(1枚ずつheadすると枚数分の
+  // サブリクエストを使い切ってしまう。2026-07-23に上限へ当たった)
+  const already = await listBackedUp(bucket)
+  let copied = 0
+  let skipped = 0
+  let remaining = 0
+  for (const path of paths) {
+    const key = `media/${path}`
+    if (already.has(key)) {
+      skipped++
+      continue
+    }
+    if (copied >= max) {
+      remaining++
+      continue
+    }
+    const obj = await mediaBucket.get(path)
+    if (!obj) continue
+    await bucket.put(key, await obj.arrayBuffer(), {
+      httpMetadata: { contentType: obj.httpMetadata?.contentType || 'application/octet-stream' },
+    })
+    copied++
+  }
+  return { copied, skipped, remaining }
+}
+
+// 控え専用のcron(2026-09-14)が1回に写す枚数。
+// 夜のcronは確定・掃除・再生キュー・ブックマークと上限(1起動あたりサブリクエスト50本)を
+// 分け合うので6枚が限界だった(12枚で上限に当たった記録がある)。写真をまとめて上げると
+// 控えが何週間も追いつかない(2026-09-14に未処理145枚)。
+// 控えだけを担当する起動なら上限をまるごと使える。1枚=取得+書き込みの2本なので
+// 20枚=40本、一覧の分を残して余裕を持たせる
+export const MAX_PHOTOS_DEDICATED_RUN = 20
+
+export async function backupPhotos(): Promise<{
+  photos?: { copied: number; skipped: number; remaining: number }
+  error?: string
+}> {
+  const { env } = await getCloudflareContext({ async: true })
+  const e = env as unknown as { BACKUP_BUCKET?: R2Store; MEDIA_BUCKET?: R2Store }
+  if (!e.BACKUP_BUCKET) return { error: 'BACKUP_BUCKET未設定' }
+  if (!e.MEDIA_BUCKET) return { error: 'MEDIA_BUCKET未設定' }
+  try {
+    return { photos: await copyPhotos(e.BACKUP_BUCKET, e.MEDIA_BUCKET, MAX_PHOTOS_DEDICATED_RUN) }
+  } catch (err) {
+    return { error: err instanceof Error ? `${err.name}: ${err.message}` : String(err) }
+  }
 }
 
 // 控え済みの写真のキーを一度に把握する(R2の一覧はサブリクエストを消費しない)

@@ -7,7 +7,9 @@
   // カスタムエントリ(2026-07-22): OpenNextのfetch+scheduled(scribe確定cron)
   "main": "worker.js",
   // 毎日15:01 UTC = 0:01 JST(Vercel Cronから移管)
-  "triggers": { "crons": ["1 15 * * *"] },
+  // 31 */3 * * * = 3時間ごとの写真の控え(2026-09-14、worker.jsのscheduledで振り分け)。
+  // 分を31にするのは、0:01の確定と同じ分に重ねないため
+  "triggers": { "crons": ["1 15 * * *", "31 */3 * * *"] },
   // ISRの永続キャッシュ(2026-07-23)。これが無い間、全ページが毎リクエストで
   // 再生成されていた(Error 1102の構造的な原因)。バケット名はrede-web-cache。
   // バインディング名はOpenNextの規約で固定(NEXT_INC_CACHE_R2_BUCKET)
