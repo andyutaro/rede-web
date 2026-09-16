@@ -107,10 +107,13 @@ export default async function PodcastPage() {
         shows={withArt.filter((s) => s.group === 'works')}
         onAirSince={tokyoDaysAgo(4)}
       />
-      {/* GUEST(2026-09-10 Andy指定): WORKSの下に最新4件。全件は下のタブで見られる。
-          ORIGINAL/WORKSは番組のカバーだが、ここはエピソードのタイル */}
+      {/* GUEST(2026-09-10 Andy指定、2026-09-16に上限撤廃): WORKSの下に置く群。
+          ORIGINAL/WORKSは番組のカバーだが、ここはエピソードのタイル。
+          **件数は絞らない**——上の2群が番組を全部並べているのに、ここだけ
+          頭から4件で切れているとこの棚が「途中で終わっている」ように見えるため
+          (2026-09-16 Andy指摘)。ゲスト出演は年に数回で、増えても数行で収まる */}
       <GuestGrid
-        items={guests.slice(0, 4).map((g) => ({
+        items={guests.map((g) => ({
           id: g.id,
           showName: g.showName,
           title: g.title,
