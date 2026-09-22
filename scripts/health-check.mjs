@@ -149,22 +149,53 @@ try {
   alerts.push(`失敗の内訳が取れない: ${e.message}`)
 }
 
-// ② Workersの枠の消費(直近24時間)。落ちないことの担保
+// ② Workersの消費(直近24時間の実測を30日に換算)。落ちないこと・払いすぎないことの担保
+//
+// **分母を日次から月次へ(2026-09-22)。** 2026-09-16にPaidへ移ったので、
+// 無料プランの「10万リクエスト/日」という日次上限はもう無い。日次で割った割合は
+// 枠の逼迫を意味しなくなっていた。
+//
+// Paidの$5に含まれるのは**月1,000万リクエスト + 月3,000万CPU-ms**(料金表の値。
+// 超過はリクエスト$0.30/100万・CPU $0.02/100万)。**効いているのはCPUの方**——
+// 2026-09-22実測でリクエストは月枠の2.1%なのにCPUは50.7%を使っていた
+// (1リクエストあたり平均73ms)。**リクエストだけ見ると安心して間違える。**
+//
+// 月初からの累計にしないのは、月のどこで走っても同じ意味の数字が出るため
+// (累計だと月初は必ず小さく、月末は必ず大きく出て、しきい値が置けない)。
+const INCLUDED_REQ = 10_000_000
+const INCLUDED_CPU_MS = 30_000_000
 try {
   const d = await gql(
     `query($a:String!,$s:Time!){viewer{accounts(filter:{accountTag:$a}){
-      workersInvocationsAdaptive(limit:1000,filter:{datetime_geq:$s}){sum{requests}dimensions{status}}}}}`,
+      workersInvocationsAdaptive(limit:1000,filter:{datetime_geq:$s}){sum{requests cpuTimeUs}dimensions{status}}}}}`,
     { a: ACC, s: iso(DAY) }
   )
   const rows = d.viewer.accounts[0].workersInvocationsAdaptive
   const by = {}
-  for (const r of rows) by[r.dimensions.status] = (by[r.dimensions.status] ?? 0) + r.sum.requests
+  let cpuMs = 0
+  for (const r of rows) {
+    by[r.dimensions.status] = (by[r.dimensions.status] ?? 0) + r.sum.requests
+    cpuMs += r.sum.cpuTimeUs / 1000
+  }
   const total = Object.values(by).reduce((a, b) => a + b, 0)
+  const reqPct = ((total * 30) / INCLUDED_REQ) * 100
+  const cpuPct = ((cpuMs * 30) / INCLUDED_CPU_MS) * 100
   numbers.workers = {
-    枠に対する割合: `${((total / 100000) * 100).toFixed(1)}%`,
+    '月枠に対する見込み(直近24時間の30日換算)': {
+      リクエスト: `${reqPct.toFixed(1)}%`,
+      CPU: `${cpuPct.toFixed(1)}%`,
+    },
     結果内訳: by,
   }
-  if (total > 70000) alerts.push(`Workersのリクエストが1日10万枠の70%を超えた(${((total / 100000) * 100).toFixed(0)}%)`)
+  // **しきい値は100%**(70%ではない)。超過は破滅的ではなく、CPUが枠の倍でも
+  // 月$0.60程度。鳴らす意味があるのは「$5の内側」でなくなる瞬間なので、
+  // それ未満で鳴らすと毎朝の通知が意味を失う(=見られなくなる)。
+  if (reqPct > 100)
+    alerts.push(`Workersのリクエストが月1,000万の込みぶんを越える見込み(${reqPct.toFixed(0)}%)`)
+  if (cpuPct > 100)
+    alerts.push(
+      `WorkersのCPUが月3,000万msの込みぶんを越える見込み(${cpuPct.toFixed(0)}%)。超過分は約$${(((cpuMs * 30 - INCLUDED_CPU_MS) / 1e6) * 0.02).toFixed(2)}/月`
+    )
 } catch (e) {
   alerts.push(`Workersの数字が取れない: ${e.message}`)
 }
