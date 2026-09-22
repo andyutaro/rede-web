@@ -18,7 +18,8 @@ import PlaceMap from '../../PlaceMap'
 
 // ISR: 再検証で新エピソードを自動反映する(間隔は下記。新着が出るまで最大1日)
 // 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
-export const revalidate = 86400
+// 新しい回が並ぶ索引なので30分(2026-09-22、/podcastと同じ理由)
+export const revalidate = 1800
 
 // 番組は5枠で既知なのでビルド時にプリレンダー(feedのある番組のみ)。
 // 各ページは30分ごとに背景で再生成され、新エピソードが乗る。

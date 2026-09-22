@@ -15,8 +15,9 @@ const worker = {
   async scheduled(controller, env, ctx) {
     // cronは2本(wrangler.jsonc)。どの時刻の起動かで行き先を分ける。
     // - "1 15 * * *"   … 0:01 JSTの確定(finalize)
-    // - "31 */3 * * *" … 3時間ごとの写真の控え(2026-09-14)。夜の確定は上限を他の仕事と
-    //                   分け合うので1晩6枚が限界で、写真をまとめて上げると追いつかなかった
+    // - "31 */3 * * *" … 3時間ごとの定期便(2026-09-14)。写真の控え(夜の確定は上限を
+    //                   他の仕事と分け合うので1晩6枚が限界だった)と、番組の作り置きの
+    //                   焼き直し(2026-09-22。夜だけだと当日配信の回がHomeに翌日まで出ない)
     const path = controller.cron === '31 */3 * * *' ? '/api/cron/backup-photos' : '/api/cron/finalize'
     const req = new Request(`https://andyutaro.com${path}`, {
       headers: { authorization: `Bearer ${env.CRON_SECRET ?? ''}` },

@@ -16,6 +16,9 @@ import { imgThumb, IMG_W } from '@/lib/site/img'
 
 // ISR: 新エピソードのページは初回アクセス時に生成・キャッシュされる
 // 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
+// **回の個別ページは1日のまま(2026-09-22)。** 公開後に中身は変わらないので
+// 短くしても何も新しくならず、330枚ぶんの作り直しが増えるだけ(CPUは$5に含まれる
+// 月3,000万msの約半分を既に使っている)。短くするのは新しい回が"現れる"ページだけ
 export const revalidate = 86400
 
 type Params = { slug: string; episode: string }

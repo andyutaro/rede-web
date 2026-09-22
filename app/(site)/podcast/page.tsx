@@ -8,7 +8,13 @@ import PodcastEpisodeGrid, { type EpItem } from './PodcastEpisodeGrid'
 import GuestGrid from './GuestGrid'
 
 // 1日(2026-09-06)。理由は app/(site)/about/page.tsx の注記
-export const revalidate = 86400
+// **新しい回が出る場所なので30分(2026-09-22)。** 2026-09-06に1日へ延ばしたのは
+// 無料プランのCPU天井で作り直しが落ち続けていたためだったが、その天井は
+// 2026-09-16のPaid移行で消えた(1102は9/18以降ゼロ)。配信当日に最新回が出ないのは
+// ポッドキャスターのサイトとしては本末転倒なので、棚と番組ページだけ戻す。
+// **回の個別ページは1日のまま**(公開後に中身は変わらない=鮮度を買っても何も増えず、
+// 330枚あるので作り直しの回数だけが増える)
+export const revalidate = 1800
 
 // 棚のdescription: 番組名はshows.tsから組む(番組が増えても追従、散文は書かない)
 const showNames = (group: 'original' | 'works') =>
