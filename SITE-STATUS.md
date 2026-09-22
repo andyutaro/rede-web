@@ -146,7 +146,8 @@ ISR化したページは `s-maxage={revalidate}, stale-while-revalidate=2592000`
 | ページ | revalidate |
 |---|---|
 | Home | 1時間 |
-| `/about` `/mail` `/membership` `/privacy` `/podcast` `/podcast/[slug]` `/podcast/[slug]/[episode]` `/podcast/guest/[id]` | **1日** |
+| `/podcast` `/podcast/[slug]` | **30分**（2026-09-22に1日から戻した。新しい回が"現れる"ページ） |
+| `/podcast/[slug]/[episode]` `/podcast/guest/[id]` `/about` `/mail` `/membership` `/privacy` | **1日**（回の個別ページは公開後に中身が変わらない＝鮮度を買っても何も増えず、330枚ぶんの作り直しが増えるだけ） |
 | `/notes` `/updates` `/photography` `/physical` `/desk/[date]` `/live` `/search` と各個別ページ | force-dynamic（毎回生成） |
 
 SWRは30日のまま。**据え置きは2026-08-05の当時より長い**（新エピソードが番組ページに出るのも最大1日）。**Paidになった今は短く戻せる余地がある**——天井が外れて作り直しの失敗が出なくなったため。ただし戻すなら1つずつ、実測を見ながら（§10）。
@@ -223,7 +224,8 @@ PODCAST — ORIGINAL / WORKS → **UPDATE — LATEST 5** → **PODCAST — LATES
 - **PODCAST — LATEST**: `/podcast` のエピソードタイルの最新4件。自番組とゲスト出演を公開日で混ぜる。**HomeはRSSを引かない**（サブリクエスト上限で落ちた前科がある。§4）——自番組は夜の作り置き（`showSummary`）、ゲスト回は控え（`listGuestRows`）から読む。
 - **NOTE — LATEST**: `/notes` のALLタブの最新4件（当日のLIVEセルが先頭）。**Homeは読むだけ**でサムネイルの焼き込みはしない。
 - **スマホ（640px以下）は両方3件**。タイルは3列で、4件だと3枚＋取り残し1枚になる。列数は変えない（2列＝1枚が153〜181pxの「重いカバー」に戻るという2026-07-14の判断）。隠れた分は「ALL →」から。
-- UPDATEは**新しい順に5件**（日数で絞らない＝更新の少ない週に「LATEST 5」なのに3件、を避ける）。**当日のDESK（LIVE行）は載せない**——すぐ下のDESKの窓と NOTE — LATEST のLIVEセルが担うので重複になる。確定アーカイブは載る。
+- UPDATEは**新しい順に5件**（日数で絞らない＝更新の少ない週に「LATEST 5」なのに3件、を避ける）。**DESKは当日のLIVE行も確定アーカイブも載せない**（2026-09-22 Andy承認）——すぐ下のDESKの窓と NOTE — LATEST が担うので重複であり、それ以上に**毎日1本出るDESKが5枠を必ず埋め切って、その週に配信した番組の回が1本も載らなくなる**（実測: 9/17〜9/21の5行が全部DESK、同じ週の4本は全滅）。同じ日付で並んだときもDESKが先に積まれるので、構造として回は永久に出てこなかった。`/updates`（全量の記録）は変えない。
+  - 経緯: 2026-07-20に「毎日のscribeで埋まりすぎる」として当日分だけにする → 2026-09-11に確定アーカイブを戻す → 同じ問題が再発してまた外す。**この欄にDESKを戻すと必ずこうなる。**
 - 「続き」の行き先は**節の右下**（`.section-foot`）で統一し、字面もDESKの窓に合わせて「全文を読む →」に揃えた。
 - 部品は棚と同じものを使う（`PodcastEpisodeGrid` / `ArticleGrid` に `heading` / `allHref` / `limit` を渡すと、タブ・検索・件数を出さず「見出し＋ALL →」だけになる）。**棚の側は何も変わらない。**
 
