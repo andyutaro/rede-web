@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
+import { SHOWS } from './shows'
 
 // 書いたものの控え(2026-07-23)。
 // このサイトで失ったら戻らないのは、コードでも音源でもなく Andy が書いたもの
@@ -48,6 +49,7 @@ const MAX_PHOTOS_PER_RUN = 6
 type BackupResult = {
   text?: string
   photos?: { copied: number; skipped: number; remaining: number }
+  feeds?: { saved: number; same: number; failed: number }
   error?: string
 }
 
@@ -115,7 +117,95 @@ export async function backupToR2(): Promise<BackupResult> {
       '写真: ' + (e instanceof Error ? `${e.name}: ${e.message}` : String(e))
   }
 
+  // ---- 3. 番組フィード(生のXML、変わった時だけ) ----
+  try {
+    result.feeds = await copyFeeds(bucket)
+  } catch (e) {
+    result.error = (result.error ? result.error + ' / ' : '') +
+      'フィード: ' + (e instanceof Error ? `${e.name}: ${e.message}` : String(e))
+  }
+
   return result
+}
+
+// 番組フィードの控え(2026-09-26)。
+//
+// **なぜ。** 5番組のフィード、約330回ぶんの題・日付・概要・アート・音源URLは、
+// 全部Anchor(Spotify)側にしか無い。サイトが持っているのは夜の作り置き
+// (番組あたり24回)とタグだけで、**カタログの本体はどこにも控えが無かった**。
+// カバーURLのローテーションで403を踏んだ実績があり、フィードが止まるか形が
+// 変われば番組棚・索引・GUEST群・sitemapが同時に痩せる。生のXMLを持っておけば、
+// 少なくとも「何をいつ出したか」は自分の手元に残る。
+//
+// 方針:
+// - **gzipして置く。** 5番組で生1.5〜1.8MB級・合計5.8MBだが、gzipなら合計437KB
+//   (RSSは同じタグの繰り返しなので13倍前後で縮む)。毎晩でも枠を圧迫しない
+// - **中身が変わった夜だけ世代を足す。** 判定はXMLのSHA-256で、前回値は
+//   feeds/index.json に1つだけ置く(番組ごとにheadを打たない=サブリクエスト節約)。
+//   新しい回が出た夜だけ増えるので、実質は番組あたり月4〜5世代
+// - **取得に失敗した応答で上書きしない。** 短すぎる/<item>が無い応答は捨てる
+//   (空の控えで正しい控えを潰すのが、この手の仕組みの一番まずい壊れ方)
+// - 戻すときは gunzip すれば普通のRSSなので、そのまま parseFeed に通せる
+type FeedIndex = Record<string, { hash: string; date: string }>
+
+async function gzipBytes(text: string): Promise<ArrayBuffer> {
+  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))
+  return await new Response(stream).arrayBuffer()
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function copyFeeds(bucket: R2Store): Promise<{ saved: number; same: number; failed: number }> {
+  const stamp = new Date().toISOString().slice(0, 10)
+  const indexKey = 'feeds/index.json'
+  let index: FeedIndex = {}
+  try {
+    const current = await bucket.get(indexKey)
+    if (current) index = JSON.parse(new TextDecoder().decode(await current.arrayBuffer())) as FeedIndex
+  } catch {
+    index = {} // 読めなければ全部を新規として置き直す(控えが増えるだけで害は無い)
+  }
+
+  let saved = 0
+  let same = 0
+  let failed = 0
+  for (const show of SHOWS) {
+    if (!show.feed) continue // 未配信の番組(フィードURL待ち)
+    try {
+      const res = await fetch(show.feed)
+      if (!res.ok) {
+        failed++
+        continue
+      }
+      const xml = await res.text()
+      // 取得できた"ように見えて中身が無い"応答で、正しい控えを潰さない
+      if (xml.length < 1000 || !xml.includes('<item')) {
+        failed++
+        continue
+      }
+      const hash = await sha256Hex(xml)
+      if (index[show.slug]?.hash === hash) {
+        same++
+        continue
+      }
+      const gz = await gzipBytes(xml)
+      const meta = { httpMetadata: { contentType: 'application/gzip' } }
+      await bucket.put(`feeds/${show.slug}/${stamp}.xml.gz`, gz, meta)
+      // 最新版は固定の名前でも置く(戻すときに日付を探さなくて済む。文章の控えと同じ作法)
+      await bucket.put(`feeds/${show.slug}/latest.xml.gz`, gz, meta)
+      index[show.slug] = { hash, date: stamp }
+      saved++
+    } catch {
+      failed++
+    }
+  }
+  await bucket.put(indexKey, JSON.stringify(index, null, 1), {
+    httpMetadata: { contentType: 'application/json' },
+  })
+  return { saved, same, failed }
 }
 
 // 写真の控え(差分)。夜のcronと、控え専用のcron(backupPhotos)が共有する

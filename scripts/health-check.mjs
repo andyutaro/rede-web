@@ -269,6 +269,30 @@ try {
   alerts.push(`R2の数字が取れない: ${e.message}`)
 }
 
+// ④-0 夜のcronが走ったか(2026-09-26改訂)。**判定はDBの事実で行う。**
+// 以前はObservabilityの `[cron]` ログ1行の有無で生存を判定していたが、
+// **1日1回しか出ないログはサンプリングで普通に落ちる**(実測: 直近4日で0件、
+// 同じ時間帯の [cron-photos] は8件/日そのまま残っていた)。その結果
+// 「夜のcronの記録が24時間ぶん無い」が、cronは正常に走っているのに鳴る。
+// 確定した日誌の finalized_at はDBに残る事実なので、こちらを生存確認に使う。
+// ログの方は「取れたら詳細を出す」扱いに降格する(⑤)。
+try {
+  const r = await fetch(
+    `${SB}/rest/v1/scribe_days?select=date,finalized_at&finalized_at=not.is.null&order=finalized_at.desc&limit=1`,
+    { headers: { apikey: SRK, authorization: `Bearer ${SRK}` } }
+  )
+  const rows = await r.json()
+  const at = rows?.[0]?.finalized_at
+  numbers.夜のcronの最後の確定 = at ? `${rows[0].date}(${at})` : '無い'
+  if (!at) alerts.push('確定済みの日誌が1日も無い。夜のcronが一度も成功していない')
+  else if (Date.now() - new Date(at).getTime() > 2 * DAY)
+    alerts.push(
+      `最後の確定から${Math.floor((Date.now() - new Date(at).getTime()) / DAY)}日経っている。夜のcronが止まっている`
+    )
+} catch (e) {
+  alerts.push(`確定の記録が読めない: ${e.message}`)
+}
+
 // ④ Supabase(Storageは凍結済み・Postgresは余裕。増えたら知らせる)
 try {
   const r = await fetch(`${SB}/rest/v1/site_content?select=key,updated_at&key=eq.hero_queue`, {
@@ -335,16 +359,28 @@ try {
   if (line) break
   }
   if (!line) {
-    alerts.push('夜のcronの記録が24時間ぶん無い。動いていないか、最後まで届いていない')
-    numbers.夜のcron = '記録なし'
+    // **ログが無いだけでは鳴らさない(2026-09-26)。** 1日1回のログ行は
+    // サンプリングで日常的に落ちる(実測: 直近4日で0件。同じ窓の3時間ごとの
+    // [cron-photos] は残っていた)。cronが動いているかは④-0のDBの事実で見ており、
+    // ここで鳴らすと「正常なのに毎朝鳴る」=通知が読まれなくなる方向にしか効かない。
+    // 見えないのは各工程の内訳(控え・掃除・キュー・フィード)だけ
+    numbers.夜のcron = '記録なし(サンプリングで落ちることがある。生存は④-0で判定)'
   } else {
     const res = JSON.parse(line.slice(line.indexOf('{')))
     numbers.夜のcron = {
       確定: res.target,
       控え: res.backup?.photos ?? res.backup?.error ?? '—',
+      フィードの控え: res.backup?.feeds ?? '—',
       掃除: res.cleanup,
       再生キュー: res.heroQueue,
     }
+    // フィードの控え(2026-09-26)。**鳴らすのは全滅した夜だけ。**
+    // 中身が変わらない夜は same が並ぶのが正常(新しい回が出た夜だけ saved が増える)
+    // ので、failed>0 で鳴らすとAnchorの一時的な不調で毎朝鳴って読まれなくなる。
+    // 全部失敗＝フィードの側が止まったか形が変わった、という本物の signal だけ拾う
+    const f = res.backup?.feeds
+    if (f && f.failed > 0 && f.saved === 0 && f.same === 0)
+      alerts.push(`番組フィードを1本も控えられなかった(${f.failed}本とも失敗)。Anchor側が止まっているか形が変わった可能性`)
     for (const [name, v] of [['控え', res.backup], ['掃除', res.cleanup], ['再生キュー', res.heroQueue]]) {
       if (v?.error) alerts.push(`夜のcronの${name}が失敗: ${String(v.error).slice(0, 90)}`)
     }
