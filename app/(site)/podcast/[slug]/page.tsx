@@ -341,7 +341,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
                   {(ep.image ?? feed?.image) && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={imgThumb(ep.image ?? feed!.image, IMG_W.ep)}
+                      src={imgThumb(ep.image ?? feed!.image, IMG_W.tile)}
                       alt=""
                       loading="lazy"
                       decoding="async"

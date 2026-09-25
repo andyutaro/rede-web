@@ -233,7 +233,7 @@ export default function SelectTable({
               <span className="row-thumb">
                 {r.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imgThumb(r.thumb, IMG_W.studio)} alt="" loading="lazy" decoding="async" />
+                  <img src={imgThumb(r.thumb, IMG_W.tile)} alt="" loading="lazy" decoding="async" />
                 ) : (
                   <span className="row-thumb-empty" aria-hidden="true" />
                 )}

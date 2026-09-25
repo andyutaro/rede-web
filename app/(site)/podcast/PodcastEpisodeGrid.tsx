@@ -105,7 +105,7 @@ export default function PodcastEpisodeGrid({
             >
               {ep.thumb ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={imgThumb(ep.thumb, IMG_W.ep)} alt="" loading="lazy" decoding="async" className="cover-frame" />
+                <img src={imgThumb(ep.thumb, IMG_W.tile)} alt="" loading="lazy" decoding="async" className="cover-frame" />
               ) : (
                 <span className="empty-cell" />
               )}
