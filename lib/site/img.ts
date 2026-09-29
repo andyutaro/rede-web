@@ -39,6 +39,23 @@ export function imgCard(url: string | null | undefined): string {
   return `${CDN_BASE}/width=1200,height=630,fit=pad,background=%23${CARD_BG},quality=82,format=jpeg/${url}`
 }
 
+// **出力はWebP固定。format=autoを使わない(2026-09-29)。**
+// Cloudflareの**AVIFのエンコードが一部の画像で失敗する**ことが実測で分かった。
+// `format=auto` はChromeに対してAVIFを返すので、その画像のセルだけが
+// 壊れた画像のアイコンになる(/photography で目視。60枚の抜き取りで3枚=5%)。
+//   実測の切り分け: 同じファイルでも
+//     width=480 + accept:avif → 500 `cf-resized: err=9523`(3回とも。BYPASS=毎回失敗)
+//     width=480 + accept:webp → 200
+//     width=480 + acceptなし   → 200 (jpeg)
+//     width=481 + accept:avif → 200
+//   つまり「この画像 × この出力サイズ × AVIF」だけが確実に落ちる。原本は
+//   1600x1200の正常なJPEGで、R2からは普通に配信できている=こちら側の問題ではない。
+// どの画像が落ちるかは事前に分からないので、**落ちない方の形式に寄せる**。
+// 代償はファイルが25%前後大きくなること(480pxのサムネで20KB→25KB程度)。
+// 壊れて見えることに比べれば安い。AVIFに戻すのは、Cloudflare側の修正を
+// 確認できてから。
+const FORMAT = 'webp'
+
 // 枠に合わせて切り取った画像(2026-08-27)。Homeの写真1枚のように、
 // 表示側でobject-fit:coverするスロット用。CSSだけで切ると、縦長の元画像を
 // まるごと落としてから大半を捨てることになる(1280幅の縦写真は1280×1700級)。
@@ -53,7 +70,7 @@ export function imgCover(
   if (!url) return ''
   if (url.startsWith('data:') || url.includes('/cdn-cgi/image/')) return url
   if (!/^https?:\/\//i.test(url)) return url
-  return `${CDN_BASE}/width=${width},height=${height},quality=78,fit=cover,format=auto/${url}`
+  return `${CDN_BASE}/width=${width},height=${height},quality=78,fit=cover,format=${FORMAT}/${url}`
 }
 
 export function imgThumb(url: string | null | undefined, width: number): string {
@@ -63,5 +80,5 @@ export function imgThumb(url: string | null | undefined, width: number): string 
   if (!/^https?:\/\//i.test(url)) return url
   // AnchorのカバーURLはローテーションで失効することがある(旧URLは全経路403)。
   // その間は変換も404/502になるが、フィードキャッシュ(30分)の更新で自己回復する
-  return `${CDN_BASE}/width=${width},quality=78,fit=scale-down,format=auto/${url}`
+  return `${CDN_BASE}/width=${width},quality=78,fit=scale-down,format=${FORMAT}/${url}`
 }
