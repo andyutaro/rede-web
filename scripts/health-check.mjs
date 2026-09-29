@@ -394,6 +394,50 @@ try {
   alerts.push(`夜のcronの記録が読めない: ${e.message}`)
 }
 
+// ⑥ 画像変換の枠(2026-09-29)。**このサイトで一番きつい枠はここ。**
+// 無料枠は5,000ユニーク変換/月で、毎月1日にリセットされる。超えると変換が止まり
+// **原画(1600px・数百KB)がそのまま流れる**=2026-07-19に直した「もっさり」に戻る。
+// 2026-09-25にCloudflareから75%の通知が来るまで、誰も見ていない枠だった。
+//
+// **ここで出すのは推定値。** ダッシュボードが出す本物の「ユニークな変換」は
+// Images:Read の権限が要り、いまの CF_USAGE_TOKEN には無い(実測で403)。
+// 代わりにゾーンの変換リクエスト数から推す。実測の対応は
+//   2026-09-25: リクエスト7,981 / ユニーク3,782 → **ユニーク ≒ リクエスト × 0.47**
+// (同じ画像が複数の拠点・複数回読まれるぶん、リクエストの方が多い)
+// 精度は荒いので、**鳴らすのは「そろそろ危ない」を伝えるためだけ**。
+// 正確な数字が要る時はダッシュボードを見る。トークンに Images:Read を足せば
+// 推定をやめて本物の数字に差し替えられる。
+const UNIQUE_PER_REQUEST = 0.47
+const MONTHLY_CAP = 5000
+try {
+  // 月初から今まで。APIの上限が4w3dなので30日で頭打ちにする
+  const first = new Date()
+  first.setUTCDate(1)
+  first.setUTCHours(0, 0, 0, 0)
+  const from = Math.max(first.getTime(), Date.now() - 30 * DAY)
+  const d = await gql(
+    `query($z:String!,$s:Time!){viewer{zones(filter:{zoneTag:$z}){
+      imageResizingRequests1mGroups(limit:1000,filter:{datetime_geq:$s}){count}}}}`,
+    { z: ZONE, s: new Date(from).toISOString().replace(/\.\d+Z$/, 'Z') }
+  )
+  const rows = d.viewer.zones[0].imageResizingRequests1mGroups
+  const requests = rows.reduce((a, r) => a + r.count, 0)
+  const est = Math.round(requests * UNIQUE_PER_REQUEST)
+  numbers.画像変換 = {
+    '推定ユニーク変換(月初から)': `${est} / ${MONTHLY_CAP}(${((est / MONTHLY_CAP) * 100).toFixed(0)}%)`,
+    リクエスト数: requests,
+    注: 'リクエストからの推定。正確な数字はダッシュボード(Images & Stream → Transformations)',
+  }
+  // 80%で鳴らす。超えてから知っても遅い(その月はもう原画が流れる)一方、
+  // 対処は「$0のプランに上げる」だけなので、余裕をもって早めに伝える方が良い
+  if (est > MONTHLY_CAP * 0.8)
+    alerts.push(
+      `画像変換が枠の${((est / MONTHLY_CAP) * 100).toFixed(0)}%(推定${est}/${MONTHLY_CAP})。超えると原画が流れて重くなる。ダッシュボードで実数を確認`
+    )
+} catch (e) {
+  alerts.push(`画像変換の数字が取れない: ${e.message}`)
+}
+
 // **ネットワークが無いだけの朝を「異常5件」にしない(2026-09-06)。**
 // Macが寝ていて、起きた直後にlaunchdが走ると、全項目が fetch failed で落ちて
 // 通知が「異常5件」になる。サイトの異常と見分けがつかないのに一番うるさい形で鳴る。
