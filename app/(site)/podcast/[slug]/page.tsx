@@ -295,16 +295,20 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             ・連続再生 = 選ばずに聴き始められる入口(全番組共通)
             ・おたより = 継続中のORIGINALはサイト内フォーム、専用フォームを
               持つ番組(ON-AIRDO等)は番組自身のフォームへ */}
-        <div className="show-actions">
-          <ShowPlayAll episodes={playable} label="第1回から作業用まとめ聞き" />
+        {/* スマホでは2等分の1段に組む(2026-09-29 Andy指摘「縦長すぎて冗長」)。
+            修飾クラスを付けるのは**このページの群だけ**が2つで収まるため——
+            エピソードページの同じ器は語が長い(「この回から作業用まとめ聞き」)ので
+            縦積みのまま残す。表記も等分割のセルに入る長さへ詰めた(Andy決定) */}
+        <div className="show-actions show-actions--pair">
+          <ShowPlayAll episodes={playable} label="まとめ聞き" />
           {isOriginal && !show.ended && !show.otayoriUrl && (
             <Link className="ep-letter" href={`/mail?show=${show.slug}`}>
-              番組へのおたよりを送る →
+              おたより →
             </Link>
           )}
           {show.otayoriUrl && (
             <a className="ep-letter" href={show.otayoriUrl} target="_blank" rel="noopener noreferrer">
-              番組へのおたよりを送る →
+              おたより →
             </a>
           )}
         </div>

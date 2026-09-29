@@ -3659,18 +3659,49 @@ a.show-cast-name:hover {
     width: 170px;
   }
 
-  /* 配信先ボタン(2026-07-22 Andy指摘のスマホゴチャつき整理):
-     幅バラバラの折返し(2+1段でLISTENだけ孤立)をやめ、等幅の縦積みに。
-     サイトの他の単独ボタン(連続再生等)と同じ「中央の一本柱」のリズムに揃える */
+  /* 配信先ボタン: 横1段の等分割(2026-09-29 Andy指摘「縦長すぎて冗長」)。
+     2026-07-22には「幅バラバラの折返し(2+1段でLISTENだけ孤立)」を嫌って
+     等幅の縦積みにしたが、縦積みは5個で377px=スマホ1画面を食っていた。
+     **grid-auto-flow:column なら本数(2〜3)が変わっても等分のまま崩れない**ので、
+     当時の「幅がバラつく」問題は起きない。表記もセルに入る長さへ詰めてある
+     (Apple Podcasts→Apple、PlatformLinks.tsx)。
+     **要点は行間。** ピルは本文の line-height:2.6 を継いでいて1個46pxあった
+     (5個で240px)。1.5に落とすと35pxになる。文字の大きさは変えていない */
+  /* **minmax(0,1fr) にするのが要点。** 素の 1fr は minmax(auto,1fr) なので、
+     字が入りきらない時はセルが content の幅まで広がって**行ごと画面をはみ出す**
+     (フォントが読み込まれる前や、端末の文字サイズを大きくしている時に起きる。
+     実際にheadlessの描画で踏んだ)。0を下限にすればセルは必ず等分に収まり、
+     入りきらない時は中で折り返す=はみ出しではなく2行になる */
   .platform-links {
-    flex-direction: column;
-    align-items: center;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     gap: 8px;
+    margin-top: 14px;
   }
 
   .platform-btn {
-    width: min(100%, 220px);
+    padding: 9px 10px;
+    line-height: 1.5;
     text-align: center;
+  }
+
+  /* 番組ページの「行動の群」だけ2等分の1段に(2026-09-29)。
+     エピソードページの同じ器(.show-actions)は語が長いので縦積みのまま。
+     子が1つ(終了番組=おたより無し)のときは1列=全幅になる */
+  .show-actions--pair {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .show-actions--pair > .show-playall,
+  .show-actions--pair > .ep-letter {
+    justify-content: center;
+    padding: 10px 8px;
+    line-height: 1.5;
   }
 
   .article-tabs {
