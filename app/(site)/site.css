@@ -348,9 +348,13 @@ html[data-theme='dark'] .theme-toggle .glyph-moon {
    MENUと同文字数・同頭文字が並ぶため塗りピルにして区別する(2026-07-20 Andy指摘):
    MAIL=塗り(送る行為の口)、MENU=線(移動の口)。彩色はしない(§10)。
    塗りは--ink(真っ黒)ではなく--mut=中間灰(黒すぎる、と2026-07-20 Andy) ---- */
+/* 間隔は16px(2026-10-08 Andy指摘「白背景がべたっとくっつきあってる」)。
+   各ピルは紙色のマットを5px纏っている(§右レールの「浮き」)ので、段の間隔が
+   10pxだとマット同士がちょうど接して白い一枚の板に見えていた。16pxにすると
+   マットの間に地が6px残り、3つが別々の粒に戻る。ピル自体の寸法・塗り・字は変えない */
 .contact-pill {
   position: fixed;
-  top: 60px; /* テーマスイッチ(top20+高さ30)の下に10px空ける */
+  top: 66px; /* テーマスイッチ(top20+高さ30)の下に16px空ける */
   right: 22px;
   width: 88px;
   height: 30px;
@@ -440,7 +444,7 @@ html[data-theme='dark'] .contact-pill:hover {
    開いている間(.open)だけは反転を残す=押されていることが色で分かる ---- */
 .menu-toggle {
   position: fixed;
-  top: 100px; /* テーマ(20)→Contact(60)→MENU(100) の縦積み */
+  top: 112px; /* テーマ(20)→Contact(66)→MENU(112) の縦積み。間隔16px */
   right: 22px;
   width: 88px;
   height: 30px;
@@ -1719,6 +1723,10 @@ html[data-theme='dark'] .menu-toggle.open {
   color: #eaf1f6;
 }
 
+.site:has(.show-hero[data-show='mimoriradio']) .wordmark { color: #eef2f0; }
+.site:has(.show-hero[data-show='longpost']) .wordmark { color: #f7f2ec; }
+.site:has(.show-hero[data-show='onairdo']) .wordmark { color: #16314a; }
+
 /* 100vwはスクロールバーの幅ぶん本文より広い。clipなら(hiddenと違って)
    スクロール文脈を作らないので、固定UIも波形もそのまま動く */
 .site:has(.show-hero.on-water) {
@@ -1769,16 +1777,73 @@ html[data-theme='dark'] .menu-toggle.open {
 .hero-water-veil {
   position: absolute;
   inset: 0;
-  background: rgba(8, 18, 34, 0.46);
+  background: var(--hero-veil, rgba(8, 18, 34, 0.46));
 }
 
-/* 水の上は暗いので文字を明色へ(サイトのダーク側の値に寄せる)。カバーは対象外 */
+/* ===== 番組ごとの色(2026-10-08 Andy指定) =====
+   4本の映像は明るさも色味もばらばらで、同じ明色の文字・同じ灰の波形を載せると
+   番組によって読める/読めないの差が出ていた。ポスター画像の**中央帯**
+   (ロゴと波形が乗る高さ)を実測した素の色:
+     サカナカイギ(イワシ)   #1b2a4c  明度20%  濃紺
+     ミモリラジオ(滝)       #484f50  明度30%  だが中央は白い飛沫
+     ロングポスト(白老の浜) #887b78  明度50%  夕景の暖かい中間色
+     ON-AIRDO(雲海)         #bbcfe3  明度81%  **明るい空色**
+   ON-AIRDOだけ地が明るいので明色の文字では沈む。ここは**文字と波形を濃色へ
+   反転**し、幕も薄くして雲海の明るさを残す。他の3本は明色のまま、地の色味に
+   合わせて同じ側の色をわずかに混ぜる(無彩色から大きく外さない範囲)。
+   波形の色(--wave)はhtmlに置く: WaveformHeroがdocumentElementから読むため */
 .show-hero.on-water .show-shelf-head h2 {
-  color: #b7c6d4;
+  color: var(--hero-sub, #b7c6d4);
 }
 
 .show-hero.on-water .show-title {
-  color: #f2f6f9;
+  color: var(--hero-ink, #f2f6f9);
+}
+
+/* 波形は番組ごとに色と濃さを持つ(2026-10-08 Andy「少しビビッドな配色にしてもいい」)。
+   既定の無彩色(--wave #b6b6b0 / 45%)は、地が映像だと色味に負けて見えなくなる。
+   **彩色はLIVE赤のみ**の原則に対する3つ目の例外で、Andyの明示指定による。
+   --wave-op を持たせたのは、地が明るいON-AIRDOでは色を濃くしても45%の透過に
+   薄められて読めないため(色だけでは解けない) */
+
+/* サカナカイギ: 濃紺の海と銀の魚。銀青の線が水の中で光る */
+html:has(.show-hero[data-show='sakanakaigi']) {
+  --wave: #86c9ef;
+  --wave-op: 0.5;
+}
+
+/* ミモリラジオ: 中央に白い滝。幕をひと段濃くして飛沫を鎮める。色味は水と苔の緑灰 */
+html:has(.show-hero[data-show='mimoriradio']) {
+  --wave: #a9ddc6;
+  --wave-op: 0.5;
+}
+.show-hero[data-show='mimoriradio'] {
+  --hero-veil: rgba(10, 20, 22, 0.58);
+  --hero-ink: #eef2f0;
+  --hero-sub: #c2cdc8;
+}
+
+/* ロングポスト: 夕景の浜。影も暖かい側へ寄せ、文字と波形を暖灰に */
+html:has(.show-hero[data-show='longpost']) {
+  --wave: #f0b183;
+  --wave-op: 0.5;
+}
+.show-hero[data-show='longpost'] {
+  --hero-veil: rgba(26, 18, 14, 0.5);
+  --hero-ink: #f7f2ec;
+  --hero-sub: #d9cec3;
+}
+
+/* ON-AIRDO: 明るい雲海。**ここだけ明暗が逆**。幕を薄くして明るさを残し、
+   文字と波形を濃色に。濃い波形は下のセクション(紙の上)でも読める */
+html:has(.show-hero[data-show='onairdo']) {
+  --wave: #1c7fb5;
+  --wave-op: 0.85;
+}
+.show-hero[data-show='onairdo'] {
+  --hero-veil: rgba(8, 18, 34, 0.18);
+  --hero-ink: #16314a;
+  --hero-sub: #41617d;
 }
 
 /* 所属の一行は水の外へ出した(2026-07-29)のでon-waterの上書きは不要になった。
@@ -3455,7 +3520,7 @@ a.show-cast-name:hover {
      したので、本文が透ける心配はここでも無い */
 
   .contact-pill {
-    top: 47px;
+    top: 55px; /* テーマ(12+27)の下に16px(2026-10-08。マットが接しない間隔) */
     right: 12px;
     width: 74px;
     height: 27px;
@@ -3463,7 +3528,7 @@ a.show-cast-name:hover {
   }
 
   .menu-toggle {
-    top: 82px;
+    top: 98px; /* Contact(55+27)の下に16px */
     right: 12px;
     width: 74px;
     height: 27px;
@@ -3546,7 +3611,7 @@ a.show-cast-name:hover {
   /* Contactピルはスイッチ(top12+高さ27)の下に8px空ける。
      塗り(--ink)は不透明なのでスマホの重なり対策の地色上書きは不要 */
   .contact-pill {
-    top: 47px;
+    top: 55px;
     right: 12px;
     width: 74px;
     height: 27px;
@@ -3554,7 +3619,7 @@ a.show-cast-name:hover {
   }
 
   .menu-toggle {
-    top: 82px; /* Contact(47+27)の下に8px */
+    top: 98px; /* Contact(55+27)の下に16px */
     right: 12px;
     width: 74px;
     height: 27px;

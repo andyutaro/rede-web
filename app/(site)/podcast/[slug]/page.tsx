@@ -214,7 +214,7 @@ export default async function ShowPage({ params }: { params: Promise<Params> }) 
             </>
           )
           return show.heroVideo ? (
-            <div className="show-hero on-water">
+            <div className="show-hero on-water" data-show={show.slug}>
               <ShowHeroWater base={show.heroVideo} />
               {identity}
             </div>

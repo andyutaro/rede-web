@@ -40,7 +40,9 @@ const CFG = {
   ampP: 0.085,
   op: 0.45,
   opP: 0.75,
-  lw: 1.25, // 地の暖白化で沈んだ分、色調(--wave)と合わせて半段だけ太く(2026-07-14)
+  // 1.25 → 1.5(2026-10-08 Andy「もう少しだけ気持ち太くして」)。サイト全体。
+  // 元は「地の暖白化で沈んだ分、色調(--wave)と合わせて半段だけ太く」(2026-07-14)
+  lw: 1.5,
   speed: 0.013,
   speedP: 0.05,
 }
@@ -108,6 +110,8 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
   // 実際に画面へ出たか。実体は波形アニメーションのeffectが入れる
   const spawnRef = useRef<((kind?: number) => { kind: number; spawned: boolean }) | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  // 波形の色を読み直す関数(効果の内側で作られる。遷移時に呼ぶため外へ出す)
+  const readColorRef = useRef<(() => void) | null>(null)
   const [playing, setPlaying] = useState(false)
   // 再生キュー: 初期値はlayoutの全番組キュー。番組ページの「この番組を連続再生」が
   // andy:play-showイベントで差し替える(2026-07-20)。音源制御はref(リスナー内参照)、
@@ -185,11 +189,21 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
     const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)')
 
     let color = '#c7c7c1'
+    // 線の濃さ(2026-10-08)。既定はCFG.opだが、地が明るい番組ページでは
+    // 色だけ濃くしても45%の透過に薄められて読めない。--wave-op で上書きできる
+    let opacity = 0
     const readColor = () => {
-      const c = getComputedStyle(document.documentElement).getPropertyValue('--wave').trim()
+      const cs = getComputedStyle(document.documentElement)
+      const c = cs.getPropertyValue('--wave').trim()
       if (c) color = c
+      const o = parseFloat(cs.getPropertyValue('--wave-op'))
+      opacity = Number.isFinite(o) ? o : 0
     }
     readColor()
+    // 番組ページは --wave を番組ごとに上書きする(2026-10-08)。この常駐canvasは
+    // 遷移してもアンマウントされないので、**ページ遷移のたびに読み直す**必要がある
+    // (テーマ切替はhtmlの属性が変わるので下のMutationObserverが拾うが、遷移では変わらない)
+    readColorRef.current = readColor
     const themeObs = new MutationObserver(() => {
       readColor()
       if (reduceMq.matches) draw(0) // 止めている間はテーマ切替で描き直す
@@ -295,7 +309,7 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
         if (connectX !== null) ctx.lineTo(connectX, cyMid) // ボタンへ水平ベースラインで接続
       }
       ctx.strokeStyle = color
-      ctx.globalAlpha = playing ? CFG.opP : CFG.op
+      ctx.globalAlpha = playing ? CFG.opP : opacity || CFG.op
       ctx.lineWidth = CFG.lw
       ctx.lineJoin = 'round'
       ctx.lineCap = 'round'
@@ -564,6 +578,8 @@ export default function WaveformHero({ episodes }: { episodes: Episode[] | null 
   const pathname = usePathname()
   useEffect(() => {
     audioRef.current?.pause()
+    // 遷移先の --wave を読み直す(番組ページごとに色が違う。2026-10-08)
+    readColorRef.current?.()
   }, [pathname])
 
   // メニューを開いたときも再生と表示を止める(SiteMenuが発するイベントを受ける)
