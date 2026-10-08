@@ -1690,8 +1690,72 @@ html[data-theme='dark'] .menu-toggle.open {
   background-size: cover;
   background-position: center;
   /* 下辺を紙へ溶かす(エピソード索引の手前で水が引く) */
-  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+}
+
+/* ===== 開いた瞬間は一面が水(2026-10-08 Andy指定) =====
+   ①背景の映像を全幅に ②スクロールしていない状態で「波形がロゴの中央を横切る」
+   ③参考は旧sakanakaigi.comのトップ(全幅の動画の上にロゴとナビが乗る)
+
+   **位置合わせの数値を持たないのが要点。** 波形は画面のY中央(h*0.5)に固定で
+   描かれているので、ロゴをビューポートの中央に置けば必ず重なる。そのために
+   ヘッダーを流れから外してページの天を画面の天に合わせ、ヒーローを1画面の高さの
+   「舞台」にして、グリッドの 1fr / auto / 1fr でカバーを舞台の中央に置く。
+   ヘッダー高さや最初のセクションの余白(150px)を足し引きする必要が無くなる */
+.site:has(.show-hero.on-water) .site-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+}
+
+/* 最初の律動(150px)を殺して、舞台を画面の天から始める */
+.site:has(.show-hero.on-water) .show-header.section {
+  margin-top: 0;
+}
+
+/* ワードマークは水の上に乗るので明色へ(水の上の文字はこのページの既定と同じ扱い) */
+.site:has(.show-hero.on-water) .wordmark {
+  color: #eaf1f6;
+}
+
+/* 100vwはスクロールバーの幅ぶん本文より広い。clipなら(hiddenと違って)
+   スクロール文脈を作らないので、固定UIも波形もそのまま動く */
+.site:has(.show-hero.on-water) {
+  overflow-x: clip;
+}
+
+.show-hero.on-water {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  justify-items: center;
+  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* 棚見出しはカバーの直上、番組名は直下に置く(中央の行=カバーだけが舞台の中心) */
+.show-hero.on-water .show-shelf-head {
+  align-self: end;
+  margin: 0 0 30px;
+}
+
+.show-hero.on-water .show-title {
+  align-self: start;
+  margin: 30px 0 0;
+}
+
+.show-hero.on-water .show-cover {
+  margin: 0;
+}
+
+/* 水を全幅に(本文柱の外へ引き出す) */
+.show-hero.on-water .hero-water {
+  left: 50%;
+  right: auto;
+  width: 100vw;
+  transform: translateX(-50%);
 }
 
 .hero-water-video {
