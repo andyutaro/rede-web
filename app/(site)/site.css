@@ -1838,7 +1838,9 @@ html:has(.show-hero[data-show='longpost']) {
    文字と波形を濃色に。濃い波形は下のセクション(紙の上)でも読める */
 html:has(.show-hero[data-show='onairdo']) {
   --wave: #1c7fb5;
-  --wave-op: 0.85;
+  /* 0.85 → 0.6(2026-10-09 Andy「今の太さからすると濃くて鬱陶しい」)。
+     線を1.25→1.5に太くしたぶん同じ濃さでも重くなった。色はそのまま、濃さだけ下げる */
+  --wave-op: 0.6;
 }
 .show-hero[data-show='onairdo'] {
   --hero-veil: rgba(8, 18, 34, 0.18);
