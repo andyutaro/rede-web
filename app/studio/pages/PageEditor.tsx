@@ -61,7 +61,13 @@ export default function PageEditor({ pageKey, fields }: { pageKey: string; field
             {f.label}
           </label>
           {f.hint && <div className="page-field-hint">{f.hint}</div>}
-          {f.kind === 'text' ? (
+          {/* rowsが指定されたフィールドは、kindがtextでも複数行で出す(2026-10-15
+              Andy「改行できてるんだかわかりにくい」)。textは改行をそのまま保つ
+              種類なのに1行のinputで描いていたため、改行が打てず・見えなかった。
+              rowsを書いてあるのは最初から「複数行で書く欄」の意思表示なので、
+              新しい指定は増やさずrowsの有無で分ける(membership/privacyの導入文も
+              rows付きで、同じく1行で出ていた) */}
+          {f.kind === 'text' && !f.rows ? (
             <input
               id={`f-${f.name}`}
               value={texts[f.name] ?? ''}
