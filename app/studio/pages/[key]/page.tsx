@@ -125,7 +125,12 @@ async function buildFields(key: string): Promise<{ title: string; fields: Editor
 }
 
 export default async function EditPage({ params }: { params: Promise<{ key: string }> }) {
-  const { key } = await params
+  const { key: raw } = await params
+  // 番組のキーは `show:<slug>` で、URLでは `show%3A<slug>` になる。
+  // この経路のparamsが復号済みで来るか生で来るかは版により違うので、**両方受ける**
+  // (2026-10-15。生のまま来て `show:` で始まらず、NOT FOUNDになっていた)。
+  // 保存キーは復号した方=site_contentの実際のキーをPageEditorへ渡す
+  const key = raw.includes('%') ? safeDecode(raw) : raw
   const built = await buildFields(key)
   if (!built) notFound()
 
@@ -135,4 +140,12 @@ export default async function EditPage({ params }: { params: Promise<{ key: stri
       <PageEditor pageKey={key} fields={built.fields} />
     </>
   )
+}
+
+function safeDecode(v: string): string {
+  try {
+    return decodeURIComponent(v)
+  } catch {
+    return v // 不正な%列はそのまま(どのキーにも一致せずNOT FOUNDになる)
+  }
 }
