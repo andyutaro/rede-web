@@ -73,7 +73,19 @@ export function textToCast(s: string): CastRow[] {
     .filter((v): v is CastRow => v !== null)
 }
 
-export type FieldKind = 'text' | 'paragraphs' | 'lines' | 'qa' | 'sections' | 'cast'
+// 分節つきの行(2026-10-15、deskの冒頭銘文)。1行＝1行、「|」で分節。
+// 分節は狭い画面で折り返す位置になる(途中で切れてギクシャクしないための区切り)
+export function segmentsToText(a: string[][]): string {
+  return (a ?? []).map((line) => line.join(' | ')).join('\n')
+}
+
+export function textToSegments(s: string): string[][] {
+  return textToLines(s)
+    .map((line) => line.split('|').map((v) => v.trim()).filter((v) => v !== ''))
+    .filter((line) => line.length > 0)
+}
+
+export type FieldKind = 'text' | 'paragraphs' | 'lines' | 'qa' | 'sections' | 'cast' | 'segments'
 
 export function serializeField(kind: FieldKind, value: unknown): string {
   if (kind === 'text') return typeof value === 'string' ? value : ''
@@ -81,6 +93,7 @@ export function serializeField(kind: FieldKind, value: unknown): string {
   if (kind === 'qa') return qaToText((value as QA[]) ?? [])
   if (kind === 'sections') return sectionsToText((value as Section[]) ?? [])
   if (kind === 'cast') return castToText((value as CastRow[]) ?? [])
+  if (kind === 'segments') return segmentsToText((value as string[][]) ?? [])
   return paragraphsToText((value as string[]) ?? [])
 }
 
@@ -90,5 +103,6 @@ export function parseField(kind: FieldKind, text: string): unknown {
   if (kind === 'qa') return textToQa(text)
   if (kind === 'sections') return textToSections(text)
   if (kind === 'cast') return textToCast(text)
+  if (kind === 'segments') return textToSegments(text)
   return textToParagraphs(text)
 }

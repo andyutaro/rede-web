@@ -3,6 +3,7 @@ import { createService } from '@/lib/supabase/service'
 import { todayInTokyo } from '@/lib/scribe/date'
 import { scribeTitle } from '@/lib/site/text'
 import LiveFull from './LiveFull'
+import { getDeskPreamble } from '@/lib/site/pages'
 import Pager from '../Pager'
 import ArrivalSection from '../ArrivalSection'
 import { arrivalsOf } from '@/lib/site/arrivals'
@@ -46,6 +47,7 @@ export default async function LivePage() {
   return (
     <div className="measure">
       <LiveFull
+        preamble={await getDeskPreamble()}
         relay={process.env.SCRIBE_RELAY_URL ?? null}
         recentlyWritten={recentlyWritten}
         today={today}

@@ -182,6 +182,27 @@ async function readContent<T>(key: string, fallback: T): Promise<T> {
   return fallback
 }
 
+// ---- deskの冒頭定型文(2026-10-15) ----
+// 確定アーカイブと当日の生放送の両方に置く位置づけ文。全幅に流すと横にだらっと
+// 広がるため、行を設計した短い銘文として組む(2026-07-19 Andy指摘)。行はさらに
+// 意味の切れ目で分節してあり、狭い画面では分節がそのまま改行になる。
+// 締めの一行だけが場面で変わる: 今日は生放送、過ぎた日はアーカイブ。
+export type DeskPreambleContent = {
+  lines: string[][]
+  live: string
+  archive: string
+}
+export const DEFAULT_DESK_PREAMBLE: DeskPreambleContent = {
+  lines: [
+    ['desk — 読むポッドキャスト。'],
+    ['日々の考え事やつぶやきを生放送で書き、', '一日が終わると確定テキストになります。'],
+  ],
+  live: 'これは今日の生放送。',
+  archive: 'これはそのアーカイブ。',
+}
+
+export const getDeskPreamble = () => readContent('desk_preamble', DEFAULT_DESK_PREAMBLE)
+
 export const getContactContent = () => readContent('contact', DEFAULT_CONTACT)
 export const getMembershipContent = () => readContent('membership', DEFAULT_MEMBERSHIP)
 export const getPrivacyContent = () => readContent('privacy', DEFAULT_PRIVACY)

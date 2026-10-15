@@ -7,6 +7,7 @@ import {
   type MembershipContent,
   type PrivacyContent,
 } from '@/lib/site/pages'
+import { getDeskPreamble } from '@/lib/site/pages'
 import { serializeField } from '@/lib/site/pageText'
 import { getShow } from '@/lib/site/showContent'
 import PageEditor, { type EditorField } from '../PageEditor'
@@ -66,6 +67,25 @@ async function buildFields(key: string): Promise<{ title: string; fields: Editor
       ],
     }
   }
+  if (key === 'desk_preamble') {
+    const d = await getDeskPreamble()
+    return {
+      title: 'DESK — 冒頭の位置づけ文',
+      fields: [
+        {
+          name: 'lines',
+          label: '本文',
+          kind: 'segments',
+          value: serializeField('segments', d.lines),
+          rows: 4,
+          hint: '1行＝1行。「|」で分節すると、狭い画面ではそこで折り返します',
+        },
+        { name: 'live', label: '締めの一行（今日の生放送）', kind: 'text', value: serializeField('text', d.live) },
+        { name: 'archive', label: '締めの一行（過ぎた日のアーカイブ）', kind: 'text', value: serializeField('text', d.archive) },
+      ],
+    }
+  }
+
   // 番組ページの言葉(2026-10-15 Andy指定)。
   // **構造はここに出さない**——slug・ORIGINAL/WORKSの群・フィードURL・取り込み開始日・
   // ヒーロー映像のパス・地図の緯度経度・派生記事のIDはコード(lib/site/shows.ts)のまま。

@@ -7,8 +7,12 @@ import AnnotationLayer from '../AnnotationLayer'
 import DeskPreamble from '../DeskPreamble'
 import type { Annotation, AnnotationTarget } from '@/lib/site/annotations'
 import { serverBodyHtml } from '@/lib/site/serverBody'
+import type { DeskPreambleContent } from '@/lib/site/pages'
 
 type Props = {
+  // 冒頭の位置づけ文(studioから編集できる。2026-10-15)。ここはクライアント部品なので
+  // 自分では読まず、サーバー側のページが読んで渡す
+  preamble: DeskPreambleContent
   relay: string | null
   today: string
   initialHtml: string | null
@@ -26,6 +30,7 @@ type Props = {
 // 当日ライブ全文ページ(/watch後継)の本文。ページ全体がスクロールし、
 // 追従中は執筆点(最下部)に張り付く。読み返し中に打鍵が来たらチップで知らせる。
 export default function LiveFull({
+  preamble,
   relay,
   today,
   initialHtml,
@@ -155,7 +160,7 @@ export default function LiveFull({
       </div>
       {/* 確定アーカイブと同じ位置づけ文を当日にも(2026-08-07 Andy指定)。
           締めの一行だけが「これは今日の生放送。」に変わる */}
-      <DeskPreamble variant="live" />
+      <DeskPreamble variant="live" content={preamble} />
       <div className="section-body">
         {mode === 'idle' && <div className="live-full-idle">{dateLabel}</div>}
         {/* ①サーバー描画用(JSを実行しない読み手向け)。JSが描いたら隠す */}

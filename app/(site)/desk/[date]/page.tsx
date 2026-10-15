@@ -7,6 +7,7 @@ import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { ogpImage } from '@/lib/site/ogp'
 import Pager from '../../Pager'
 import DeskPreamble from '../../DeskPreamble'
+import { getDeskPreamble } from '@/lib/site/pages'
 import ArrivalSection from '../../ArrivalSection'
 import CreatureDrift from '../../CreatureDrift'
 import { arrivalsOf } from '@/lib/site/arrivals'
@@ -64,6 +65,8 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
   const service = createService()
   // '*': deleted_at列がマイグレーション未実行でも壊れない読み方
   const { data } = await service.from('scribe_days').select('*').eq('date', date).maybeSingle()
+  // 冒頭の位置づけ文(studioから編集できる。2026-10-15)
+  const preamble = await getDeskPreamble()
 
   if (!data || !data.html || data.deleted_at) notFound()
 
@@ -136,7 +139,7 @@ export default async function ScribeDayPage({ params }: { params: Promise<Params
         <div className="section-head">
           <h1>DESK ARCHIVE — {scribeTitle(date)}</h1>
         </div>
-        <DeskPreamble variant="archive" />
+        <DeskPreamble variant="archive" content={preamble} />
         <ScribeArchive
           html={data.html as string}
           annotations={annotations}

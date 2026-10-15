@@ -33,6 +33,7 @@ const PAGES = [
   { key: 'membership', label: 'MEMBERSHIP', href: '/studio/pages/membership' },
   { key: 'privacy', label: 'PRIVACY POLICY', href: '/studio/pages/privacy' },
   { key: 'about', label: 'ABOUT（専用エディタ →/desk/about）', href: '/desk/about' },
+  { key: 'desk_preamble', label: 'DESK — 冒頭の位置づけ文', href: '/studio/pages/desk_preamble' },
   // 番組ページの言葉(2026-10-15)。1番組=1行。構造(フィードURL・座標・映像)はコードのまま
   ...SHOWS.map((s) => ({
     key: `show:${s.slug}`,
