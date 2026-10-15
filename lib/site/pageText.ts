@@ -52,13 +52,35 @@ export function textToSections(s: string): Section[] {
 }
 
 // フィールド種別(serializeでテキスト化、parseで構造に戻す)
-export type FieldKind = 'text' | 'paragraphs' | 'lines' | 'qa' | 'sections'
+// 出演者(2026-10-15)。1行＝1人、「名前 | 担当 | URL」。URLは省略可。
+// 行の分割はlinesと同じで、列だけ「|」で割る——新しい記法を作らず、
+// 既存の「1行=1項目」の約束の内側に収める
+export type CastRow = { name: string; role: string; href?: string }
+
+export function castToText(a: CastRow[]): string {
+  return (a ?? [])
+    .map((c) => [c.name, c.role, c.href].filter((v) => v != null && v !== '').join(' | '))
+    .join('\n')
+}
+
+export function textToCast(s: string): CastRow[] {
+  return textToLines(s)
+    .map((line) => {
+      const [name = '', role = '', href = ''] = line.split('|').map((v) => v.trim())
+      if (!name) return null
+      return href ? { name, role, href } : { name, role }
+    })
+    .filter((v): v is CastRow => v !== null)
+}
+
+export type FieldKind = 'text' | 'paragraphs' | 'lines' | 'qa' | 'sections' | 'cast'
 
 export function serializeField(kind: FieldKind, value: unknown): string {
   if (kind === 'text') return typeof value === 'string' ? value : ''
   if (kind === 'lines') return linesToText((value as string[]) ?? [])
   if (kind === 'qa') return qaToText((value as QA[]) ?? [])
   if (kind === 'sections') return sectionsToText((value as Section[]) ?? [])
+  if (kind === 'cast') return castToText((value as CastRow[]) ?? [])
   return paragraphsToText((value as string[]) ?? [])
 }
 
@@ -67,5 +89,6 @@ export function parseField(kind: FieldKind, text: string): unknown {
   if (kind === 'lines') return textToLines(text)
   if (kind === 'qa') return textToQa(text)
   if (kind === 'sections') return textToSections(text)
+  if (kind === 'cast') return textToCast(text)
   return textToParagraphs(text)
 }

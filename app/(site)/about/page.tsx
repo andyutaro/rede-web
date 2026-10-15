@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SHOWS, showBySlug } from '@/lib/site/shows'
+// 番組名と舞台の文字はstudioから上書きできる(2026-10-15)。地図の座標は
+// SHOWS(構造)のまま=ALL_PLACE_POINTSは触らない
+import { getShows } from '@/lib/site/showContent'
+import type { Show } from '@/lib/site/shows'
 import { channelInfo } from '@/lib/site/podcastFeed'
 import { getAboutContent, type AboutContent, type AboutShow } from '@/lib/site/about'
 import Accordion from './Accordion'
@@ -25,10 +29,10 @@ const JAPAN_PLACE_POINTS = ALL_PLACE_POINTS.filter((p) => p.lon > 100)
 // 地名 → その土地の番組名(2026-07-30)。Aboutに載っている番組だけを対象にする
 // =未公開番組(ガイロン等)を地図から漏らさない。名前はshows.tsの短い方を使う
 // (Aboutの表示名は副題つきで長く、小さなポップアップには入らない)
-function showsByPlace(listed: { slug: string }[]): Record<string, string[]> {
+function showsByPlace(listed: { slug: string }[], shows: Show[]): Record<string, string[]> {
   const out: Record<string, string[]> = {}
   for (const { slug } of listed) {
-    const show = showBySlug(slug)
+    const show = shows.find((x) => x.slug === slug)
     if (!show?.place) continue
     const name = show.shortName ?? show.name
     for (const p of show.place.points) {
@@ -82,6 +86,9 @@ async function coverMap(slugs: string[]): Promise<Record<string, string | null>>
 export default async function AboutPage() {
   const c: AboutContent = await getAboutContent()
   const covers = await coverMap([...c.original, ...c.branded].map((s) => s.slug))
+  // 番組の言葉(名前・舞台の文字)はstudioの上書きを反映する(2026-10-15)
+  const shows = await getShows()
+  const showOf = (slug: string) => shows.find((x) => x.slug === slug)
 
   // Aboutの構造化データ(2026-09-10、事実データのみ)。このページが「Andyという人の
   // プロフィールページ」であることを渡す。人物の定義はHomeと同じ@idを指し、
@@ -204,7 +211,7 @@ export default async function AboutPage() {
         </div>
         <div className="about-worldmap">
           {/* 点を押すとその土地の番組が出る(2026-07-30 Andy)。番組ページへは飛ばさない */}
-          <PlacesTap shows={showsByPlace([...c.original, ...c.branded])}>
+          <PlacesTap shows={showsByPlace([...c.original, ...c.branded], shows)}>
             <PlaceMap points={JAPAN_PLACE_POINTS} view="japan" width={340} labels interactive />
           </PlacesTap>
           <p className="about-worldmap-note">
@@ -216,8 +223,18 @@ export default async function AboutPage() {
 
       {/* 楽章3: 番組ポートフォリオ。各エントリに番組の舞台の銘板を組み込む
           (2026-07-25 Andy指定「地名はこの一覧に落とし込む」。独立のPLACES節は廃止) */}
-      <ShowList heading="ORIGINAL PODCASTS" shows={c.original} covers={covers} />
-      <ShowList heading="BRANDED PODCASTS" shows={c.branded} covers={covers} />
+      <ShowList
+        heading="ORIGINAL PODCASTS"
+        shows={c.original}
+        covers={covers}
+        placeOf={(slug) => showOf(slug)?.place}
+      />
+      <ShowList
+        heading="BRANDED PODCASTS"
+        shows={c.branded}
+        covers={covers}
+        placeOf={(slug) => showOf(slug)?.place}
+      />
 
       {/* 楽章4: 姿勢(STANCE) */}
       <section className="about-movement about-stance-block">
@@ -262,10 +279,13 @@ function ShowList({
   heading,
   shows,
   covers,
+  placeOf,
 }: {
   heading: string
   shows: AboutShow[]
   covers: Record<string, string | null>
+  // 舞台はstudioで文字を上書きできる(2026-10-15)。ページ本体が解決して渡す
+  placeOf: (slug: string) => Show['place']
 }) {
   return (
     <section className="about-movement">
@@ -290,7 +310,7 @@ function ShowList({
                   ラベル行の文法で紹介文の下に。名前と紹介文の間に挟む初版は
                   段が増えてごちゃついたため廃止。出所はshows.tsのplace(単一の真実) */}
               {(() => {
-                const place = showBySlug(s.slug)?.place
+                const place = placeOf(s.slug)
                 return place ? (
                   <p className="about-show-role">
                     <span className="role-label">舞台</span>

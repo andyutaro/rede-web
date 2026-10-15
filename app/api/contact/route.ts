@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createService } from '@/lib/supabase/service'
 import { TOPICS } from '@/app/(site)/mail/content'
-import { otayoriLabels } from '@/lib/site/shows'
+import { otayoriLabelsLive } from '@/lib/site/showContent'
 import { judgeSpam } from '@/lib/site/spamFilter'
 
 // おたより(2026-07-20): topics=[「おたより — 宛先」]で仕事の問い合わせと同じ
 // テーブルに載せる。宛先の許可リストは公開フォームと同じotayoriLabels()
 // (終了番組は含まれない。項目持ち番組は「番組名 / 項目」)
-const OTAYORI_TOPICS = otayoriLabels().map((l) => `おたより — ${l}`)
+// 宛先の許可リストは**公開フォームと同じ出所**から都度組む(2026-10-15)。
+// 番組名や項目をstudioで変えた瞬間に、フォームの選択肢と検証が食い違って
+// 送信が弾かれるのを防ぐため、モジュール読み込み時の固定値にしない
+const otayoriTopics = async () => (await otayoriLabelsLive()).map((l) => `おたより — ${l}`)
 
 // 問い合わせの受付(公開エンドポイント)。
 // - 保存はservice role(anonの書き込みポリシーは作らない=直POSTでの荒らし面を狭める)
@@ -82,7 +85,8 @@ export async function POST(request: Request) {
   const message = (body.message ?? '').trim()
   const topics = Array.isArray(body.topics) ? body.topics : []
   // おたより=topicsが全て「おたより — 番組名」。メールは任意(書かれていれば形式検証)
-  const isOtayori = topics.length > 0 && topics.every((t) => OTAYORI_TOPICS.includes(t))
+  const allowed = await otayoriTopics()
+  const isOtayori = topics.length > 0 && topics.every((t) => allowed.includes(t))
   const emailOk = isOtayori
     ? !email || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 200)
     : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 200

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { SHOWS, showBySlug } from '@/lib/site/shows'
+import { SHOWS } from '@/lib/site/shows'
+// 番組の「言葉」はstudioから上書きできる(2026-10-15)。構造(フィード・座標・映像)は
+// SHOWSのまま。generateStaticParamsはslugしか見ないのでSHOWSを直接使う
+import { getShow } from '@/lib/site/showContent'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
 import { dateDots, dateShort, firstImageSrc, plainExcerpt, tokyoDaysAgo, tokyoYmd } from '@/lib/site/text'
@@ -41,7 +44,7 @@ export async function generateMetadata({
   params: Promise<Params>
 }): Promise<Metadata> {
   const { slug } = await params
-  const show = showBySlug(slug)
+  const show = await getShow(slug)
   if (!show?.feed) return { title: show?.name ?? 'Podcast' }
   // description: RSSのchannel説明(番組側の言葉)から抜粋(2026-07-25)。
   // channelInfoは軽量フィード(description空)なので、ページ本体と同じフルフィードを
@@ -118,7 +121,7 @@ async function productCells(ids?: string[]): Promise<ProductCell[]> {
 // SHOW NOTES・検索付きエピソード索引。
 export default async function ShowPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
-  const show = showBySlug(slug)
+  const show = await getShow(slug)
   if (!show || !show.feed) notFound()
 
   const isOriginal = show.group === 'original'

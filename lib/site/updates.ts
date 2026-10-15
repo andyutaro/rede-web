@@ -1,7 +1,7 @@
 import { createService } from '@/lib/supabase/service'
 import { scribeTitle, htmlToPlainText, tokyoYmd } from './text'
 import { todayInTokyo } from '@/lib/scribe/date'
-import { SHOWS } from './shows'
+import { getShows } from './showContent'
 import { showSummaries, summaryOf } from './showSummary'
 import { listGuestRows } from './guestEpisodes'
 
@@ -150,7 +150,10 @@ export async function recentUpdates(
 
   // 各番組の直近エピソード。sinceで旧番組の混入を除去(BrandShift)。
   // マージ後にlimitで切るので各番組はlimit件で十分。
-  SHOWS.forEach((s) => {
+  // 番組名はstudioで上書きできる(2026-10-15)。作り置き(feeds)はslug基準なので
+  // 突き合わせは変わらない
+  const namedShows = await getShows()
+  namedShows.forEach((s) => {
     const feed = summaryOf(feeds, s.slug)
     if (!feed) return
     const showName = s.shortName ?? s.name // 「ロングポスト」等の自然な番組名

@@ -5,6 +5,7 @@ import { assignedOf, listAllImages } from '@/lib/site/photos'
 import SelectTable, { type SelectRow } from '../SelectTable'
 import { articleRows, thumbOf } from '../articleRows'
 import ThumbGrid, { type ThumbItem } from '../ThumbGrid'
+import { SHOWS } from '@/lib/site/shows'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,12 @@ const PAGES = [
   { key: 'membership', label: 'MEMBERSHIP', href: '/studio/pages/membership' },
   { key: 'privacy', label: 'PRIVACY POLICY', href: '/studio/pages/privacy' },
   { key: 'about', label: 'ABOUT（専用エディタ →/desk/about）', href: '/desk/about' },
+  // 番組ページの言葉(2026-10-15)。1番組=1行。構造(フィードURL・座標・映像)はコードのまま
+  ...SHOWS.map((s) => ({
+    key: `show:${s.slug}`,
+    label: `PODCAST — ${s.display ?? s.name}`,
+    href: `/studio/pages/${encodeURIComponent(`show:${s.slug}`)}`,
+  })),
 ]
 
 const ARTICLE_COLS = 'id, title, type, status, tags, published_at, created_at, deleted_at'

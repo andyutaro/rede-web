@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import { SHOWS } from '@/lib/site/shows'
+// 番組名はstudioで上書きできる(2026-10-15)。metadataは静的constなのでSHOWSのまま
+// (説明文の番組名が遅れて追従するだけで、実害が無い)
+import { getShows } from '@/lib/site/showContent'
 import { fetchShowFeedLight } from '@/lib/site/podcastFeed'
 import { tokyoDaysAgo } from '@/lib/site/text'
 import { listGuestEpisodes } from '@/lib/site/guestEpisodes'
@@ -30,14 +33,15 @@ export const metadata: Metadata = {
 
 export default async function PodcastPage() {
   // 棚はタイトル・日付・カバーだけ使う=軽量版で足りる
-  const [feeds, guests] = await Promise.all([
+  const [feeds, guests, shows] = await Promise.all([
     Promise.all(
       SHOWS.map((s) => (s.feed ? fetchShowFeedLight(s.feed, s.since) : Promise.resolve(null)))
     ),
     listGuestEpisodes(),
+    getShows(), // SHOWSと同じ順・同じ長さを返すので feeds[i] の対応は変わらない
   ])
 
-  const withArt = SHOWS.map((s, i) => ({
+  const withArt = shows.map((s, i) => ({
     ...s,
     cover: feeds[i]?.image ?? null,
     latest: feeds[i]?.latest ?? null,

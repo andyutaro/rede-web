@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { showBySlug } from '@/lib/site/shows'
+import { getShow } from '@/lib/site/showContent'
 import { fetchShowFeed } from '@/lib/site/podcastFeed'
 import { dateDots, plainExcerpt } from '@/lib/site/text'
 import { breadcrumbJsonLd } from '@/lib/site/breadcrumbs'
@@ -25,7 +25,7 @@ type Params = { slug: string; episode: string }
 
 async function loadEpisode(params: Promise<Params>) {
   const { slug, episode } = await params
-  const show = showBySlug(slug)
+  const show = await getShow(slug)
   if (!show || !show.feed) return null
   const feed = await fetchShowFeed(show.feed, show.since)
   const ep = feed?.episodes.find((e) => e.id === episode)

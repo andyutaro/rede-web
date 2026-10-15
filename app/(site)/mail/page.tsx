@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { getAboutContent, type AboutContent } from '@/lib/site/about'
 import { getContactContent } from '@/lib/site/pages'
-import { otayoriShows, otayoriTopicsOf } from '@/lib/site/shows'
+import { otayoriTopicsOf } from '@/lib/site/shows'
+// 番組名と宛先項目はstudioで上書きできる(2026-10-15)。APIの検証と同じ出所を使う
+import { otayoriShowsLive } from '@/lib/site/showContent'
 import Accordion from '../about/Accordion'
 import ContactForm from './ContactForm'
 import ContactModes from './ContactModes'
@@ -34,7 +36,7 @@ export default async function ContactPage() {
   // おたより宛先: 継続中のオリジナル番組のみ(終了・未配信は出さない)。
   // 全番組を【 番組名 】+項目の同じ形で出す(2026-07-25 Andy指定)。
   // 項目なし番組は既定の「自由おたより」1つに正規化される
-  const otayoriTargets: OtayoriShow[] = otayoriShows().map((s) => ({
+  const otayoriTargets: OtayoriShow[] = (await otayoriShowsLive()).map((s) => ({
     slug: s.slug,
     label: s.shortName ?? s.name,
     topics: otayoriTopicsOf(s),

@@ -8,6 +8,7 @@ import {
   type PrivacyContent,
 } from '@/lib/site/pages'
 import { serializeField } from '@/lib/site/pageText'
+import { getShow } from '@/lib/site/showContent'
 import PageEditor, { type EditorField } from '../PageEditor'
 
 export const dynamic = 'force-dynamic'
@@ -65,6 +66,41 @@ async function buildFields(key: string): Promise<{ title: string; fields: Editor
       ],
     }
   }
+  // 番組ページの言葉(2026-10-15 Andy指定)。
+  // **構造はここに出さない**——slug・ORIGINAL/WORKSの群・フィードURL・取り込み開始日・
+  // ヒーロー映像のパス・地図の緯度経度・派生記事のIDはコード(lib/site/shows.ts)のまま。
+  // フォームから触れるようにすると壊れ方が静かなため(フィードURLを一字間違えれば
+  // 番組が丸ごと消え、緯度経度はフォーム上で意味が読めない)。
+  // **空欄にした項目は出なくなる**(コードの既定には戻らない)。
+  if (key.startsWith('show:')) {
+    const show = await getShow(key.slice('show:'.length))
+    if (!show) return null
+    const fields: EditorField[] = [
+      { name: 'name', label: '番組名', kind: 'text', value: serializeField('text', show.name) },
+      { name: 'shortName', label: '短縮名（「◯◯配信」で使う。空欄なら番組名）', kind: 'text', value: serializeField('text', show.shortName ?? '') },
+      { name: 'display', label: 'タイル下の表記（SAKANAKAIGI等）', kind: 'text', value: serializeField('text', show.display ?? '') },
+      // introは改行をそのまま出す(white-space: pre-line)ので、段落ではなく素のテキストで持つ
+      { name: 'intro', label: '番組の言葉（識別部の紹介文）', kind: 'text', value: serializeField('text', show.intro ?? ''), rows: 6, hint: '改行はそのまま出ます。空欄にすると出なくなります' },
+      { name: 'role', label: '担当（ROLE）', kind: 'text', value: serializeField('text', show.role ?? ''), rows: 3 },
+      { name: 'cast', label: '出演者', kind: 'cast', value: serializeField('cast', show.cast ?? []), rows: 5, hint: '1行＝1人。「名前 | 担当 | URL」。URLは省略可' },
+    ]
+    if (show.place) {
+      fields.push(
+        { name: 'place.ja', label: '舞台（日本語）', kind: 'text', value: serializeField('text', show.place.ja) },
+        { name: 'place.en', label: '舞台（英語）', kind: 'text', value: serializeField('text', show.place.en) },
+        { name: 'place.note', label: '舞台の注記', kind: 'text', value: serializeField('text', show.place.note ?? '') }
+      )
+    }
+    fields.push(
+      { name: 'platforms.spotify', label: '配信先 Spotify のURL', kind: 'text', value: serializeField('text', show.platforms?.spotify ?? '') },
+      { name: 'platforms.apple', label: '配信先 Apple Podcasts のURL', kind: 'text', value: serializeField('text', show.platforms?.apple ?? '') },
+      { name: 'platforms.listen', label: '配信先 LISTEN のURL', kind: 'text', value: serializeField('text', show.platforms?.listen ?? '') },
+      { name: 'otayoriTopics', label: 'おたよりの宛先項目（1行=1項目）', kind: 'lines', value: serializeField('lines', show.otayoriTopics ?? []), rows: 4 },
+      { name: 'otayoriUrl', label: '外部おたよりフォームのURL', kind: 'text', value: serializeField('text', show.otayoriUrl ?? '') }
+    )
+    return { title: `PODCAST — ${show.display ?? show.name}`, fields }
+  }
+
   return null
 }
 

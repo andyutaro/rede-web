@@ -4,7 +4,7 @@ import { todayInTokyo } from '@/lib/scribe/date'
 import { recentUpdates } from '@/lib/site/updates'
 import { randomPhotoWithHref, listAllImages, assignedOf } from '@/lib/site/photos'
 import { isRecentlyWritten } from '@/lib/site/serverBody'
-import { SHOWS } from '@/lib/site/shows'
+import { getShows } from '@/lib/site/showContent'
 import { showSummaries, summaryOf } from '@/lib/site/showSummary'
 import { tokyoDaysAgo, tokyoYmd, firstImageSrc } from '@/lib/site/text'
 import { listGuestRows } from '@/lib/site/guestEpisodes'
@@ -132,8 +132,10 @@ export default async function Home() {
   // 最新エピソード(2026-09-11 Andy指定「/podcastのエピソードタイルの最新4件」)。
   // 自番組(夜の作り置き)とゲスト出演(控え)を公開日で混ぜる。棚と同じ並び・同じ組版
   const newSince = tokyoDaysAgo(7)
+  // 番組名はstudioで上書きできる(2026-10-15)。作り置き(covers)はslug基準
+  const shows = await getShows()
   const eps: EpItem[] = []
-  SHOWS.forEach((s) => {
+  shows.forEach((s) => {
     const sum = summaryOf(covers, s.slug)
     if (!sum) return
     for (const ep of sum.episodes.slice(0, 4)) {
@@ -213,7 +215,7 @@ export default async function Home() {
   // 背景波形+ランダム再生はlayoutへ移設(全ページ共通、2026-07-13)。Homeは通常のmeasure構成に戻す
   // カバーが取れた番組だけ出す(フィード未設定・取得失敗はプレースホルダを出さない)。
   // 並びは各群とも最新エピソードが新しい順(左が最新)
-  const withArt = SHOWS.map((s) => {
+  const withArt = shows.map((s) => {
     const sum = summaryOf(covers, s.slug)
     return { ...s, cover: sum?.image ?? null, latest: sum?.latest ?? null }
   })

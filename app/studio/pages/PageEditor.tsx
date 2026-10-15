@@ -25,8 +25,20 @@ export default function PageEditor({ pageKey, fields }: { pageKey: string; field
     if (busy) return
     setBusy(true)
     setMessage('保存中…')
+    // 名前に「.」があるものは入れ子にして送る(2026-10-15。番組の place.ja /
+    // platforms.spotify のように、保存先が入れ子のフィールドのため)
     const data: Record<string, unknown> = {}
-    for (const f of fields) data[f.name] = parseField(f.kind, texts[f.name] ?? '')
+    for (const f of fields) {
+      const value = parseField(f.kind, texts[f.name] ?? '')
+      if (!f.name.includes('.')) {
+        data[f.name] = value
+        continue
+      }
+      const [head, tail] = f.name.split('.')
+      const nest = (data[head] ?? {}) as Record<string, unknown>
+      nest[tail] = value
+      data[head] = nest
+    }
     try {
       const res = await fetch('/api/pages/save', {
         method: 'POST',
