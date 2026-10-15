@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation'
 import {
   getContactContent,
   getMembershipContent,
@@ -132,7 +131,23 @@ export default async function EditPage({ params }: { params: Promise<{ key: stri
   // 保存キーは復号した方=site_contentの実際のキーをPageEditorへ渡す
   const key = raw.includes('%') ? safeDecode(raw) : raw
   const built = await buildFields(key)
-  if (!built) notFound()
+  // 編集者向けの画面なので、黙って404にせず**何を要求されたか**を見せる
+  // (2026-10-15。番組の編集画面がNOT FOUNDになったとき、受け取ったキーが
+  //  分からず原因の切り分けができなかった)
+  if (!built) {
+    return (
+      <>
+        <h1 className="studio-h1">編集できない頁</h1>
+        <p className="studio-note">
+          受け取ったキー: <code>{key}</code>（URLの生の値: <code>{raw}</code>）
+        </p>
+        <p className="studio-note">
+          編集できるのは contact / membership / privacy / desk_preamble /
+          show:&lt;番組のslug&gt; です。
+        </p>
+      </>
+    )
+  }
 
   return (
     <>
